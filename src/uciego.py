@@ -1,4 +1,5 @@
 from PIL import Image
+import numpy as np
 import os
 import torch.utils.data as data
 
@@ -18,11 +19,23 @@ def load_image(path):
     return image.convert("RGB")
 
 
+def load_annotation(path):
+    """
+    loads keypoint annotations from text file at path
+    :param path: absolute or relative path to .txt file containing annotations
+    :return numpy.ndarray:
+    """
+    return np.loadtxt(path, usecols=[2, 3, 4])
+
+
+
 def get_input_target(sequence_nb, image_nb):
     pass
 
+
 def get_tensors():
     pass
+
 
 class UCIEGO(data.Dataset):
     def __init__(self, ego_path="../data/UCI-EGO", sequences = [1, 2, 3, 4],
@@ -54,11 +67,11 @@ class UCIEGO(data.Dataset):
 
             # Get radical of the image
             file_names = [jpg_file.split(".")[0] for jpg_file in jpgs]
+
             # Keep only files with annotations
             # TODO for now we only consider frames where the right hand is present
             # we also ignore the left hand, this could be improved in the future
             annotated = [filename for filename in file_names if filename + "-1.txt" in annotations]
-            import pdb; pdb.set_trace()
             seq_images = [(seq, file_name) for file_name in file_names]
             self.all_images = self.all_images + seq_images
         self.item_nb = len(self.all_images)
@@ -66,9 +79,13 @@ class UCIEGO(data.Dataset):
     def __getitem__(self, index):
         if(self.rgb):
             seq, image_name = self.all_images[index]
-            image_path = self.path + "/Seq"+ str(seq) + "/" + image_name  + '.jpg'
+            seq_path =  self.path + "/Seq"+ str(seq) + "/"
+            image_path = seq_path + image_name + '.jpg'
+            # TODO add handling for left hand
             rgb_img = load_image(image_path)
-            return rgb_img
+            annot_path = seq_path + image_name + '-1.txt'
+            annot = load_annotation(annot_path)
+            return rgb_img, annot
 
     def __len__(self):
         return self.item_nb
