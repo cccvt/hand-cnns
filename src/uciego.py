@@ -72,7 +72,7 @@ class UCIEGO(data.Dataset):
             # TODO for now we only consider frames where the right hand is present
             # we also ignore the left hand, this could be improved in the future
             annotated = [filename for filename in file_names if filename + "-1.txt" in annotations]
-            seq_images = [(seq, file_name) for file_name in file_names]
+            seq_images = [(seq, file_name) for file_name in annotated]
             self.all_images = self.all_images + seq_images
         self.item_nb = len(self.all_images)
 
