@@ -43,8 +43,8 @@ def get_tensors():
 
 
 class UCIEGO(data.Dataset):
-    def __init__(self, ego_path="../data/UCI-EGO", sequences=[1, 2, 3, 4],
-                 rgb=True, depth=False):
+    def __init__(self, transform=None, ego_path="../data/UCI-EGO",
+                 sequences=[1, 2, 3, 4], rgb=True, depth=False):
         """
         :param sequences: indexes of the sequences to load in dataset
         :param rgb: whether rgb channels should be used
@@ -53,6 +53,7 @@ class UCIEGO(data.Dataset):
         :type depth: Boolean
         :type sequences: list of integers among 1 to 4
         """
+        self.transform = transform
         self.path = ego_path
         self.rgb = rgb
         self.depth = depth
@@ -63,6 +64,7 @@ class UCIEGO(data.Dataset):
                       (21, 22), (22, 23), (23, 24),
                       (25, 21), (25, 17), (25, 13), (25, 9), (25, 5),
                       (4, 25)]
+        self.joint_nb = 26
         # self.all_images contains tuples (sequence_idx, image_name)
         # where image_name is the common prefix of the files
         # ('fr187' for instance)
@@ -99,10 +101,12 @@ class UCIEGO(data.Dataset):
             seq_path = self.path + "/Seq" + str(seq) + "/"
             image_path = seq_path + image_name + '.jpg'
             # TODO add handling for left hand
-            rgb_img = load_image(image_path)
+            img = load_image(image_path)
             annot_path = seq_path + image_name + '-1.txt'
             annot = load_annotation(annot_path)
-            return rgb_img, annot
+            if self.transform is not None:
+                img = self.transform(img)
+            return img, annot
 
     def __len__(self):
         return self.item_nb
