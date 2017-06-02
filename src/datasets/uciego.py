@@ -14,7 +14,7 @@ right hand while -2 indicates the left hand
 """
 
 
-def load_image(path):
+def _load_image(path):
     """
     loads image from path
     :param path: absolute or relative path to file
@@ -25,22 +25,15 @@ def load_image(path):
     return image.convert("RGB")
 
 
-def load_annotation(path):
+def _load_annotation(path):
     """
     loads keypoint annotations from text file at path
     :param path: absolute or relative path to .txt file containing annotations
+    :param exclude_joints: list of indexes of the rows to delete
     :return numpy.ndarray:
     """
-    return np.loadtxt(path, usecols=[2, 3, 4])
-
-
-def get_input_target(sequence_nb, image_nb):
-    pass
-
-
-def get_tensors():
-    pass
-
+    annots = np.loadtxt(path, usecols=[2, 3, 4])
+    return annots
 
 class UCIEGO(data.Dataset):
     def __init__(self, transform=None, ego_path="../data/UCI-EGO",
@@ -65,6 +58,7 @@ class UCIEGO(data.Dataset):
                       (25, 21), (25, 17), (25, 13), (25, 9), (25, 5),
                       (4, 25)]
         self.joint_nb = 26
+
         # self.all_images contains tuples (sequence_idx, image_name)
         # where image_name is the common prefix of the files
         # ('fr187' for instance)
@@ -101,9 +95,9 @@ class UCIEGO(data.Dataset):
             seq_path = self.path + "/Seq" + str(seq) + "/"
             image_path = seq_path + image_name + '.jpg'
             # TODO add handling for left hand
-            img = load_image(image_path)
+            img = _load_image(image_path)
             annot_path = seq_path + image_name + '-1.txt'
-            annot = load_annotation(annot_path)
+            annot = _load_annotation(annot_path)
             if self.transform is not None:
                 img = self.transform(img)
             return img, annot
