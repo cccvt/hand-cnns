@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 
-def draw2d_annotated_img(img, annot, links):
+def draw2d_annotated_img(img, annot, links, keep_joints=None):
     """
     Draws 2d image img with joint annotations
 
@@ -14,9 +14,10 @@ def draw2d_annotated_img(img, annot, links):
     ax.imshow(img)
     ax.scatter(annot[:, 0], annot[:, 1], s=4, c="r")
     if(links):
-        draw2djoints(ax, annot, links)
+        draw2djoints(ax, annot, links, keep_joints)
 
-def draw3d_annotated_img(annot, links, angle=320):
+
+def draw3d_annotated_img(annot, links, keep_joints=None, angle=320):
     """
     Draws 3d image img with joint annotations
 
@@ -27,7 +28,19 @@ def draw3d_annotated_img(annot, links, angle=320):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.view_init(30, angle)
-    draw3djoints(ax, annot, links)
+    draw3djoints(ax, annot, links, keep_joints)
+
+
+def draw2djoints(ax, annots, links, keep_joints=None):
+    """
+    :param annot: 2d numpy ndarray [[x1, y1, z1], ...]
+    :param ax: matplot plot/subplot
+    :param links: tuples of annot rows to link [(idx1, idx2), ...]
+    """
+    for link in links:
+        if keep_joints is None or (link[0] in keep_joints
+                                   and link[1] in keep_joints):
+            draw2dseg(ax, annots, link[0], link[1])
 
 
 def draw2dseg(ax, annot, idx1, idx2, color="r", marker="o"):
@@ -42,14 +55,16 @@ def draw2dseg(ax, annot, idx1, idx2, color="r", marker="o"):
             c=color, marker=marker)
 
 
-def draw2djoints(ax, annots, links):
+def draw3djoints(ax, annots, links, keep_joints=None):
     """
     :param annot: 2d numpy ndarray [[x1, y1, z1], ...]
-    :param ax: matplot plot/subplot
+    :param ax: matplot 3d plot/subplot
     :param links: tuples of annot rows to link [(idx1, idx2), ...]
     """
     for link in links:
-        draw2dseg(ax, annots, link[0], link[1])
+        if keep_joints is None or (link[0] in keep_joints
+                                   and link[1] in keep_joints):
+            draw3dseg(ax, annots, link[0], link[1])
 
 
 def draw3dseg(ax, annot, idx1, idx2, color="r"):
@@ -62,14 +77,4 @@ def draw3dseg(ax, annot, idx1, idx2, color="r"):
     ax.plot([annot[idx1, 0], annot[idx2, 0]],
             [annot[idx1, 1], annot[idx2, 1]],
             [annot[idx1, 2], annot[idx2, 2]])
-
-
-def draw3djoints(ax, annots, links):
-    """
-    :param annot: 2d numpy ndarray [[x1, y1, z1], ...]
-    :param ax: matplot 3d plot/subplot
-    :param links: tuples of annot rows to link [(idx1, idx2), ...]
-    """
-    for link in links:
-        draw3dseg(ax, annots, link[0], link[1])
 

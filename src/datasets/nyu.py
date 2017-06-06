@@ -20,7 +20,7 @@ Therefore there are 3*scene_nb images in the train and test folders
 
 class NYU(data.Dataset):
     def __init__(self, transform=None, root_folder="../data/NYU",
-                 train=True, depth=True):
+                 train=True, depth=True, nyu_joints=True):
         """
         :param train: True to load training samples, false for testing
         :type train: Boolean
@@ -39,6 +39,21 @@ class NYU(data.Dataset):
                       (18, 19), (19, 20), (20, 21), (21, 22), (22, 23),
                       (24, 25), (25, 26), (26, 27), (27, 28), (28, 29),
                       (35, 5), (35, 11), (35, 17), (35, 23), (35, 29)]
+
+        # NYU joints
+        if nyu_joints:
+            self.keep_joints = [0, 2,  # little
+                                6, 8,  # ring
+                                12, 14,  # middle
+                                18, 20,  # index
+                                24, 25, 27,  # thumb
+                                30, 31,  # wrist
+                                32]  # palm
+            self.links = [(0, 2), (6, 8), (12, 14), (18, 20),  # fingers
+                          (24, 25), (25, 27),  # thumb
+                          (2, 32), (8, 32), (14, 32),
+                          (20, 32), (27, 32),  # finger - palms
+                          (32, 30), (32, 21)]  # palm - wrist
 
         # set path to data folder
         if (self.train):
@@ -80,7 +95,8 @@ class NYU(data.Dataset):
 
     def draw2d(self, idx):
         img, annot = self[idx]
-        visualize.draw2d_annotated_img(img, annot, self.links)
+        visualize.draw2d_annotated_img(img, annot, self.links,
+                                       keep_joints=self.keep_joints)
 
     def draw3d(self, idx, xyz=True, angle=320):
         """
@@ -96,5 +112,8 @@ class NYU(data.Dataset):
         else:
             annot = self.annot_uvd[view, sequence]
 
-        visualize.draw3d_annotated_img(annot, self.links, angle=320)
+        visualize.draw3d_annotated_img(annot, self.links,
+                                       keep_joints=self.keep_joints,
+                                       angle=320,)
+
 
