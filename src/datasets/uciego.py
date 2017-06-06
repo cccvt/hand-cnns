@@ -1,10 +1,9 @@
-from PIL import Image
-
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import torch.utils.data as data
 
+import src.datasets.utils.loader as loader
 import src.datasets.utils.visualize as visualize
 
 """
@@ -12,17 +11,6 @@ UCI ego contains almost 400 annotated frames
 in the .txt files a -1 suffix indicates the
 right hand while -2 indicates the left hand
 """
-
-
-def _load_image(path):
-    """
-    loads image from path
-    :param path: absolute or relative path to file
-    :rtype: PIL Image
-    :return: RGB Image
-    """
-    image = Image.open(path)
-    return image.convert("RGB")
 
 
 def _load_annotation(path):
@@ -35,8 +23,9 @@ def _load_annotation(path):
     annots = np.loadtxt(path, usecols=[2, 3, 4])
     return annots
 
+
 class UCIEGO(data.Dataset):
-    def __init__(self, transform=None, ego_path="../data/UCI-EGO",
+    def __init__(self, transform=None, root_folder="../data/UCI-EGO",
                  sequences=[1, 2, 3, 4], rgb=True, depth=False):
         """
         :param sequences: indexes of the sequences to load in dataset
@@ -47,7 +36,7 @@ class UCIEGO(data.Dataset):
         :type sequences: list of integers among 1 to 4
         """
         self.transform = transform
-        self.path = ego_path
+        self.path = root_folder
         self.rgb = rgb
         self.depth = depth
         self.links = [(5, 6), (6, 7), (7, 8),
@@ -64,7 +53,7 @@ class UCIEGO(data.Dataset):
         # ('fr187' for instance)
         self.all_images = []
         for seq in sequences:
-            seq_path = ego_path + "/Seq" + str(seq)
+            seq_path = root_folder + "/Seq" + str(seq)
             files = os.listdir(seq_path)
             # Remove depth files
             files = [filename for filename in files if "_z" not in filename]
@@ -95,7 +84,7 @@ class UCIEGO(data.Dataset):
             seq_path = self.path + "/Seq" + str(seq) + "/"
             image_path = seq_path + image_name + '.jpg'
             # TODO add handling for left hand
-            img = _load_image(image_path)
+            img = loader.load_rgb_image(image_path)
             annot_path = seq_path + image_name + '-1.txt'
             annot = _load_annotation(annot_path)
             if self.transform is not None:
