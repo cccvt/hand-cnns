@@ -1,8 +1,3 @@
-from PIL import Image
-
-import matplotlib.pyplot as plt
-import numpy as np
-import os
 import scipy.io
 import torch.utils.data as data
 
@@ -100,6 +95,10 @@ class NYU(data.Dataset):
                                                        view=view + 1)
         image_path = self.path + '/' + filename
         image = loader.load_depth_image(image_path)
+
+        # extrace depth from image
+        empty, segm, depth = image.split()
+        image = depth
 
         # Get matching annotations
         annot = self._load_annotations(index, keep_joints=self.keep_joints)

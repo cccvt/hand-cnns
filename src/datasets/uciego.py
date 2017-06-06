@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 import torch.utils.data as data
@@ -26,19 +25,22 @@ def _load_annotation(path):
 
 class UCIEGO(data.Dataset):
     def __init__(self, transform=None, root_folder="../data/UCI-EGO",
-                 sequences=[1, 2, 3, 4], rgb=True, depth=False):
+                 sequences=[1, 2, 3, 4], rgb=True, depth=False,
+                 xyz=False):
         """
         :param sequences: indexes of the sequences to load in dataset
+        :type sequences: list of integers among 1 to 4
         :param rgb: whether rgb channels should be used
         :type rgb: Boolean
         :param depth: whether depth should be used
         :type depth: Boolean
-        :type sequences: list of integers among 1 to 4
+        :param xyz: use real world or image (uvd) coordinates
         """
         self.transform = transform
         self.path = root_folder
         self.rgb = rgb
         self.depth = depth
+        self.xyz = xyz
         self.links = [(5, 6), (6, 7), (7, 8),
                       (9, 10), (10, 11), (11, 12),
                       (13, 14), (14, 15), (15, 16),
@@ -79,17 +81,30 @@ class UCIEGO(data.Dataset):
         self.item_nb = len(self.all_images)
 
     def __getitem__(self, index):
+        seq, image_name = self.all_images[index]
+        seq_path = self.path + "/Seq" + str(seq) + "/"
+
+        # Load image
         if(self.rgb):
-            seq, image_name = self.all_images[index]
-            seq_path = self.path + "/Seq" + str(seq) + "/"
             image_path = seq_path + image_name + '.jpg'
             # TODO add handling for left hand
-            img = loader.load_rgb_image(image_path)
-            annot_path = seq_path + image_name + '-1.txt'
-            annot = _load_annotation(annot_path)
+            rgb_img = loader.load_rgb_image(image_path)
+            img = rgb_img
             if self.transform is not None:
                 img = self.transform(img)
-            return img, annot
+        if(self.depth):
+            depth_path = seq_path + image_name + '_z.png'
+            depth_img = loader.load_depth_image(depth_path)
+            img = depth_img
+
+        # Load annotations
+        if(self.xyz):
+            annot_path = seq_path + image_name + '-1_z.txt'
+            annot = _load_annotation(annot_path)
+        else:
+            annot_path = seq_path + image_name + '-1.txt'
+            annot = _load_annotation(annot_path)
+        return img, annot
 
     def __len__(self):
         return self.item_nb

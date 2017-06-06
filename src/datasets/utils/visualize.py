@@ -12,7 +12,7 @@ def draw2d_annotated_img(img, annot, links, keep_joints=None):
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.imshow(img)
+    ax.matshow(img)
     ax.scatter(annot[:, 0], annot[:, 1], s=4, c="r")
     if(links):
         draw2djoints(ax, annot, links, keep_joints)
