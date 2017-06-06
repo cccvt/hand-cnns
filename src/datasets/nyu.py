@@ -27,6 +27,7 @@ class NYU(data.Dataset):
         :param depth: True to load depth data
         False for registered rgb
         :type depth: Boolean
+        :param nyu_joints: Use original nyu joints for training
         """
         self.transform = transform
         self.train = train
@@ -54,6 +55,8 @@ class NYU(data.Dataset):
                           (2, 32), (8, 32), (14, 32),
                           (20, 32), (27, 32),  # finger - palms
                           (32, 30), (32, 21)]  # palm - wrist
+        else:
+            self.keep_joints = None
 
         # set path to data folder
         if (self.train):
@@ -66,6 +69,16 @@ class NYU(data.Dataset):
         annots = scipy.io.loadmat(self.path + '/joint_data.mat')
         self.annot_uvd = annots['joint_uvd']
         self.annot_xyz = annots['joint_xyz']
+
+    def _load_annotations(self, index, xyz=False, keep_joints=None):
+        sequence, view = divmod(index, self.view_nb)
+        if xyz:
+            annot = self.annot_xyz[view, sequence]
+        else:
+            annot = self.annot_uvd[view, sequence]
+        if keep_joints is not None:
+            annot = annot.take(keep_joints, axis=0)
+        return annot
 
     def __getitem__(self, index):
         """
@@ -89,13 +102,18 @@ class NYU(data.Dataset):
         image = loader.load_depth_image(image_path)
 
         # Get matching annotations
-        annot = self.annot_uvd[view, sequence]
+        annot = self._load_annotations(index, keep_joints=self.keep_joints)
 
         return image, annot
 
-    def draw2d(self, idx):
-        img, annot = self[idx]
-        visualize.draw2d_annotated_img(img, annot, self.links,
+    def draw2d(self, idx, xyz=False):
+        """
+        :param xyz: draws uv coordinates when false, else xyz
+        """
+        img, train_annot = self[idx]
+        draw_annot = self._load_annotations(idx, keep_joints=None,
+                                            xyz=xyz)
+        visualize.draw2d_annotated_img(img, draw_annot, self.links,
                                        keep_joints=self.keep_joints)
 
     def draw3d(self, idx, xyz=True, angle=320):
@@ -105,15 +123,12 @@ class NYU(data.Dataset):
         :param xyz: True for xyz, False for uvd coordinates
         :param angle: angle in [0:360] for the rotation of the 3d plot
         """
-        img, annot = self[idx]
-        sequence, view = divmod(idx, self.view_nb)
-        if(xyz):
-            annot = self.annot_xyz[view, sequence]
-        else:
-            annot = self.annot_uvd[view, sequence]
+        img, train_annot = self[idx]
+        draw_annot = self._load_annotations(idx, keep_joints=None,
+                                            xyz=xyz)
 
-        visualize.draw3d_annotated_img(annot, self.links,
+        visualize.draw3d_annotated_img(draw_annot, self.links,
                                        keep_joints=self.keep_joints,
-                                       angle=320,)
+                                       angle=320)
 
 

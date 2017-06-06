@@ -8,6 +8,7 @@ def draw2d_annotated_img(img, annot, links, keep_joints=None):
     :param annot: First axes represent joint indexes
     second the u, v  (and useless d) joint coordinates
     :type annot: numpy ndarray
+    :param keep_joints: only draws links between joints in keep_joints
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -24,6 +25,7 @@ def draw3d_annotated_img(annot, links, keep_joints=None, angle=320):
     :param annot: First axes represent joint indexes
     second the x, y, z joint coordinates
     :type annot: numpy ndarray
+    :param keep_joints: only draws links between joints in keep_joints
     """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -36,6 +38,7 @@ def draw2djoints(ax, annots, links, keep_joints=None):
     :param annot: 2d numpy ndarray [[x1, y1, z1], ...]
     :param ax: matplot plot/subplot
     :param links: tuples of annot rows to link [(idx1, idx2), ...]
+    :param keep_joints: only draws links between joints in keep_joints
     """
     for link in links:
         if keep_joints is None or (link[0] in keep_joints
@@ -60,6 +63,7 @@ def draw3djoints(ax, annots, links, keep_joints=None):
     :param annot: 2d numpy ndarray [[x1, y1, z1], ...]
     :param ax: matplot 3d plot/subplot
     :param links: tuples of annot rows to link [(idx1, idx2), ...]
+    :param keep_joints: only draws links between joints in keep_joints
     """
     for link in links:
         if keep_joints is None or (link[0] in keep_joints
