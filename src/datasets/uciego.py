@@ -109,7 +109,4 @@ class UCIEGO(data.Dataset):
         :param angle: angle in [0:360] for the rotation of the 3d plot
         """
         img, annot = self[idx]
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.view_init(30, angle)
-        visualize.draw3djoints(ax, annot, self.links)
+        visualize.draw3d_annotated_img(annot, self.links, angle=320)

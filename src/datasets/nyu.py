@@ -33,7 +33,12 @@ class NYU(data.Dataset):
         self.depth = depth
 
         self.view_nb = 3
-        self.links = None
+        self.links = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5),
+                      (6, 7), (7, 8), (8, 9), (9, 10), (10, 11),
+                      (12, 13), (13, 14), (14, 15), (15, 16), (16, 17),
+                      (18, 19), (19, 20), (20, 21), (21, 22), (22, 23),
+                      (24, 25), (25, 26), (26, 27), (27, 28), (28, 29),
+                      (35, 5), (35, 11), (35, 17), (35, 23), (35, 29)]
 
         # set path to data folder
         if (self.train):
@@ -69,8 +74,6 @@ class NYU(data.Dataset):
         image = loader.load_depth_image(image_path)
 
         # Get matching annotations
-        print(view)
-        print(sequence)
         annot = self.annot_uvd[view, sequence]
 
         return image, annot
@@ -78,3 +81,13 @@ class NYU(data.Dataset):
     def draw2d(self, idx):
         img, annot = self[idx]
         visualize.draw2d_annotated_img(img, annot, self.links)
+
+    def draw3d(self, idx, angle=320):
+        """
+        draw 2D rgb image with displayed annotations
+        :param idx: idx of the item in the dataset
+        :param angle: angle in [0:360] for the rotation of the 3d plot
+        """
+        img, annot = self[idx]
+        visualize.draw3d_annotated_img(annot, self.links, angle=320)
+

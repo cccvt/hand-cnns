@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 def draw2d_annotated_img(img, annot, links):
     """
-    Draws image img with annotations annot
+    Draws 2d image img with joint annotations
 
     :param annot: First axes represent joint indexes
     second the u, v  (and useless d) joint coordinates
@@ -15,6 +15,19 @@ def draw2d_annotated_img(img, annot, links):
     ax.scatter(annot[:, 0], annot[:, 1], s=4, c="r")
     if(links):
         draw2djoints(ax, annot, links)
+
+def draw3d_annotated_img(annot, links, angle=320):
+    """
+    Draws 3d image img with joint annotations
+
+    :param annot: First axes represent joint indexes
+    second the x, y, z joint coordinates
+    :type annot: numpy ndarray
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.view_init(30, angle)
+    draw3djoints(ax, annot, links)
 
 
 def draw2dseg(ax, annot, idx1, idx2, color="r", marker="o"):
