@@ -4,3 +4,4 @@ test/.cache
 __pycache__
 
 *.swp
+*.swo

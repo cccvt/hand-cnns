@@ -5,6 +5,10 @@ import torch
 def train_net(dataloader, model, optimizer, criterion,
               epochs=10, verbose=True, use_gpu=True):
     loss_evolution = []
+    if use_gpu:
+        # Transfert model to GPU
+        model = model.cuda()
+
     for epoch in range(epochs):
         losses = []
         for i, (image, target) in enumerate(dataloader):
@@ -14,7 +18,6 @@ def train_net(dataloader, model, optimizer, criterion,
             if use_gpu:
                 target = target.cuda()
                 image = image.cuda()
-                model = model.cuda()
 
             # Create pytorch Varibles
             input_var = torch.autograd.Variable(image)
