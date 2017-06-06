@@ -99,12 +99,8 @@ class UCIEGO(data.Dataset):
         draw 2D rgb image with displayed annotations
         :param idx: idx of the item in the dataset
         """
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
         img, annot = self[idx]
-        ax.imshow(img)
-        plt.scatter(annot[:, 0], annot[:, 1])
-        visualize.draw2djoints(ax, annot, self.links)
+        visualize.draw2d_annotated_img(img, annot, self.links)
 
     def draw3d(self, idx, angle=320):
         """

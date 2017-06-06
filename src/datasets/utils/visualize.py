@@ -1,3 +1,22 @@
+import matplotlib.pyplot as plt
+
+
+def draw2d_annotated_img(img, annot, links):
+    """
+    Draws image img with annotations annot
+
+    :param annot: First axes represent joint indexes
+    second the u, v  (and useless d) joint coordinates
+    :type annot: numpy ndarray
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(img)
+    ax.scatter(annot[:, 0], annot[:, 1], s=4, c="r")
+    if(links):
+        draw2djoints(ax, annot, links)
+
+
 def draw2dseg(ax, annot, idx1, idx2, color="r", marker="o"):
     """
     :param annot: 2d numpy ndarray [[x1, y1, z1], ...]
