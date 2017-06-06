@@ -82,12 +82,19 @@ class NYU(data.Dataset):
         img, annot = self[idx]
         visualize.draw2d_annotated_img(img, annot, self.links)
 
-    def draw3d(self, idx, angle=320):
+    def draw3d(self, idx, xyz=True, angle=320):
         """
         draw 2D rgb image with displayed annotations
         :param idx: idx of the item in the dataset
+        :param xyz: True for xyz, False for uvd coordinates
         :param angle: angle in [0:360] for the rotation of the 3d plot
         """
         img, annot = self[idx]
+        sequence, view = divmod(idx, self.view_nb)
+        if(xyz):
+            annot = self.annot_xyz[view, sequence]
+        else:
+            annot = self.annot_uvd[view, sequence]
+
         visualize.draw3d_annotated_img(annot, self.links, angle=320)
 
