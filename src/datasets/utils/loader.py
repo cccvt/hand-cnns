@@ -21,3 +21,4 @@ def load_depth_image(path):
     """
     image = Image.open(path)
     return image
+
