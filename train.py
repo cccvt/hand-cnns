@@ -1,6 +1,18 @@
 import numpy as np
 import torch
 
+from src.datasets import gtea, gun
+from src.options.train_options import TrainOptions
+
+opt = TrainOptions().parse()
+
+if opt.dataset == 'gtea':
+    dataset = gtea.GTEA()
+    inp_size = dataset.in_channels
+
+
+dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, batch_size=opt.batch_size)
+
 
 def train_net(dataloader, model, optimizer, criterion,
               epochs=10, verbose=True, use_gpu=True):

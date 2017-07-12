@@ -13,7 +13,7 @@ Note that rgb and depth images are not aligned in this dataset
 
 
 class GUN(data.Dataset):
-    def __init__(self, transform=None, root_folder="../data/gun",
+    def __init__(self, transform=None, root_folder="data/gun",
                  rgb=True):
         """
         :param rgb: whether rgb channels should be used

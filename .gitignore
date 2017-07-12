@@ -1,4 +1,6 @@
 data
+checkpoints
+
 test/.cache
 
 __pycache__

@@ -20,7 +20,7 @@ by removing them we get to 71 action classes
 
 
 class GTEA(data.Dataset):
-    def __init__(self, transform=None, root_folder="../data/GTEA"):
+    def __init__(self, transform=None, root_folder="data/GTEA"):
         """
         :param transform: transformation to apply to the images
         """
@@ -35,6 +35,8 @@ class GTEA(data.Dataset):
         self.file_paths = filenames
         self.item_nb = len(self.file_paths)
         self.classes = self._get_all_classes()
+
+        self.in_channels = 3
         assert len(self.classes) == self.class_nb, \
             "{0} classes found, should be {1}".format(
                 len(self.classes), self.class_nb)
