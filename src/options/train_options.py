@@ -1,5 +1,6 @@
 import argparse
 import os
+import subprocess
 
 from src.utils import filesys
 
@@ -64,4 +65,7 @@ class TrainOptions():
             for k, v in sorted(args.items()):
                 opt_file.write('{option}: {value}\n'.format(
                     option=str(k), value=str(v)))
+            git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+            opt_file.write('git hash: {}\n'.format(git_hash.strip()))
+
         return self.opt
