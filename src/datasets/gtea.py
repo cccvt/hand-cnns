@@ -4,7 +4,7 @@ import os
 import re
 import torch.utils.data as data
 
-from src.datasets.utils import loader, visualize, filesys
+from src.datasets.utils import loader, filesys
 
 """
 Grasp UNderstanding Dataset
@@ -37,6 +37,7 @@ class GTEA(data.Dataset):
         self.classes = self._get_all_classes()
 
         self.in_channels = 3
+        self.in_size = (720, 405)
         assert len(self.classes) == self.class_nb, \
             "{0} classes found, should be {1}".format(
                 len(self.classes), self.class_nb)

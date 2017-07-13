@@ -10,22 +10,39 @@ class TrainOptions():
         self.initialized = False
 
     def initialize(self):
-        # Train params
+        # Input params
         self.parser.add_argument('--dataset', type=str, default='gtea',
-                                 help='dataset to use (uciego|gtea|gteagazeplus)')
-        self.parser.add_argument('--epochs', type=int,
-                                 default=1, help='number of training epochs')
-        self.parser.add_argument(
-            '--batch_size', type=int, default=2, help='input mini-batch size')
+                                 help='dataset to use among\
+                                 (uciego|gtea|gteagazeplus)')
+        self.parser.add_argument('--normalize', type=int, default=1,
+                                 help='use imageNet normalization values\
+                                 for input during training')
+
+        # Train params
+        self.parser.add_argument('--epochs', type=int, default=1,
+                                 help='number of training epochs')
+        self.parser.add_argument('--batch_size', type=int, default=2,
+                                 help='input mini-batch size')
+        self.parser.add_argument('--use_gpu', type=int, default=1,
+                                 help='1 to use gpu, 0 for cpu')
+
+        # Optim params
+        self.parser.add_argument('--lr', type=float, default=0.001,
+                                 help='Base learning rate for training')
+        self.parser.add_argument('--new_lr', type=float, default=0.01,
+                                 help='Learning rate for new (not pretrained) layers\
+                                 typically, lr < new_lr')
+        self.parser.add_argument('--momentum', type=float, default=0.9,
+                                 help='Base learning rate for training')
         self.parser.add_argument('--criterion', type=str, default='MSE',
-                                 help='(MSE for mean square | CE for cross-entropy)')
-        self.parser.add_argument(
-            '--use_gpu', type=int, default=1, help='1 to use gpu, 0 for cpu')
+                                 help='(MSE for mean square |\
+                                 CE for cross-entropy)')
         # Save params
-        self.parser.add_argument('--checkpoint_dir', type=str,
-                                 default='./checkpoints', help='where to save models')
+        self.parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints',
+                                 help='where to save models')
         self.parser.add_argument('--exp_id', type=str, default='experiment',
-                                 help='name of experiment, determines where to store experiment data')
+                                 help='name of experiment, determines where\
+                                 to store experiment data')
 
     def parse(self):
         if not self.initialized:

@@ -1,50 +1,65 @@
 import numpy as np
 import torch
+from torchvision import transforms
+import torchvision.models as models
 
 from src.datasets import gtea, gun
-from src.options.train_options import TrainOptions
+from src.options import train_options, error
+from src.nets import resnet_adapt, netutils
+from src.netscripts import train
 
-opt = TrainOptions().parse()
 
+opt = train_options.TrainOptions().parse()
+
+
+# Normalize as imageNet
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])
+
+# Set input tranformations
+transformations = ([
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor()
+])
+
+if opt.normalize:
+    transformations.append(normalize)
+    first_transforms = [transforms.Scale(230), transforms.RandomCrop(224)]
+    transformations = first_transforms + transformations
+
+transform = transforms.Compose(transformations)
+
+# Create dataset
 if opt.dataset == 'gtea':
-    dataset = gtea.GTEA()
+    dataset = gtea.GTEA(transform=transform)
     inp_size = dataset.in_channels
 
+print(len(dataset))
 
-dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, batch_size=opt.batch_size)
+dataloader = torch.utils.data.DataLoader(
+    dataset, shuffle=True, batch_size=opt.batch_size)
 
+# Load model
+resnet = models.resnet18(pretrained=True)
+model = resnet_adapt.ResNetAdapt(resnet, dataset.class_nb)
 
-def train_net(dataloader, model, optimizer, criterion,
-              epochs=10, verbose=True, use_gpu=True):
-    loss_evolution = []
-    if use_gpu:
-        # Transfert model to GPU
-        model = model.cuda()
+if opt.lr != opt.new_lr:
+    model_params = model.lr_params()
+else:
+    model_params = model.parameters()
 
-    for epoch in range(epochs):
-        losses = []
-        for i, (image, target) in enumerate(dataloader):
-            # Cast from double to float
-            target = target.float()
-            # Transfer to GPU
-            if use_gpu:
-                target = target.cuda()
-                image = image.cuda()
+netutils.print_net(model)
 
-            # Create pytorch Varibles
-            input_var = torch.autograd.Variable(image)
-            target_var = torch.autograd.Variable(target)
+optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr,
+                            momentum=opt.momentum)
 
-            # Forward pass
-            output = model(input_var)
-            loss = criterion(output, target_var)
-            losses.append(loss.data[0])
+if opt.criterion == 'MSE':
+    criterion = torch.nn.MSELoss()
+elif opt.criterion == 'CE':
+    torch.nn.CrossEntropyLoss()
+else:
+    raise error.ArgumentError(
+        '{0} is not among known error functions'.format(opt.criterion))
 
-            # compute gradient and do descent step
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        loss_evolution.append(np.mean(losses))
-    if verbose:
-        print('Done training')
-    return loss_evolution
+train.train_net(dataloader, model, optimizer, criterion,
+                opt.epochs, use_gpu=opt.use_gpu)
