@@ -40,7 +40,15 @@ dataloader = torch.utils.data.DataLoader(
 
 # Load model
 resnet = models.resnet18(pretrained=True)
-model = resnet_adapt.ResNetAdapt(resnet, dataset.class_nb)
+model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb)
+
+# Load existing weights, opt.continue_training is epoch to load
+if opt.continue_training:
+    if opt.continue_epoch == 0:
+        model.load('latest')
+    else:
+        model.load(opt.continue_epoch)
+
 
 if opt.lr != opt.new_lr:
     model_params = model.lr_params()

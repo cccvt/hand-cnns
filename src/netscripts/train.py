@@ -7,7 +7,7 @@ from src.utils.evaluation import batch_topk_accuracy as topk
 
 
 def train_net(dataloader, model, optimizer, criterion,
-              opt, verbose=True):
+              opt, verbose=False):
     loss_evolution = []
     metrics = {'top1': {'win': None,
                         'func': lambda out, pred: topk(out, pred, 1),
@@ -34,7 +34,6 @@ def train_net(dataloader, model, optimizer, criterion,
         # Initialize epoch losses
         for metric in metrics.values():
             metric['epoch_scores'] = []
-
 
         for i, (image, target) in enumerate(tqdm(dataloader, desc='iter')):
             # Cast from double to float
@@ -64,8 +63,8 @@ def train_net(dataloader, model, optimizer, criterion,
             loss.backward()
             optimizer.step()
             debug_counter = debug_counter + 1
-            if debug_counter > 100:
-                break
+            # if debug_counter > 100:
+            #     break
 
         # Log metrics
         mean_loss = np.mean(losses)
@@ -77,6 +76,9 @@ def train_net(dataloader, model, optimizer, criterion,
                        for key, metric in metrics.items()}
         last_scores['loss'] = mean_loss
         message = visualizer.log_errors(epoch, last_scores)
+        if verbose:
+            print(message)
+
         error_win = visualizer.plot_errors(np.array(list(range(epoch + 1))),
                                            np.array(loss_evolution),
                                            title='loss', win=error_win)
@@ -88,6 +90,10 @@ def train_net(dataloader, model, optimizer, criterion,
                                          scores, title=metric_name,
                                          win=metric['win'])
             metric['win'] = win
+        if opt.save_latest:
+            model.save('latest')
+        if epoch % opt.save_freq == 0:
+            model.save(epoch)
 
     if verbose:
         print('Done training')

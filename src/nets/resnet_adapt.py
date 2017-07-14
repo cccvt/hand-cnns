@@ -1,9 +1,11 @@
 from torch import nn
+from src.nets.basenet import BaseNet
 
 
-class ResNetAdapt(nn.Module):
-    def __init__(self, resnet, nb_out):
-        super().__init__()
+class ResNetAdapt(BaseNet):
+    def __init__(self, opt, resnet, nb_out):
+        super().__init__(opt)
+        self.name = 'resnet_adapt'
         self.resnet = resnet
         self.resnet.fc = nn.Linear(512, nb_out)
         self.input_size = (224, 224)
@@ -35,3 +37,9 @@ class ResNetAdapt(nn.Module):
             params.append({'params': layer.parameters(),
                            'lr': lr})
         return params
+
+    def save(self, epoch):
+        self.save_net(self.resnet, self.name, epoch, self.opt)
+
+    def load(self, epoch):
+        self.load_net(self.resnet, self.name, epoch)

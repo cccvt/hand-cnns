@@ -44,6 +44,20 @@ class TrainOptions():
         self.parser.add_argument('--exp_id', type=str, default='experiment',
                                  help='name of experiment, determines where\
                                  to store experiment data')
+        self.parser.add_argument('--save-freq', type=int, default=5,
+                                 help='Frequency at which to save the \
+                                 network weights')
+        self.parser.add_argument('--save-latest', type=int, default=1,
+                                 help='Whether to save the latest computed weights \
+                                 at each epoch')
+
+        # Load params
+        self.parser.add_argument('--continue_training', type=int, default=0,
+                                 help='1 to continue training from saved weights')
+        self.parser.add_argument('--continue_epoch', type=int, default=0,
+                                 help='Epoch to load for trianing continuation \
+                                 latest if 0')
+
 
     def parse(self):
         if not self.initialized:
