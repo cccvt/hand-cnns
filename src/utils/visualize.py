@@ -1,4 +1,3 @@
-import numpy as np
 import os
 import time
 import visdom
@@ -12,15 +11,15 @@ class Visualize():
                                      opt.exp_id, 'loss_log.txt')
         with open(self.log_name, "a") as log_file:
             now = time.strftime("%c")
-            log_file.write('Training loss log at {0}\n'.format(now))
+            log_file.write('==== Training loss log at {0} ====\n'.format(now))
 
     def log_errors(self, epoch, errors):
         now = time.strftime("%c")
-        message = '(epoch: {epoch}, time: {t}) '.format(epoch=epoch,
-                                                        t=now)
+        message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch,
+                                                       t=now)
         for k, v in errors.items():
-            message = message + '{name}: {err} '.format(name=k,
-                                                        err=v)
+            message = message + ',{name}:{err}'.format(name=k,
+                                                       err=v)
 
         with open(self.log_name, "a") as log_file:
             log_file.write(message + '\n')
@@ -46,6 +45,6 @@ class Visualize():
                     'xlabel': 'epoch',
                     'ylabel': 'loss'
                 },
-                win = win
+                win=win
             )
         return win
