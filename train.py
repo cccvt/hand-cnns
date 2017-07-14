@@ -63,7 +63,8 @@ optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr,
 if opt.criterion == 'MSE':
     criterion = torch.nn.MSELoss()
 elif opt.criterion == 'CE':
-    torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss()
+
 else:
     raise error.ArgumentError(
         '{0} is not among known error functions'.format(opt.criterion))

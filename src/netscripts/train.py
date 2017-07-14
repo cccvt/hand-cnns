@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+from src.options import error
 from src.utils.visualize import Visualize
 from src.utils.evaluation import batch_topk_accuracy as topk
 
@@ -52,7 +53,17 @@ def train_net(dataloader, model, optimizer, criterion,
             output = model(input_var)
 
             # Compute scores
-            loss = criterion(output, target_var)
+            if opt.criterion == 'MSE':
+                loss = criterion(output, target_var)
+            elif opt.criterion == 'CE':
+                # CE expects index of class as ground truth input
+                target_vals, target_idxs = target_var.max(1)
+                loss = criterion(output, target_idxs.view(-1))
+            else:
+                raise error.ArgumentError(
+                    '{0} is not among known error functions'.format(opt.criterion))
+
+
             losses.append(loss.data[0])
             for metric in metrics.values():
                 score = metric['func'](output, target)
