@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from torchvision import transforms
 import torchvision.models as models
@@ -61,5 +60,4 @@ else:
     raise error.ArgumentError(
         '{0} is not among known error functions'.format(opt.criterion))
 
-train.train_net(dataloader, model, optimizer, criterion,
-                opt.epochs, use_gpu=opt.use_gpu)
+train.train_net(dataloader, model, optimizer, criterion, opt)

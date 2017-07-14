@@ -20,7 +20,7 @@ class TrainOptions():
                                  for input during training')
 
         # Train params
-        self.parser.add_argument('--epochs', type=int, default=1,
+        self.parser.add_argument('--epochs', type=int, default=10,
                                  help='number of training epochs')
         self.parser.add_argument('--batch_size', type=int, default=2,
                                  help='input mini-batch size')
