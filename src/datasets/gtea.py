@@ -84,7 +84,9 @@ class GTEA(data.Dataset):
             for annot in annots:
                 object_actions.append((annot[0:2]))
         unique_object_actions = sorted(list(set(object_actions)))
-        return unique_object_actions
+        unique_classes = [_class_string(action, objects)
+                          for action, objects in unique_object_actions]
+        return unique_classes
 
 
 def process_lines(annot_path):
@@ -109,6 +111,10 @@ def process_lines(annot_path):
     return processed_lines
 
 
+def _class_string(action, objects):
+    return action + ' ' + ' '.join(objects)
+
+
 def process_annots(processed_lines):
     """
     Returns a dictionnary with frame as key and
@@ -119,7 +125,7 @@ def process_annots(processed_lines):
     annot_dict = {}
     for action, object_label, begin, end in processed_lines:
         for frame in range(begin, end + 1):
-            annot_dict[frame] = (action, object_label)
+            annot_dict[frame] = _class_string(action, object_label)
     return annot_dict
 
 
