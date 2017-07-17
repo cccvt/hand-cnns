@@ -16,29 +16,41 @@ action labels are composed of a vert and a set of actions such as
 two action labels have 1 and 2 occurences : ('stir', ['cup'])
 and ('put', ['tea'])
 by removing them we get to 71 action classes
+
+Not all frames are annotated !
 """
 
 
 class GTEA(data.Dataset):
-    def __init__(self, transform=None, root_folder="data/GTEA"):
+    def __init__(self, transform=None, untransform=None,
+                 root_folder="data/GTEA", no_action_label=True):
         """
         :param transform: transformation to apply to the images
+        :param no_action_label: encode absence of action class as class
+        if True, 'no action' is encoded as last column in vector
         """
+        self.no_action_label = no_action_label
         self.transform = transform
+        self.untransform = untransform
         self.path = root_folder
         self.label_path = os.path.join(self.path, 'labels')
-        self.class_nb = 71  # action classes
         self.actions = ['close', 'fold', 'open', 'pour', 'put',
                         'scoop', 'shake', 'spread', 'stir', 'take']
 
         filenames = filesys.recursive_files_dataset(self.path, ".png", depth=3)
         self.file_paths = filenames
         self.item_nb = len(self.file_paths)
-        self.classes = self._get_all_classes()
 
         self.in_channels = 3
         self.in_size = (720, 405)
-        assert len(self.classes) == self.class_nb, \
+
+        self.classes = self._get_all_classes()
+        # Sanity check on computed class nb
+        if self.no_action_label:
+            self.class_nb = 72
+        else:
+            self.class_nb = 71
+        assert len(self.classes) == self.class_nb,\
             "{0} classes found, should be {1}".format(
                 len(self.classes), self.class_nb)
 
@@ -47,6 +59,7 @@ class GTEA(data.Dataset):
 
         # Load image
         img = loader.load_rgb_image(img_path)
+        self.img = img
         if self.transform is not None:
             img = self.transform(img)
 
@@ -61,6 +74,10 @@ class GTEA(data.Dataset):
             action_class = sequence_annots[frame_idx]
             class_idx = self.classes.index(action_class)
             annot[class_idx] = 1
+        else:
+            if self.no_action_label:
+                annot[self.class_nb - 1] = 1
+
         return img, annot
 
     def __len__(self):
@@ -86,15 +103,14 @@ class GTEA(data.Dataset):
         unique_object_actions = sorted(list(set(object_actions)))
         unique_classes = [_class_string(action, objects)
                           for action, objects in unique_object_actions]
+        if self.no_action_label:
+            unique_classes.append('None')
         return unique_classes
 
 
 def process_lines(annot_path):
     """
-    Returns list [(verb, objects, begin, end), ...]
-    where objects is a tuple of objects in action
-    and begin, end are integers marking the begin and
-    end action frames
+    Returns list of action_objects ['action object1 object2', ...]
     """
     with open(annot_path) as f:
         lines = f.readlines()
@@ -118,7 +134,7 @@ def _class_string(action, objects):
 def process_annots(processed_lines):
     """
     Returns a dictionnary with frame as key and
-    value (action, [object1, object2, ...]) from
+    value 'action object1 object2 object3' from
     the gtea annotation text file
     """
     # create annotation_dict
