@@ -6,14 +6,18 @@ from src.datasets import gtea, gun
 from src.options import train_options, error
 from src.nets import resnet_adapt, netutils
 from src.netscripts import train
+from src.utils.normalize import Unnormalize
 
 
 opt = train_options.TrainOptions().parse()
 
 
 # Normalize as imageNet
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
+img_means = [0.485, 0.456, 0.406]
+img_stds = [0.229, 0.224, 0.225]
+normalize = transforms.Normalize(mean=img_means,
+                                 std=img_stds)
+unnormalize = Unnormalize(mean=img_means, std=img_stds)
 
 # Set input tranformations
 transformations = ([
@@ -30,14 +34,16 @@ transform = transforms.Compose(transformations)
 
 # Create dataset
 if opt.dataset == 'gtea':
-    dataset = gtea.GTEA(transform=transform)
-    inp_size = dataset.in_channels
+    dataset = gtea.GTEA(transform=transform, untransform=unnormalize)
+
+elif opt.dataset == 'gun':
+    dataset = gun.GUN(transform=transform)
 
 print(len(dataset))
 
 dataloader = torch.utils.data.DataLoader(
     dataset, shuffle=True, batch_size=opt.batch_size,
-    num_workers=opt.nThreads)
+    num_workers=opt.nThreads, drop_last=True)
 
 # Load model
 resnet = models.resnet18(pretrained=True)
