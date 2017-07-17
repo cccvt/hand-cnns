@@ -1,7 +1,6 @@
 from torch import nn
 from src.nets.basenet import BaseNet
 
-
 class ResNetAdapt(BaseNet):
     def __init__(self, opt, resnet, nb_out):
         super().__init__(opt)

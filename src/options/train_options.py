@@ -18,6 +18,9 @@ class TrainOptions():
         self.parser.add_argument('--normalize', type=int, default=1,
                                  help='use imageNet normalization values\
                                  for input during training')
+        self.parser.add_argument('--nThreads', type=int, default=4,
+                                 help='number of threads used for data\
+                                 loading')
 
         # Train params
         self.parser.add_argument('--epochs', type=int, default=10,

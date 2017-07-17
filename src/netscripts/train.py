@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import torch
 from tqdm import tqdm
 
@@ -61,8 +62,8 @@ def train_net(dataloader, model, optimizer, criterion,
                 loss = criterion(output, target_idxs.view(-1))
             else:
                 raise error.ArgumentError(
-                    '{0} is not among known error functions'.format(opt.criterion))
-
+                    '{0} is not among known error\
+                    functions'.format(opt.criterion))
 
             losses.append(loss.data[0])
             for metric in metrics.values():

@@ -36,7 +36,8 @@ if opt.dataset == 'gtea':
 print(len(dataset))
 
 dataloader = torch.utils.data.DataLoader(
-    dataset, shuffle=True, batch_size=opt.batch_size)
+    dataset, shuffle=True, batch_size=opt.batch_size,
+    num_workers=opt.nThreads)
 
 # Load model
 resnet = models.resnet18(pretrained=True)
