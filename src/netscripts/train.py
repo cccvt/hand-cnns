@@ -22,12 +22,15 @@ def train_net(dataloader, model, optimizer, criterion,
 
     # visdom window handles
     error_win = None
+    sample_win = None
 
     visualizer = Visualize(opt)
     if opt.use_gpu:
         # Transfert model to GPU
         model = model.cuda()
         criterion = criterion.cuda()
+
+    total_steps = 0
 
     for epoch in tqdm(range(opt.epochs), desc='epoch'):
         losses = []
@@ -38,6 +41,7 @@ def train_net(dataloader, model, optimizer, criterion,
             metric['epoch_scores'] = []
 
         for i, (image, target) in enumerate(tqdm(dataloader, desc='iter')):
+            total_steps += opt.batch_size
             # Cast from double to float
             target = target.float()
 
@@ -77,6 +81,12 @@ def train_net(dataloader, model, optimizer, criterion,
             debug_counter = debug_counter + 1
             # if debug_counter > 100:
             #     break
+            if i % opt.display_freq == 0:
+                sample_win = visualizer.plot_sample(image, target,
+                                                    output.data,
+                                                    dataloader.dataset.classes,
+                                                    sample_win,
+                                                    unnormalize=dataloader.dataset.untransform)
 
         # Log metrics
         mean_loss = np.mean(losses)

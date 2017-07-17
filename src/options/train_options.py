@@ -61,6 +61,11 @@ class TrainOptions():
                                  help='Epoch to load for trianing continuation \
                                  latest if 0')
 
+        # Display params
+        self.parser.add_argument('--display_freq', type=int, default=100,
+                                 help='number of iters between displays of results\
+                                 in visdom')
+
 
     def parse(self):
         if not self.initialized:
