@@ -9,30 +9,40 @@ from src.datasets.utils import loader, visualize, filesys
 Grasp UNderstanding Dataset
 Note that rgb and depth images are not aligned in this dataset
 (they cannot be superposed perfectly)
+
+The taxonomy can be found here : http://www.cs.cmu.edu/~jialiu1/database.html
 """
 
 
 class GUN(data.Dataset):
-    def __init__(self, transform=None, root_folder="data/gun",
-                 rgb=True):
+    def __init__(self, transform=None, untransform=None,
+                 root_folder="data/gun", rgb=True,
+                 seqs=['Subject1', 'Subject2',
+                       'Subject3', 'Subject4',
+                       'Subject5', 'Subject6',
+                       'Subject7', 'Subject8']):
         """
         :param rgb: whether rgb channels should be used
         :type rgb: Boolean
         """
         self.transform = transform
+        self.untransform = untransform
         self.path = root_folder
         self.rgb = rgb
         self.class_max_idx = 73
         self.missing_classes = [50, 61]
         self.class_nb = self.class_max_idx - len(self.missing_classes)
-
-        rgb_files = filesys.recursive_files_dataset(self.path, '.jpg', 3)
-        depth_files = filesys.recursive_files_dataset(self.path, '.png', 3)
+        self.classes = ['grasp' + str(i) for i in range(self.class_nb)]
 
         if rgb:
-            self.image_paths = rgb_files
+            filenames = filesys.recursive_files_dataset(self.path, '.jpg', 3)
         else:
-            self.image_paths = depth_files
+            filenames = filesys.recursive_files_dataset(self.path, '.png', 3)
+
+        # Filter sequences out
+        filenames = [filename for filename in filenames if
+                     any(seq in filename for seq in seqs)]
+        self.image_paths = filenames
         self.item_nb = len(self.image_paths)
 
     def __getitem__(self, index):

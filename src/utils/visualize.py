@@ -34,7 +34,7 @@ class Visualize():
                 opts={
                     'title': title,
                     'xlabel': 'epoch',
-                    'ylabel': 'loss'
+                    'ylabel': 'score'
                 }
             )
         else:
@@ -44,7 +44,7 @@ class Visualize():
                 opts={
                     'title': title,
                     'xlabel': 'epoch',
-                    'ylabel': 'loss'
+                    'ylabel': 'score'
                 },
                 win=win
             )

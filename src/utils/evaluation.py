@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 
@@ -17,3 +18,24 @@ def batch_topk_accuracy(pred, ground_truth, k=1):
     matches = torch.eq(topk_classes, gt_classes_rep)
     acc = matches.float().sum(1).mean()
     return acc
+
+
+class Metric(object):
+    def __init__(self, name, func=None, compute=True, win=None):
+        self.name = name
+        self.func = func
+        self.compute = compute
+
+        self.evolution = []  # Evolution of scores over epoch
+        self.epoch_scores = []  # Scores for the current epoch
+
+        self.win = None  # visdom window for display
+
+    def update_epoch(self):
+        """
+        Update evolution scores by taking mean of
+        current epoch_scores
+        """
+        epoch_score = np.mean(self.epoch_scores)
+        self.evolution.append(epoch_score)
+        self.epoch_scores = []

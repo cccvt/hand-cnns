@@ -36,16 +36,41 @@ transform = transforms.Compose(transformations)
 
 # Create dataset
 if opt.dataset == 'gtea':
-    dataset = gtea.GTEA(transform=transform, untransform=unnormalize)
+    dataset = gtea.GTEA(transform=transform, untransform=unnormalize,
+                        seqs=['S2', 'S3', 'S4'])
+    valid_dataset = gtea.GTEA(transform=transform,
+                              untransform=unnormalize,
+                              seqs=['S1'])
+    valid = True
 
 elif opt.dataset == 'gun':
-    dataset = gun.GUN(transform=transform)
+    test_subject_id = 1
+    # Leave one out training
+    seqs = ['Subject1', 'Subject2',
+            'Subject3', 'Subject4',
+            'Subject5', 'Subject6',
+            'Subject7', 'Subject8']
+    valid_seqs = [seqs.pop(test_subject_id)]
+    train_seqs = seqs
+
+    dataset = gun.GUN(transform=transform, untransform=unnormalize,
+                      seqs=train_seqs)
+
+    valid_dataset = gun.GUN(transform=transform, untransform=unnormalize,
+                            seqs=valid_seqs)
+    valid = True
 
 print('Dataset size : {0}'.format(len(dataset)))
 
 dataloader = torch.utils.data.DataLoader(
     dataset, shuffle=True, batch_size=opt.batch_size,
-    num_workers=opt.nThreads, drop_last=True)
+    num_workers=opt.threads, drop_last=True)
+
+if valid:
+    valid_dataloader = torch.utils.data.DataLoader(valid_dataset,
+                                                   shuffle=False,
+                                                   batch_size=opt.batch_size,
+                                                   num_workers=opt.threads)
 
 # Load model
 resnet = models.resnet18(pretrained=True)
@@ -80,4 +105,5 @@ else:
 model.set_criterion(criterion)
 model.set_optimizer(optimizer)
 
-train.train_net(dataloader, model, criterion, opt, optimizer)
+train.train_net(dataloader, model, criterion, opt, optimizer,
+                valid_dataloader=valid_dataloader)
