@@ -17,6 +17,8 @@ img_means = [0.485, 0.456, 0.406]
 img_stds = [0.229, 0.224, 0.225]
 normalize = transforms.Normalize(mean=img_means,
                                  std=img_stds)
+
+# Compute reverse of normalize transform
 unnormalize = Unnormalize(mean=img_means, std=img_stds)
 
 # Set input tranformations
@@ -39,7 +41,7 @@ if opt.dataset == 'gtea':
 elif opt.dataset == 'gun':
     dataset = gun.GUN(transform=transform)
 
-print(len(dataset))
+print('Dataset size : ' + len(dataset))
 
 dataloader = torch.utils.data.DataLoader(
     dataset, shuffle=True, batch_size=opt.batch_size,

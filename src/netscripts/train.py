@@ -69,18 +69,21 @@ def train_net(dataloader, model, optimizer, criterion,
                     '{0} is not among known error\
                     functions'.format(opt.criterion))
 
+            # Compute batch scores
             losses.append(loss.data[0])
             for metric in metrics.values():
                 score = metric['func'](output, target)
                 metric['epoch_scores'].append(score)
 
-            # compute gradient and do descent step
+            # Compute gradient and do gradient step
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             debug_counter = debug_counter + 1
             # if debug_counter > 100:
             #     break
+
+            # Display an image example in visdom
             if i % opt.display_freq == 0:
                 sample_win = visualizer.plot_sample(image, target,
                                                     output.data,
@@ -88,7 +91,7 @@ def train_net(dataloader, model, optimizer, criterion,
                                                     sample_win,
                                                     unnormalize=dataloader.dataset.untransform)
 
-        # Log metrics
+        # Compute epoch mean scores
         mean_loss = np.mean(losses)
         loss_evolution.append(mean_loss)
         for metric in metrics.values():
@@ -97,21 +100,26 @@ def train_net(dataloader, model, optimizer, criterion,
         last_scores = {key: metric['evolution'][-1]
                        for key, metric in metrics.items()}
         last_scores['loss'] = mean_loss
+
+        # Write scores to log file
         message = visualizer.log_errors(epoch, last_scores)
         if verbose:
             print(message)
 
+        # Display loss in visdom
         error_win = visualizer.plot_errors(np.array(list(range(epoch + 1))),
                                            np.array(loss_evolution),
                                            title='loss', win=error_win)
 
-        # Update visdom displays
+        # Display scores in visdom
         for metric_name, metric in metrics.items():
             scores = np.array(metric['evolution'])
             win = visualizer.plot_errors(np.array(list(range(len(scores)))),
                                          scores, title=metric_name,
                                          win=metric['win'])
             metric['win'] = win
+
+        # Save network weights
         if opt.save_latest:
             model.save('latest')
         if epoch % opt.save_freq == 0:
