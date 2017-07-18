@@ -51,7 +51,7 @@ class Visualize():
         return win
 
     def plot_sample(self, input_imgs, gts, predictions, classes, win,
-                    display_idx=1, k=1, unnormalize=None):
+                    display_idx=0, k=1, unnormalize=None):
         """
         Plots in visdom one image with predicted and ground truth labels
         from the given batch
@@ -65,21 +65,25 @@ class Visualize():
             input_img = input_img.cpu()
         if unnormalize is not None:
             input_img = unnormalize(input_img)
-        pred_classes = classes[int(pred_val[0])]
-        pred_string = 'pred class : ' + pred_classes
+        pred_classes = classes[int(topk_classes[0])]
+        pred_string = 'predicted : ' + pred_classes
 
         real_score, real_class = gts[display_idx].max(0)
         real_class_str = classes[int(real_class[0])]
 
-        real_string = 'True class : ' + real_class_str
+        real_string = 'true : ' + real_class_str
 
-        caption = pred_string + '\n' + real_string
+        caption = pred_string + ';\n' + real_string
 
         if win is None:
-            win = self.vis.image(input_img, opts={'title': 'sample',
-                                                  'caption': caption})
+            win = self.vis.image(input_img,
+                                 opts={'title': 'sample',
+                                       'caption': caption,
+                                       'win_size': 256})
         else:
-            win = self.vis.image(input_img, opts={'title': 'sample',
-                                                  'caption': caption},
+            win = self.vis.image(input_img,
+                                 opts={'title': 'sample',
+                                       'caption': caption,
+                                       'win_size': 256},
                                  win=win)
         return win
