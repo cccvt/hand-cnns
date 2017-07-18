@@ -39,8 +39,8 @@ def test_top2_custom_accuracy():
     var_scores = torch.autograd.Variable(torch.from_numpy(np_scores))
     t_gt = torch.from_numpy(np_gt)
 
-    top1_score = batch_topk_accuracy(var_scores, t_gt, k=2)
-    assert top1_score == 1
+    top2_score = batch_topk_accuracy(var_scores, t_gt, k=2)
+    assert top2_score == 1
 
 
 def test_top3_custom_accuracy():
@@ -51,8 +51,8 @@ def test_top3_custom_accuracy():
     var_scores = torch.autograd.Variable(torch.from_numpy(np_scores))
     t_gt = torch.from_numpy(np_gt)
 
-    top1_score = batch_topk_accuracy(var_scores, t_gt, k=3)
-    assert top1_score == 0
+    top3_score = batch_topk_accuracy(var_scores, t_gt, k=3)
+    assert top3_score == 0
 
 
 def test_top5_custom_accuracy():
@@ -67,5 +67,5 @@ def test_top5_custom_accuracy():
     var_scores = torch.autograd.Variable(torch.from_numpy(np_scores))
     t_gt = torch.from_numpy(np_gt)
 
-    top1_score = batch_topk_accuracy(var_scores, t_gt, k=5)
-    assert top1_score == 0.5
+    top5_score = batch_topk_accuracy(var_scores, t_gt, k=5)
+    assert top5_score == 0.5
