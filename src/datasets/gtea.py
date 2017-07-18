@@ -7,14 +7,12 @@ import torch.utils.data as data
 from src.datasets.utils import loader, filesys
 
 """
-Grasp UNderstanding Dataset
-Note that rgb and depth images are not aligned in this dataset
+Action labels are composed of a vert and a set of actions such as
+('pour', ['honey, bread']), they are then processed to string labels
+such as 'pour honey bread'
 
-action labels are composed of a vert and a set of actions such as
-('pour', ['honey, bread'])
-
-two action labels have 1 and 2 occurences : ('stir', ['cup'])
-and ('put', ['tea'])
+two action labels have only 1 and 2 occurences in dataset:
+('stir', ['cup']) and ('put', ['tea'])
 by removing them we get to 71 action classes
 
 Not all frames are annotated !
@@ -23,7 +21,8 @@ Not all frames are annotated !
 
 class GTEA(data.Dataset):
     def __init__(self, transform=None, untransform=None,
-                 root_folder="data/GTEA", no_action_label=True):
+                 root_folder="data/GTEA", no_action_label=True,
+                 seqs=['S1', 'S2', 'S3', 'S4']):
         """
         :param transform: transformation to apply to the images
         :param no_action_label: encode absence of action class as class
@@ -38,6 +37,8 @@ class GTEA(data.Dataset):
                         'scoop', 'shake', 'spread', 'stir', 'take']
 
         filenames = filesys.recursive_files_dataset(self.path, ".png", depth=3)
+        filenames = [filename for filename in filenames if
+                     any(seq in filename for seq in seqs)]
         self.file_paths = filenames
         self.item_nb = len(self.file_paths)
 
