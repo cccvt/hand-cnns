@@ -29,7 +29,12 @@ def train_net(dataloader, model, criterion, opt,
         model = model.cuda()
         criterion = criterion.cuda()
 
-    for epoch in tqdm(range(opt.epochs), desc='epoch'):
+    if opt.train:
+        epoch_nb = opt.epochs
+    else:
+        epoch_nb = 1
+
+    for epoch in tqdm(range(epoch_nb), desc='epoch'):
         losses = []
 
         # Initialize epoch losses
@@ -42,10 +47,13 @@ def train_net(dataloader, model, criterion, opt,
 
             output = model.forward(image)
             loss = model.compute_loss(output, target)
-            model.step_backward(loss)
+
+            if opt.train:
+                model.step_backward(loss)
 
             # Compute batch scores
             losses.append(loss.data[0])
+
             for metric in metrics.values():
                 score = metric['func'](output.data, target.data)
                 metric['epoch_scores'].append(score)

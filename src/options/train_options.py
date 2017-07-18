@@ -23,6 +23,8 @@ class TrainOptions():
                                  loading')
 
         # Train params
+        self.parser.add_argument('--train', type=int, default=1,
+                                 help='1 for training, 2 for testing')
         self.parser.add_argument('--epochs', type=int, default=10,
                                  help='number of training epochs')
         self.parser.add_argument('--batch_size', type=int, default=2,
