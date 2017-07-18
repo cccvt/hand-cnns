@@ -1,6 +1,8 @@
 import os
 import torch
 
+from src.options import error
+
 
 class BaseNet(torch.nn.Module):
     def __init__(self, opt):
@@ -23,6 +25,39 @@ class BaseNet(torch.nn.Module):
         """
         load_path = self._netfile_path(network_name, epoch)
         network.load_state_dict(torch.load(load_path))
+
+    def set_optimizer(self, optim):
+        self.optimizer = optim
+
+    def set_criterion(self, crit):
+        self.criterion = crit
+
+    def prepare_var(self, tensor):
+        tensor = tensor.float()
+        if self.opt.use_gpu:
+            tensor = tensor.cuda()
+        var = torch.autograd.Variable(tensor)
+        return var
+
+    def compute_loss(self, output, target):
+        # Compute scores
+        if self.opt.criterion == 'MSE':
+            loss = self.criterion(output, target)
+        elif self.opt.criterion == 'CE':
+            # CE expects index of class as ground truth input
+            target_vals, target_idxs = target.max(1)
+            loss = self.criterion(output, target_idxs.view(-1))
+        else:
+            raise error.ArgumentError(
+                '{0} is not among known error\
+                functions'.format(self.opt.criterion))
+        return loss
+
+    def step_backward(self, loss):
+        # Compute gradient and do gradient step
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
     def _netfile_path(self, network_name, epoch):
         """

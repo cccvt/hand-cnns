@@ -41,7 +41,7 @@ if opt.dataset == 'gtea':
 elif opt.dataset == 'gun':
     dataset = gun.GUN(transform=transform)
 
-print('Dataset size : ' + len(dataset))
+print('Dataset size : {0}'.format(len(dataset)))
 
 dataloader = torch.utils.data.DataLoader(
     dataset, shuffle=True, batch_size=opt.batch_size,
@@ -73,9 +73,11 @@ if opt.criterion == 'MSE':
     criterion = torch.nn.MSELoss()
 elif opt.criterion == 'CE':
     criterion = torch.nn.CrossEntropyLoss()
-
 else:
     raise error.ArgumentError(
         '{0} is not among known error functions'.format(opt.criterion))
 
-train.train_net(dataloader, model, optimizer, criterion, opt)
+model.set_criterion(criterion)
+model.set_optimizer(optimizer)
+
+train.train_net(dataloader, model, criterion, opt, optimizer)

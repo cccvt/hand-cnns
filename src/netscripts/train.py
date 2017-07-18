@@ -1,6 +1,5 @@
 import numpy as np
 import time
-import torch
 from tqdm import tqdm
 
 from src.options import error
@@ -8,8 +7,8 @@ from src.utils.visualize import Visualize
 from src.utils.evaluation import batch_topk_accuracy as topk
 
 
-def train_net(dataloader, model, optimizer, criterion,
-              opt, verbose=False):
+def train_net(dataloader, model, criterion, opt,
+              optimizer=None, verbose=False):
     loss_evolution = []
     metrics = {'top1': {'win': None,
                         'func': lambda out, pred: topk(out, pred, 1),
@@ -30,62 +29,31 @@ def train_net(dataloader, model, optimizer, criterion,
         model = model.cuda()
         criterion = criterion.cuda()
 
-    total_steps = 0
-
     for epoch in tqdm(range(opt.epochs), desc='epoch'):
         losses = []
 
-        debug_counter = 0
         # Initialize epoch losses
         for metric in metrics.values():
             metric['epoch_scores'] = []
 
         for i, (image, target) in enumerate(tqdm(dataloader, desc='iter')):
-            total_steps += opt.batch_size
-            # Cast from double to float
-            target = target.float()
+            image = model.prepare_var(image)
+            target = model.prepare_var(target)
 
-            # Transfer to GPU
-            if opt.use_gpu:
-                target = target.cuda()
-                image = image.cuda()
-
-            # Create pytorch Varibles
-            input_var = torch.autograd.Variable(image)
-            target_var = torch.autograd.Variable(target)
-
-            # Forward pass
-            output = model(input_var)
-
-            # Compute scores
-            if opt.criterion == 'MSE':
-                loss = criterion(output, target_var)
-            elif opt.criterion == 'CE':
-                # CE expects index of class as ground truth input
-                target_vals, target_idxs = target_var.max(1)
-                loss = criterion(output, target_idxs.view(-1))
-            else:
-                raise error.ArgumentError(
-                    '{0} is not among known error\
-                    functions'.format(opt.criterion))
+            output = model.forward(image)
+            loss = model.compute_loss(output, target)
+            model.step_backward(loss)
 
             # Compute batch scores
             losses.append(loss.data[0])
             for metric in metrics.values():
-                score = metric['func'](output, target)
+                score = metric['func'](output.data, target.data)
                 metric['epoch_scores'].append(score)
-
-            # Compute gradient and do gradient step
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            debug_counter = debug_counter + 1
-            # if debug_counter > 100:
-            #     break
-
             # Display an image example in visdom
+
             if i % opt.display_freq == 0:
-                sample_win = visualizer.plot_sample(image, target,
+                sample_win = visualizer.plot_sample(image.data,
+                                                    target.data,
                                                     output.data,
                                                     dataloader.dataset.classes,
                                                     sample_win,
