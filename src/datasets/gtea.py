@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import re
 import torch.utils.data as data
 
 from src.datasets.utils import loader, filesys
+from src.datasets.utils import gteaannots
 
 """
 Action labels are composed of a vert and a set of actions such as
@@ -45,12 +45,19 @@ class GTEA(data.Dataset):
         self.in_channels = 3
         self.in_size = (720, 405)
 
-        self.classes = self._get_all_classes()
+        self.classes = gteaannots.get_all_classes(self.label_path,
+                                                  self.inclusion_condition,
+                                                  no_action_label=False)
         # Sanity check on computed class nb
         if self.no_action_label:
             self.class_nb = 72
         else:
             self.class_nb = 71
+
+        # Remove frames with no class attached
+        if not self.no_action_label:
+            self.remove_no_class()
+
         assert len(self.classes) == self.class_nb,\
             "{0} classes found, should be {1}".format(
                 len(self.classes), self.class_nb)
@@ -67,9 +74,7 @@ class GTEA(data.Dataset):
         # One hot encoding
         annot = np.zeros(self.class_nb)
         root, img_folder, seq, img_file = img_path.rsplit('/', 3)
-        annot_path = os.path.join(self.label_path, seq + '.txt')
-        sequence_lines = process_lines(annot_path)
-        sequence_annots = process_annots(sequence_lines)
+        sequence_annots = self.get_seq_annotations(seq)
         frame_idx = int(img_file.split('.')[0])
         if frame_idx in sequence_annots:
             action_class = sequence_annots[frame_idx]
@@ -80,6 +85,25 @@ class GTEA(data.Dataset):
                 annot[self.class_nb - 1] = 1
 
         return img, annot
+
+    def get_seq_annotations(self, sequence_name):
+        annot_path = os.path.join(self.label_path, sequence_name + '.txt')
+        sequence_lines = gteaannots.process_lines(annot_path,
+                                                  self.inclusion_condition)
+        sequence_annots = gteaannots.process_annots(sequence_lines)
+        return sequence_annots
+
+    def remove_no_class(self):
+        """
+        Removes from list of files all frames that do not have
+        an action label
+        """
+        for image_path in self.file_paths:
+            root, img_folder, seq, img_file = image_path.rsplit('/', 3)
+            sequence_annots = self.get_seq_annotations(seq)
+            frame_idx = int(img_file.split('.')[0])
+            if frame_idx not in sequence_annots:
+                self.file_paths.remove(image_path)
 
     def __len__(self):
         return self.item_nb
@@ -93,65 +117,12 @@ class GTEA(data.Dataset):
         plt.imshow(img)
         plt.axis('off')
 
-    def _get_all_classes(self):
-        sequences = os.listdir(self.label_path)
-        seqs = [os.path.join(self.label_path, seq) for seq in sequences]
-        object_actions = []
-        for seq in seqs:
-            annots = process_lines(seq)
-            for annot in annots:
-                object_actions.append((annot[0:2]))
-        unique_object_actions = sorted(list(set(object_actions)))
-        unique_classes = [_class_string(action, objects)
-                          for action, objects in unique_object_actions]
-        if self.no_action_label:
-            unique_classes.append('None')
-        return unique_classes
-
-
-def process_lines(annot_path):
-    """
-    Returns list of action_objects ['action object1 object2', ...]
-    """
-    with open(annot_path) as f:
-        lines = f.readlines()
-    processed_lines = []
-    for line in lines:
-        matches = re.search('<(.*)><(.*)> \((.*)-(.*)\)', line)
-        if matches:
-            action_label, object_label = matches.group(1), matches.group(2)
-            begin, end = int(matches.group(3)), int(matches.group(4))
-            object_labels = tuple(object_label.split(','))
-            if inclusion_condition(action_label, object_labels):
-                processed_lines.append((action_label, object_labels,
-                                        begin, end))
-    return processed_lines
-
-
-def _class_string(action, objects):
-    return action + ' ' + ' '.join(objects)
-
-
-def process_annots(processed_lines):
-    """
-    Returns a dictionnary with frame as key and
-    value 'action object1 object2 object3' from
-    the gtea annotation text file
-    """
-    # create annotation_dict
-    annot_dict = {}
-    for action, object_label, begin, end in processed_lines:
-        for frame in range(begin, end + 1):
-            annot_dict[frame] = _class_string(action, object_label)
-    return annot_dict
-
-
-def inclusion_condition(action, objects):
-    if len(objects) != 1:
-        return True
-    if action == 'stir' and objects[0] == 'cup':
-        return False
-    elif action == 'put' and objects[0] == 'tea':
-        return False
-    else:
-        return True
+    def inclusion_condition(self, action, objects):
+        if len(objects) != 1:
+            return True
+        if action == 'stir' and objects[0] == 'cup':
+            return False
+        elif action == 'put' and objects[0] == 'tea':
+            return False
+        else:
+            return True

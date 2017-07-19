@@ -37,14 +37,14 @@ transform = transforms.Compose(transformations)
 # Create dataset
 if opt.dataset == 'gtea':
     dataset = gtea.GTEA(transform=transform, untransform=unnormalize,
-                        seqs=['S2', 'S3', 'S4'])
+                        seqs=['S2', 'S3', 'S4'], no_action_label=False)
     valid_dataset = gtea.GTEA(transform=transform,
                               untransform=unnormalize,
-                              seqs=['S1'])
+                              seqs=['S1'], no_action_label=False)
     valid = True
 
 elif opt.dataset == 'gun':
-    test_subject_id = 1
+    test_subject_id = 2
     # Leave one out training
     seqs = ['Subject1', 'Subject2',
             'Subject3', 'Subject4',
