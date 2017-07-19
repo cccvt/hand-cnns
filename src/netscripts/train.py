@@ -41,7 +41,8 @@ def train_net(dataloader, model, criterion, opt,
                                             vis=visualizer,
                                             sample_win=sample_win,
                                             i=i)
-        for i, (image, target) in enumerate(tqdm(valid_dataloader, desc='iter')):
+        for i, (image, target) in enumerate(tqdm(valid_dataloader,
+                                                 desc='iter')):
             valid_metrics, valid_sample_win = data_pass(model, image,
                                                         target, opt,
                                                         metrics=valid_metrics,
@@ -56,13 +57,18 @@ def train_net(dataloader, model, criterion, opt,
         for metric in valid_metrics:
             metric.update_epoch()
 
-        last_scores = {metric.name: metric.evolution
+        last_scores = {metric.name: metric.evolution[-1]
                        for metric in metrics}
+        last_valid_scores = {'valid' + metric.name: metric.evolution[-1]
+                             for metric in metrics}
 
         # Write scores to log file
         message = visualizer.log_errors(epoch, last_scores)
+        valid_message = visualizer.log_errors(epoch, last_valid_scores,
+                                              valid=True)
         if verbose:
             print(message)
+            print(valid_message)
 
         # Display scores in visdom
         for metric in metrics:

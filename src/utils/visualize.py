@@ -8,13 +8,22 @@ class Visualize():
         self.vis = visdom.Visdom()
         self.opt = opt
         self.win = None
-        self.log_name = os.path.join(opt.checkpoint_dir,
-                                     opt.exp_id, 'loss_log.txt')
-        with open(self.log_name, "a") as log_file:
-            now = time.strftime("%c")
-            log_file.write('==== Training loss log at {0} ====\n'.format(now))
+        self.train_log_path = os.path.join(opt.checkpoint_dir,
+                                           opt.exp_id, 'train_log.txt')
+        self.valid_log_path = os.path.join(opt.checkpoint_dir,
+                                           opt.exp_id,
+                                           'valid_log.txt')
 
-    def log_errors(self, epoch, errors):
+        # Initialize log files
+        with open(self.train_log_path, "a") as log_file:
+            now = time.strftime("%c")
+            log_file.write('==== Training log at {0} ====\n'.format(now))
+
+        with open(self.valid_log_path, "a") as log_file:
+            now = time.strftime("%c")
+            log_file.write('==== Valid log at {0} ====\n'.format(now))
+
+    def log_errors(self, epoch, errors, valid=False):
         now = time.strftime("%c")
         message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch,
                                                        t=now)
@@ -22,8 +31,13 @@ class Visualize():
             message = message + ',{name}:{err}'.format(name=k,
                                                        err=v)
 
-        with open(self.log_name, "a") as log_file:
-            log_file.write(message + '\n')
+        # Write log message to correct file
+        if valid:
+            with open(self.valid_log_path, "a") as log_file:
+                log_file.write(message + '\n')
+        else:
+            with open(self.train_log_path, "a") as log_file:
+                log_file.write(message + '\n')
         return message
 
     def plot_errors(self, epochs, errors, title='score', win=None):
