@@ -104,6 +104,7 @@ class GTEA(data.Dataset):
             frame_idx = int(img_file.split('.')[0])
             if frame_idx not in sequence_annots:
                 self.file_paths.remove(image_path)
+        self.item_nb = len(self.file_paths)
 
     def __len__(self):
         return self.item_nb
