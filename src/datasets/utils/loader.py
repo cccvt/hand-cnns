@@ -74,6 +74,9 @@ def get_clip(video_capture, frame_begin, frame_nb):
     # Fill clip array with consecutive frames
     for frame_idx in range(frame_nb):
         flag, frame = video_capture.read()
+        if not flag:
+            raise OpenCvError('Could not read frame {0}'.format(
+                frame_idx + frame_begin))
         frame_rgb = frame[:, :, ::-1]
         arranged_frame = np.rollaxis(frame_rgb, 2, 0)
         clip[:, frame_idx, :, :] = arranged_frame
