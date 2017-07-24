@@ -39,3 +39,21 @@ class Metric(object):
         epoch_score = np.mean(self.epoch_scores)
         self.evolution.append(epoch_score)
         self.epoch_scores = []
+
+
+def leave_one_out(full_list, idx=0):
+    """
+    Takes one list and returns the train list and the valid
+    list containing just the item at idx
+
+    :param full_list: original list
+    :param idx: idx of validation item
+    :return train_list: full_list from which the validation
+    item has been removed
+    :return valid_list: list containing the validation item
+    """
+    assert idx < len(full_list), "idx of validation item should\
+    be smaller then len of original list"
+    valid_list = [full_list.pop(idx)]
+    train_list = full_list
+    return train_list, valid_list

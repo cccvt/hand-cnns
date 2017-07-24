@@ -32,6 +32,11 @@ class TrainOptions():
         self.parser.add_argument('--use_gpu', type=int, default=1,
                                  help='1 to use gpu, 0 for cpu')
 
+        # Valid params
+        self.parser.add_argument('--leave_out', type=int, default=0,
+                                 help="Index of sequence item to leave out\
+                                 for validation")
+
         # Optim params
         self.parser.add_argument('--lr', type=float, default=0.001,
                                  help='Base learning rate for training')

@@ -34,22 +34,26 @@ class GTEAGazePlus(data.Dataset):
         if True, 'no action' is encoded as last column in vector
         """
         self.no_action_label = no_action_label
+        # Tranform to apply to RGB image
         self.transform = transform
+        # Reverse of transform for visualiztion during training
         self.untransform = untransform
         self.path = root_folder
+        self.rgb_path = os.path.join(self.path, 'png')
         self.label_path = os.path.join(self.path, 'labels')
         self.all_seqs = ['Ahmad', 'Alireza', 'Carlos',
                          'Rahul', 'Yin', 'Shaghayegh']
         self.seqs = seqs
 
-        filenames = filesys.recursive_files_dataset(self.path, ".png", depth=3)
+        filenames = filesys.recursive_files_dataset(self.rgb_path,
+                                                    ".png", depth=2)
         filenames = [filename for filename in filenames if
                      any(seq in filename for seq in seqs)]
+
         self.file_paths = filenames
         self.item_nb = len(self.file_paths)
 
         self.in_channels = 3
-        self.in_size = (720, 405)
 
         self.classes = gteaannots.get_all_classes(self.label_path,
                                                   self.inclusion_condition,

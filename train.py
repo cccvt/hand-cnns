@@ -2,11 +2,12 @@ import torch
 from torchvision import transforms
 import torchvision.models as models
 
-from src.datasets import gtea, gun
+from src.datasets import gtea, gteagazeplus, gun
 from src.options import train_options, error
 from src.nets import resnet_adapt, netutils
 from src.netscripts import train
 from src.utils.normalize import Unnormalize
+from src.utils import evaluation
 
 
 opt = train_options.TrainOptions().parse()
@@ -34,13 +35,35 @@ if opt.normalize:
 
 transform = transforms.Compose(transformations)
 
+# Index of sequence item to leave out for validation
+leave_out_idx = opt.leave_out
+
 # Create dataset
 if opt.dataset == 'gtea':
+    seqs = ['S1', 'S2', 'S3', 'S4']
+    train_seqs, valid_seqs = evaluation.leave_one_out(seqs, leave_out_idx)
+
     dataset = gtea.GTEA(transform=transform, untransform=unnormalize,
-                        seqs=['S2', 'S3', 'S4'], no_action_label=False)
+                        seqs=train_seqs, no_action_label=False)
     valid_dataset = gtea.GTEA(transform=transform,
                               untransform=unnormalize,
-                              seqs=['S1'], no_action_label=False)
+                              seqs=valid_seqs, no_action_label=False)
+    valid = True
+
+elif opt.dataset == 'gteagazeplus':
+    # Create dataset
+    all_subjects = ['Ahmad', 'Alireza', 'Carlos',
+                    'Rahul', 'Yin', 'Shaghayegh']
+    train_seqs, valid_seqs = evaluation.leave_one_out(all_subjects,
+                                                      leave_out_idx)
+    dataset = gteagazeplus.GTEAGazePlus(transform=transform,
+                                        untransform=unnormalize,
+                                        seqs=train_seqs,
+                                        no_action_label=False)
+    valid_dataset = gteagazeplus.GTEAGazePlus(transform=transform,
+                                              untransform=unnormalize,
+                                              seqs=valid_seqs,
+                                              no_action_label=False)
     valid = True
 
 elif opt.dataset == 'gun':
@@ -50,8 +73,8 @@ elif opt.dataset == 'gun':
             'Subject3', 'Subject4',
             'Subject5', 'Subject6',
             'Subject7', 'Subject8']
-    valid_seqs = [seqs.pop(test_subject_id)]
-    train_seqs = seqs
+    train_seqs, valid_seqs = evaluation.leave_one_out(seqs,
+                                                      test_subject_id)
 
     dataset = gun.GUN(transform=transform, untransform=unnormalize,
                       seqs=train_seqs)
