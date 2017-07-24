@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 from PIL import Image
 from src.utils.debug import timeit
@@ -28,6 +29,25 @@ def load_depth_image(path):
 
 class OpenCvError(Exception):
     pass
+
+
+def get_video_capture(file_name):
+    """
+    Returns opencv video_capture name based on file_name
+    """
+    file_found = os.path.isfile(file_name)
+
+    # Check video exists as file
+    if not file_found:
+        raise OpenCvError('Video file {0} doesn\'t exist'.format(
+            file_name))
+    video_capture = cv2.VideoCapture(file_name)
+
+    # Check video could be read
+    if not video_capture.isOpened():
+        raise OpenCvError('Video is not opened')
+
+    return video_capture
 
 
 def get_clip(video_capture, frame_begin, frame_nb):
