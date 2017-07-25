@@ -1,14 +1,11 @@
 from collections import defaultdict
-import matplotlib.pyplot as plt
 import numpy as np
 import re
-import torch
 import os
 import torch.utils.data as data
 
 from src.datasets.utils import loader
 from src.datasets.utils import gteaannots
-from src.utils.debug import timeit
 
 """
 Action labels are composed of a vert and a set of actions such as
@@ -84,7 +81,7 @@ class GTEAGazePlus(data.Dataset):
         return clip, annot
 
     def __len__(self):
-        return self.item_nb
+        return len(self.action_clips)
 
     def get_clip(self, sequence_name, frame_begin, frame_nb):
         if self.use_video:

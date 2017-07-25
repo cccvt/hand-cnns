@@ -2,7 +2,6 @@ import cv2
 import os
 import numpy as np
 from PIL import Image
-from src.utils.debug import timeit
 
 
 def load_rgb_image(path):
