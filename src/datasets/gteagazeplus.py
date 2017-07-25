@@ -1,10 +1,12 @@
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
+import re
+import torch
 import os
 import torch.utils.data as data
 
-from src.datasets.utils import loader, filesys
+from src.datasets.utils import loader
 from src.datasets.utils import gteaannots
 
 """
@@ -25,13 +27,13 @@ Not all frames are annotated !
 
 class GTEAGazePlus(data.Dataset):
     def __init__(self, transform=None, untransform=None,
-                 root_folder="data/GTEAGazePlus", no_action_label=True,
+                 root_folder="data/GTEAGazePlus", no_action_label=False,
                  seqs=['Ahmad', 'Alireza', 'Carlos',
-                       'Rahul', 'Shaghayegh', 'Yin']):
+                       'Rahul', 'Shaghayegh', 'Yin'],
+                 clip_size=16, use_video=True):
         """
         :param transform: transformation to apply to the images
-        :param no_action_label: encode absence of action class as class
-        if True, 'no action' is encoded as last column in vector
+        :param use_video: whether to use video inputs or png inputs
         """
         self.no_action_label = no_action_label
         # Tranform to apply to RGB image
@@ -39,82 +41,54 @@ class GTEAGazePlus(data.Dataset):
         # Reverse of transform for visualiztion during training
         self.untransform = untransform
         self.path = root_folder
+        self.use_video = use_video
         self.rgb_path = os.path.join(self.path, 'png')
+        self.video_path = os.path.join(self.path, 'avi_files')
         self.label_path = os.path.join(self.path, 'labels')
         self.all_seqs = ['Ahmad', 'Alireza', 'Carlos',
                          'Rahul', 'Yin', 'Shaghayegh']
+
         self.seqs = seqs
+        self.clip_size = clip_size
 
-        filenames = filesys.recursive_files_dataset(self.rgb_path,
-                                                    ".png", depth=2)
-        filenames = [filename for filename in filenames if
-                     any(seq in filename for seq in seqs)]
+        # Compute classes
+        self.classes = self.get_classes(2)
+        self.action_clips = self.get_dense_actions(clip_size, self.classes)
 
-        self.file_paths = filenames
-        self.item_nb = len(self.file_paths)
-
-        self.in_channels = 3
-
-        self.classes = gteaannots.get_all_classes(self.label_path,
-                                                  self.inclusion_condition,
-                                                  no_action_label=True)
         # Sanity check on computed class nb
         if self.no_action_label:
-            self.class_nb = 963
+            self.class_nb = 33
         else:
-            self.class_nb = 962
+            self.class_nb = 32
         assert len(self.classes) == self.class_nb,\
             "{0} classes found, should be {1}".format(
                 len(self.classes), self.class_nb)
 
     def __getitem__(self, index):
-        img_path = self.file_paths[index]
-
         # Load image
-        img = loader.load_rgb_image(img_path)
-        self.img = img
-        if self.transform is not None:
-            img = self.transform(img)
+        subject, recipe, action, objects, frame_idx = self.action_clips[index]
+
+        video_path = os.path.join(self.video_path,
+                                  subject + '_' + recipe + '.avi')
+        video_capture = loader.get_video_capture(video_path)
+        clip = loader.get_clip(video_capture, frame_idx, self.clip_size)
 
         # One hot encoding
         annot = np.zeros(self.class_nb)
-        root, img_folder, seq, img_file = img_path.rsplit('/', 3)
-        annot_path = os.path.join(self.label_path, seq + '.txt')
-        sequence_lines = gteaannots.process_lines(annot_path,
-                                                  self.inclusion_condition)
-        sequence_annots = gteaannots.process_annots(sequence_lines)
-        frame_idx = int(img_file.split('.')[0])
-        if frame_idx in sequence_annots:
-            action_class = sequence_annots[frame_idx]
-            class_idx = self.classes.index(action_class)
-            annot[class_idx] = 1
-        else:
-            if self.no_action_label:
-                annot[self.class_nb - 1] = 1
-
-        return img, annot
+        class_idx = self.classes.index((action, objects))
+        annot[class_idx] = 1
+        return clip, annot
 
     def __len__(self):
         return self.item_nb
 
-    def draw2d(self, idx):
-        """
-        draw 2D rgb image with displayed annotations
-        :param idx: idx of the item in the dataset
-        """
-        img, annot = self[idx]
-        plt.imshow(img)
-        plt.axis('off')
+    def get_clip(self, video_path, frame_begin, frame_nb):
+        video_capture = loader.get_video_capture(video_path)
+        clip = loader.get_clip(video_capture, frame_begin, frame_nb)
+        return torch.from_numpy(clip)
 
     def inclusion_condition(self, action, objects):
-        if len(objects) != 1:
-            return True
-        if action == 'stir' and objects[0] == 'cup':
-            return False
-        elif action == 'put' and objects[0] == 'tea':
-            return False
-        else:
-            return True
+        return True
 
     def get_classes(self, repetition_per_subj=2):
         """
@@ -153,6 +127,11 @@ class GTEAGazePlus(data.Dataset):
         return shared_classes
 
     def get_repeated_annots(self, annot_lines, repetitions):
+        """
+        Given list of annotations in format [action, objects, begin, end]
+        returns list of (action, objects) tuples for the (action, objects)
+        that appear at least repetitions time
+        """
         action_labels = [(act, obj) for (act, obj, b, e) in annot_lines]
         counted_labels = defaultdict(int)
         for label in action_labels:
@@ -160,3 +139,35 @@ class GTEAGazePlus(data.Dataset):
         repeated_labels = [label for label, count in counted_labels.items()
                            if count >= repetitions]
         return repeated_labels
+
+    def get_dense_actions(self, frame_nb, action_object_classes):
+        """
+        Gets dense list of all action movie clips by extracting
+        all possible tuples (subject, recipe, action, objects, begin_frame)
+        with all begin_frame so that at least frame_nb frames belong
+        to the given action
+
+        for frame_nb: 2 and begin: 10, end:17, the candidate begin_frames are:
+        10, 11, 12, 13, 14, 15
+        This guarantees that we can extract frame_nb of frames starting at
+        begin_frame and still be inside the action
+
+        This gives all possible action blocks for the subjects in self.seqs
+        """
+        annot_paths = [os.path.join(self.label_path, annot_file)
+                       for annot_file in os.listdir(self.label_path)]
+        actions = []
+
+        # Get classes for each subject
+        for subject in self.seqs:
+            subject_annot_files = [filepath for filepath in annot_paths
+                                   if subject in filepath]
+            for annot_file in subject_annot_files:
+                recipe = re.search('.*_(.*).txt', annot_file).group(1)
+                action_lines = gteaannots.process_lines(annot_file)
+                for action, objects, begin, end in action_lines:
+                    if (action, objects) in action_object_classes:
+                        for frame_idx in range(begin, end - frame_nb + 1):
+                            actions.append((subject, recipe, action,
+                                            objects, frame_idx))
+        return actions
