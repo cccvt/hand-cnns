@@ -52,7 +52,7 @@ def get_video_capture(file_name):
 
 def get_clip(video_capture, frame_begin, frame_nb):
     """
-    Returns clip of video as torch Tensor
+    Returns clip of video as list of numpy.ndarrays
     of dimensions [channels, frames, height, width]
 
     :param video_capture: opencv videoCapture object loading a video
@@ -70,14 +70,45 @@ def get_clip(video_capture, frame_begin, frame_nb):
     # Retrieve successive frames starting from frame_begin frame
     video_capture.set(1, frame_begin)
 
-    clip = np.zeros([3, frame_nb, int(height), int(width)])
+    clip = []
     # Fill clip array with consecutive frames
     for frame_idx in range(frame_nb):
         flag, frame = video_capture.read()
         if not flag:
             raise OpenCvError('Could not read frame {0}'.format(
                 frame_idx + frame_begin))
-        frame_rgb = frame[:, :, ::-1]
-        arranged_frame = np.rollaxis(frame_rgb, 2, 0)
-        clip[:, frame_idx, :, :] = arranged_frame
+
+        clip.append(frame)
     return clip
+
+
+def get_stacked_frames(image_folder, frame_begin, frame_nb):
+    """
+    Returns numpy array of stacked images with dimensions
+    [channels, frames, height, width]
+
+    :param image_folder: folder containing the images in format 00{frame}.png
+    :param frame_nb: number of consecutive frames to stack
+    """
+
+    frame_template = "{frame:010d}.png"
+    clip = []
+    for idx in range(frame_nb):
+        frame_idx = frame_begin + idx
+        image_path = os.path.join(image_folder,
+                                  frame_template.format(frame=frame_idx))
+        img = cv2.imread(image_path)
+        if img is None:
+            raise OpenCvError('Could not open image {0}'.format(image_path))
+        clip.append(img)
+    return clip
+
+
+def format_img_from_opencv(img_array):
+    """
+    Transforms an opencv numpy array [width, height, BRG]
+    to [RGB, width, height]
+    """
+    frame_rgb = img_array[:, :, ::-1]
+    arranged_frame = np.rollaxis(frame_rgb, 2, 0)
+    return arranged_frame

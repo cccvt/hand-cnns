@@ -8,6 +8,7 @@ import torch.utils.data as data
 
 from src.datasets.utils import loader
 from src.datasets.utils import gteaannots
+from src.utils.debug import timeit
 
 """
 Action labels are composed of a vert and a set of actions such as
@@ -27,17 +28,18 @@ Not all frames are annotated !
 
 class GTEAGazePlus(data.Dataset):
     def __init__(self, transform=None, untransform=None,
-                 root_folder="data/GTEAGazePlus", no_action_label=False,
+                 root_folder="data/GTEAGazePlus", video_transform=None,
+                 no_action_label=False,
                  seqs=['Ahmad', 'Alireza', 'Carlos',
                        'Rahul', 'Shaghayegh', 'Yin'],
-                 clip_size=16, use_video=True):
+                 clip_size=16, use_video=False):
         """
         :param transform: transformation to apply to the images
         :param use_video: whether to use video inputs or png inputs
         """
         self.no_action_label = no_action_label
         # Tranform to apply to RGB image
-        self.transform = transform
+        self.video_transform = video_transform
         # Reverse of transform for visualiztion during training
         self.untransform = untransform
         self.path = root_folder
@@ -65,13 +67,15 @@ class GTEAGazePlus(data.Dataset):
                 len(self.classes), self.class_nb)
 
     def __getitem__(self, index):
-        # Load image
+        # Load clip
         subject, recipe, action, objects, frame_idx = self.action_clips[index]
+        sequence_name = subject + '_' + recipe
 
-        video_path = os.path.join(self.video_path,
-                                  subject + '_' + recipe + '.avi')
-        video_capture = loader.get_video_capture(video_path)
-        clip = loader.get_clip(video_capture, frame_idx, self.clip_size)
+        clip = self.get_clip(sequence_name, frame_idx, self.clip_size)
+
+        # Apply video transform
+        if self.video_transform is not None:
+            clip = self.video_transform(clip)
 
         # One hot encoding
         annot = np.zeros(self.class_nb)
@@ -82,10 +86,18 @@ class GTEAGazePlus(data.Dataset):
     def __len__(self):
         return self.item_nb
 
-    def get_clip(self, video_path, frame_begin, frame_nb):
-        video_capture = loader.get_video_capture(video_path)
-        clip = loader.get_clip(video_capture, frame_begin, frame_nb)
-        return torch.from_numpy(clip)
+    def get_clip(self, sequence_name, frame_begin, frame_nb):
+        if self.use_video:
+            video_path = os.path.join(self.video_path,
+                                      sequence_name + '.avi')
+            video_capture = loader.get_video_capture(video_path)
+            clip = loader.get_clip(video_capture, frame_begin, frame_nb)
+        else:
+            png_path = os.path.join(self.rgb_path,
+                                    sequence_name)
+            clip = loader.get_stacked_frames(png_path, frame_begin, frame_nb)
+
+        return clip
 
     def inclusion_condition(self, action, objects):
         return True
