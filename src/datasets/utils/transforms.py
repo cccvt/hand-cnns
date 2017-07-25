@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from skimage.transform import resize
 
 
 class Compose(object):
@@ -9,6 +10,7 @@ class Compose(object):
         transforms (list of ``Transform`` objects): list of transforms
         to compose
     """
+
     def __init__(self, transforms):
         self.transforms = transforms
 
@@ -43,3 +45,14 @@ class ToTensor(object):
         else:
             raise TypeError('Expected numpy.ndarray, got {0}'.format(
                 type(img)))
+
+
+class Scale(object):
+    """Scales a list of (H x W x C) numpy.ndarray to the final size
+    """
+
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, clip):
+        return [resize(img, self.size) for img in clip]
