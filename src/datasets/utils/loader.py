@@ -50,13 +50,14 @@ def get_video_capture(file_name):
 
 
 def get_clip(video_capture, frame_begin, frame_nb):
-    """
-    Returns clip of video as list of numpy.ndarrays
+    """ Returns clip of video as list of numpy.ndarrays
     of dimensions [channels, frames, height, width]
 
-    :param video_capture: opencv videoCapture object loading a video
-    :param frame_begin: first frame from clip
-    :param frame_nb: number of frames to retrieve
+    Args:
+        video_capture (cv2.VideoCapture): opencv videoCapture
+            object loading a video
+        frame_begin (int): first frame from clip
+        frame_nb (int): number of frames to retrieve
     """
 
     # Get video dimensions
@@ -83,7 +84,7 @@ def get_clip(video_capture, frame_begin, frame_nb):
 
 
 def get_stacked_frames(image_folder, frame_begin, frame_nb,
-                       use_open_cv=True):
+                       use_open_cv=True, to_numpy=False):
     """ Returns numpy array/PIL image of stacked images with dimensions
     [channels, frames, height, width]
 
@@ -108,8 +109,10 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
             img = img[:, :, ::-1]
         else:
             img = Image.open(image_path)
-            img = np.asarray(img)
+            if to_numpy:
+                img = np.asarray(img)
         clip.append(img)
+
     return clip
 
 

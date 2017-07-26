@@ -90,7 +90,7 @@ class Visualize():
 
         # Extract one image from stacked images
         if input_img.dim() == 4:
-            input_img = input_img[:, 0, :, :]*255*255
+            input_img = input_img[:, 0, :, :]*255
         if win is None:
             win = self.vis.image(input_img,
                                  opts={'title': 'sample',
