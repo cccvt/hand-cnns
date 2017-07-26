@@ -22,7 +22,7 @@ dataset = gteagazeplus.GTEAGazePlus(video_transform=video_transform,
                                     use_video=False, clip_size=16)
 
 dataloader = torch.utils.data.DataLoader(
-    dataset, shuffle=True, batch_size=2,
+    dataset, shuffle=True, batch_size=opt.batch_size,
     num_workers=1, drop_last=True)
 
 
