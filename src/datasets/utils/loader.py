@@ -49,6 +49,7 @@ def get_video_capture(file_name):
     return video_capture
 
 
+@profile
 def get_clip(video_capture, frame_begin, frame_nb):
     """
     Returns clip of video as list of numpy.ndarrays
@@ -81,13 +82,18 @@ def get_clip(video_capture, frame_begin, frame_nb):
     return clip
 
 
-def get_stacked_frames(image_folder, frame_begin, frame_nb):
-    """
-    Returns numpy array of stacked images with dimensions
+@profile
+def get_stacked_frames(image_folder, frame_begin, frame_nb,
+                       use_open_cv=True):
+    """ Returns numpy array/PIL image of stacked images with dimensions
     [channels, frames, height, width]
 
-    :param image_folder: folder containing the images in format 00{frame}.png
-    :param frame_nb: number of consecutive frames to stack
+    Args:
+        image_folder (str): folder containing the images in format
+            00{frame}.png
+        frame_nb (int): number of consecutive frames to stack
+        use_open_cv (bool): wheter to use opencv or PIl image reader
+            if PIL is used, PIL image are returned
     """
 
     frame_template = "{frame:010d}.png"
@@ -96,9 +102,13 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb):
         frame_idx = frame_begin + idx
         image_path = os.path.join(image_folder,
                                   frame_template.format(frame=frame_idx))
-        img = cv2.imread(image_path)
-        if img is None:
-            raise OpenCvError('Could not open image {0}'.format(image_path))
+        if use_open_cv:
+            img = cv2.imread(image_path)
+            if img is None:
+                raise OpenCvError('Could not open image {0}'.format(image_path))
+        else:
+            img = Image.open(image_path)
+            img = np.asarray(img)
         clip.append(img)
     return clip
 
