@@ -92,7 +92,8 @@ class GTEAGazePlus(data.Dataset):
         else:
             png_path = os.path.join(self.rgb_path,
                                     sequence_name)
-            clip = loader.get_stacked_frames(png_path, frame_begin, frame_nb)
+            clip = loader.get_stacked_frames(png_path, frame_begin, frame_nb,
+                                             use_open_cv=False)
 
         return clip
 

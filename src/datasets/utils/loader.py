@@ -49,7 +49,6 @@ def get_video_capture(file_name):
     return video_capture
 
 
-@profile
 def get_clip(video_capture, frame_begin, frame_nb):
     """
     Returns clip of video as list of numpy.ndarrays
@@ -78,11 +77,11 @@ def get_clip(video_capture, frame_begin, frame_nb):
             raise OpenCvError('Could not read frame {0}'.format(
                 frame_idx + frame_begin))
 
+        frame = frame[:, :, ::-1]
         clip.append(frame)
     return clip
 
 
-@profile
 def get_stacked_frames(image_folder, frame_begin, frame_nb,
                        use_open_cv=True):
     """ Returns numpy array/PIL image of stacked images with dimensions
@@ -106,6 +105,7 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
             img = cv2.imread(image_path)
             if img is None:
                 raise OpenCvError('Could not open image {0}'.format(image_path))
+            img = img[:, :, ::-1]
         else:
             img = Image.open(image_path)
             img = np.asarray(img)

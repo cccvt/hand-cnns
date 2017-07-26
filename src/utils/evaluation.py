@@ -16,7 +16,9 @@ def batch_topk_accuracy(pred, ground_truth, k=1):
     gt_vals, gt_classes = ground_truth.max(1)
     gt_classes_rep = gt_classes.repeat(1, k)
     matches = torch.eq(topk_classes, gt_classes_rep)
-    acc = matches.float().sum(1).mean()
+    matches = matches.float()
+    match_count = matches.sum(1)
+    acc = torch.mean(match_count)
     return acc
 
 

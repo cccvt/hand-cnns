@@ -1,3 +1,4 @@
+import cv2
 import torch
 from torchvision import transforms
 import torchvision.models as models

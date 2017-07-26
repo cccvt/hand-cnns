@@ -48,6 +48,7 @@ class TrainOptions():
         self.parser.add_argument('--criterion', type=str, default='MSE',
                                  help='(MSE for mean square |\
                                  CE for cross-entropy)')
+
         # Save params
         self.parser.add_argument('--checkpoint_dir', type=str, default='./checkpoints',
                                  help='where to save models')

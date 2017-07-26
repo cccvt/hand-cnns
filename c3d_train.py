@@ -8,12 +8,14 @@ from src.netscripts import train
 from src.datasets.utils import transforms
 from src.options import train_options
 
-
-
 opt = train_options.TrainOptions().parse()
-model = c3d.C3D(opt)
 
-input_size = (112, 200)
+# Index of sequence item to leave out for validation
+leave_out_idx = opt.leave_out
+
+model = c3d.C3D(32, opt)
+
+input_size = (112, 112)
 video_transform = transforms.Compose([transforms.Scale(input_size),
                                       transforms.ToTensor()])
 dataset = gteagazeplus.GTEAGazePlus(video_transform=video_transform,
@@ -25,8 +27,10 @@ dataloader = torch.utils.data.DataLoader(
 
 
 criterion = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001,
-                            momentum=0.9)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.003)
+
+model.set_criterion(criterion)
+model.set_optimizer(optimizer)
 
 train.train_net(dataloader, model, criterion, opt, optimizer,
-                valid_dataloader=None, save=False, visualize=False)
+                valid_dataloader=None)

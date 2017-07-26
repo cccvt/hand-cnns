@@ -3,7 +3,7 @@ from src.nets.basenet import BaseNet
 
 
 class C3D(BaseNet):
-    def __init__(self, opt):
+    def __init__(self, class_nb, opt):
         super(C3D, self).__init__(opt)
 
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
@@ -35,7 +35,7 @@ class C3D(BaseNet):
 
         self.fc6 = nn.Linear(8192, 4096)
         self.fc7 = nn.Linear(4096, 4096)
-        self.fc8 = nn.Linear(4096, 487)
+        self.fc8 = nn.Linear(4096, class_nb)
 
         self.dropout = nn.Dropout(p=0.5)
 

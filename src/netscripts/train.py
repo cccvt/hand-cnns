@@ -8,7 +8,6 @@ from src.utils.visualize import Visualize
 from src.utils.evaluation import batch_topk_accuracy as topk
 from src.utils.evaluation import Metric
 
-
 def train_net(dataloader, model, criterion, opt,
               optimizer=None, valid_dataloader=None,
               verbose=False):
