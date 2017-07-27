@@ -25,7 +25,7 @@ dataset = gteagazeplus.GTEAGazePlus(video_transform=video_transform,
 
 dataloader = torch.utils.data.DataLoader(
     dataset, shuffle=True, batch_size=opt.batch_size,
-    num_workers=1, drop_last=True)
+    num_workers=opt.threads, drop_last=True)
 
 
 criterion = torch.nn.CrossEntropyLoss()
