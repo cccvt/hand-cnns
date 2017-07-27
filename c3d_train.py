@@ -15,8 +15,10 @@ leave_out_idx = opt.leave_out
 
 model = c3d.C3D(32, opt)
 
-input_size = (112, 112)
-video_transform = transforms.Compose([transforms.Scale(input_size),
+scale_size = (128, 171)
+crop_size = (112, 112)
+video_transform = transforms.Compose([transforms.Scale(scale_size),
+                                      transforms.RandomCrop(crop_size),
                                       transforms.ToTensor()])
 dataset = gteagazeplus.GTEAGazePlus(video_transform=video_transform,
                                     use_video=False, clip_size=16)

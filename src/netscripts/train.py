@@ -85,7 +85,6 @@ def data_pass(model, image, target, opt,
                                      dataloader.dataset.classes,
                                      sample_win,
                                      unnormalize=dataloader.dataset.untransform)
-
     return metrics, sample_win
 
 
