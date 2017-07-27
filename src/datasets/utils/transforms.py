@@ -1,3 +1,4 @@
+import cv2
 import random
 import numpy as np
 import PIL
@@ -70,17 +71,30 @@ class Scale(object):
 
     The larger the original image is, the more times it takes to
     interpolate
+
+    Args:
+        interpolation (str): Can be one of 'nearest', 'bilinear'
+            defaults to nearest
     """
 
-    def __init__(self, size, interpolation=PIL.Image.NEAREST):
+    def __init__(self, size, interpolation='nearest'):
         self.size = size
         self.interpolation = interpolation
 
     def __call__(self, clip):
         if isinstance(clip[0], np.ndarray):
-            scaled = [resize(img, self.size) for img in clip]
+            if self.interpolation == 'bilinear':
+                np_inter = cv2.INTER_LINEAR
+            else:
+                np_inter = cv2.INTER_NEAREST
+            scaled = [resize(img, self.size, interpolation=np_inter)
+                      for img in clip]
         elif isinstance(clip[0], PIL.Image.Image):
-            scaled = [img.resize(self.size) for img in clip]
+            if self.interpolation == 'bilinear':
+                pil_inter = PIL.Image.NEAREST
+            else:
+                pil_inter = PIL.Image.BILINEAR
+            scaled = [img.resize(self.size, pil_inter) for img in clip]
         else:
             raise TypeError('Expected numpy.ndarray or PIL.Image\
             but got list of {0}'.format(type(clip[0])))
