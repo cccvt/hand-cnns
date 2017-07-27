@@ -67,10 +67,14 @@ class ToTensor(object):
 
 class Scale(object):
     """Scales a list of (H x W x C) numpy.ndarray to the final size
+
+    The larger the original image is, the more times it takes to
+    interpolate
     """
 
-    def __init__(self, size):
+    def __init__(self, size, interpolation=PIL.Image.NEAREST):
         self.size = size
+        self.interpolation = interpolation
 
     def __call__(self, clip):
         if isinstance(clip[0], np.ndarray):
