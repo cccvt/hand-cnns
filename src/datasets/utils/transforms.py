@@ -65,6 +65,31 @@ class ToTensor(object):
         img = img.transpose(2, 0, 1)
         return img
 
+class RandomHorizontalFlip(object):
+    """Horizontally flip the list of given images randomly
+    with a probability 0.5
+    """
+
+    def __call__(self, clip):
+        """
+        Args:
+            img (PIL.Image or numpy.ndarray): List of images to be cropped
+                in format (h, w, c) in numpy.ndarray
+
+        Returns:
+            PIL.Image or numpy.ndarray: Randomly flipped clip
+        """
+        if random.random() < 0.5:
+            if isinstance(clip[0], np.ndarray):
+                return [np.fliplr(img) for img in clip]
+            elif isinstance(clip[0], PIL.Image.Image):
+                return [img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+                        for img in clip]
+            else:
+                raise TypeError('Expected numpy.ndarray or PIL.Image\
+                but got list of {0}'.format(type(clip[0])))
+        return clip
+
 
 class Scale(object):
     """Scales a list of (H x W x C) numpy.ndarray to the final size
@@ -87,7 +112,7 @@ class Scale(object):
                 np_inter = cv2.INTER_LINEAR
             else:
                 np_inter = cv2.INTER_NEAREST
-            scaled = [resize(img, self.size, interpolation=np_inter)
+            scaled = [cv2.resize(img, self.size, interpolation=np_inter)
                       for img in clip]
         elif isinstance(clip[0], PIL.Image.Image):
             if self.interpolation == 'bilinear':
