@@ -8,23 +8,36 @@ class BaseNet(torch.nn.Module):
     def __init__(self, opt):
         super().__init__()
         self.save_dir = os.path.join(opt.checkpoint_dir, opt.exp_id)
+        self.name = None
+        self.net = None
         self.opt = opt
 
-    def save_net(self, network, network_name, epoch, opt):
+    def save(self, epoch, opt):
         """
         Utility function to save network weights
+        If necessary, network should be stored as self.net property
+        otherwise, uses the layers at the first level
+        (self.fc for instance)
         """
-        save_path = self._netfile_path(network_name, epoch)
-        torch.save(network.cpu().state_dict(), save_path)
-        if self.opt.use_gpu:
-            network.cuda()
+        save_path = self._netfile_path(self.name, epoch)
+        if self.net is not None:
+            torch.save(self.net.cpu().state_dict(), save_path)
+            if self.opt.use_gpu:
+                self.net.cuda()
+        else:
+            torch.save(self.cpu().state_dict(), save_path)
+            if self.opt.use_gpu:
+                self.cuda()
 
-    def load_net(self, network, network_name, epoch):
+    def load(self, epoch):
         """
         Utility function to load network weights
         """
-        load_path = self._netfile_path(network_name, epoch)
-        network.load_state_dict(torch.load(load_path))
+        load_path = self._netfile_path(self.name, epoch)
+        if self.net is not None:
+            self.net.load_state_dict(torch.load(load_path))
+        else:
+            self.load_state_dict(torch.load(load_path))
 
     def set_optimizer(self, optim):
         self.optimizer = optim

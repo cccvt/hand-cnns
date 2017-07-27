@@ -5,6 +5,7 @@ from src.nets.basenet import BaseNet
 class C3D(BaseNet):
     def __init__(self, class_nb, opt):
         super(C3D, self).__init__(opt)
+        self.name = 'c3d'
 
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))
         self.pool1 = nn.MaxPool3d(kernel_size=(1, 2, 2), stride=(1, 2, 2))
