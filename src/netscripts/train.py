@@ -1,12 +1,11 @@
 import copy
 import numpy as np
-import time
 from tqdm import tqdm
 
-from src.options import error
 from src.utils.visualize import Visualize
 from src.utils.evaluation import batch_topk_accuracy as topk
 from src.utils.evaluation import Metric
+
 
 def train_net(dataloader, model, criterion, opt,
               optimizer=None, valid_dataloader=None,
@@ -15,11 +14,12 @@ def train_net(dataloader, model, criterion, opt,
     top5 = Metric('top5', func=lambda out, pred: topk(out, pred, 5))
     loss_metric = Metric('loss', compute=False)
     metrics = [top1, top5, loss_metric]
-    valid_metrics = copy.deepcopy(metrics)
+    val_metrics = copy.deepcopy(metrics)
 
     # visdom window handles
     sample_win = None
-    valid_sample_win = None
+    if valid_dataloader is not None:
+        val_sample_win = None
 
     visualizer = Visualize(opt)
     if opt.use_gpu:
@@ -33,63 +33,26 @@ def train_net(dataloader, model, criterion, opt,
         epoch_nb = 1
 
     for epoch in tqdm(range(epoch_nb), desc='epoch'):
-        for i, (image, target) in enumerate(tqdm(dataloader, desc='iter')):
-            metrics, sample_win = data_pass(model, image, target,
-                                            opt, metrics=metrics,
-                                            dataloader=dataloader,
-                                            vis=visualizer,
-                                            sample_win=sample_win,
-                                            i=i)
-        for i, (image, target) in enumerate(tqdm(valid_dataloader,
-                                                 desc='iter')):
-            valid_metrics, valid_sample_win = data_pass(model, image,
-                                                        target, opt,
-                                                        metrics=valid_metrics,
-                                                        dataloader=valid_dataloader,
-                                                        vis=visualizer,
-                                                        sample_win=valid_sample_win,
-                                                        i=i, train=False)
-        # Compute epoch scores and clear current scores
-        for metric in metrics:
-            metric.update_epoch()
+        # Train for one epoch
+        metrics, sample_win = epoch_pass(dataloader, model, opt,
+                                         epoch, metrics, visualizer,
+                                         sample_win=sample_win, train=True,
+                                         verbose=False)
 
-        for metric in valid_metrics:
-            metric.update_epoch()
-
-        last_scores = {metric.name: metric.evolution[-1]
-                       for metric in metrics}
-        last_valid_scores = {'valid' + metric.name: metric.evolution[-1]
-                             for metric in metrics}
-
-        # Write scores to log file
-        message = visualizer.log_errors(epoch, last_scores)
-        valid_message = visualizer.log_errors(epoch, last_valid_scores,
-                                              valid=True)
-        if verbose:
-            print(message)
-            print(valid_message)
-
-        # Display scores in visdom
-        for metric in metrics:
-            scores = np.array(metric.evolution)
-            win = visualizer.plot_errors(np.array(list(range(len(scores)))),
-                                         scores, title=metric.name,
-                                         win=metric.win)
-            metric.win = win
-
-        for metric in valid_metrics:
-            scores = np.array(metric.evolution)
-            win = visualizer.plot_errors(np.array(list(range(len(scores)))),
-                                         scores,
-                                         title='valid ' + metric.name,
-                                         win=metric.win)
-            metric.win = win
+        if valid_dataloader is not None:
+            # Validation for one epoch
+            val_metrics, val_sample_win = epoch_pass(valid_dataloader, model,
+                                                     opt, epoch,
+                                                     val_metrics, visualizer,
+                                                     sample_win=val_sample_win,
+                                                     train=False,
+                                                     verbose=False)
 
         # Save network weights
         if opt.save_latest:
-            model.save('latest')
+            model.save('latest', opt)
         if epoch % opt.save_freq == 0:
-            model.save(epoch)
+            model.save(epoch, opt)
 
     if verbose:
         print('Done training')
@@ -122,5 +85,41 @@ def data_pass(model, image, target, opt,
                                      dataloader.dataset.classes,
                                      sample_win,
                                      unnormalize=dataloader.dataset.untransform)
+
+    return metrics, sample_win
+
+
+def epoch_pass(dataloader, model, opt, epoch, metrics, visualizer,
+               sample_win=None, train=True, verbose=False):
+    for i, (image, target) in enumerate(tqdm(dataloader, desc='iter')):
+        metrics, sample_win = data_pass(model, image, target,
+                                        opt, metrics=metrics,
+                                        dataloader=dataloader,
+                                        vis=visualizer,
+                                        sample_win=sample_win,
+                                        i=i, train=train)
+
+    # Compute epoch scores and clear current scores
+    for metric in metrics:
+        metric.update_epoch()
+
+    last_scores = {metric.name: metric.evolution[-1]
+                   for metric in metrics}
+
+    # Display scores in visdom
+    for metric in metrics:
+        plt_title = 'valid ' + metric.name if train is False else metric.name
+        scores = np.array(metric.evolution)
+        win = visualizer.plot_errors(np.array(list(range(len(scores)))),
+                                     scores, title=plt_title,
+                                     win=metric.win)
+        metric.win = win
+
+    # Write scores to log file
+    valid = True if train is False else False
+    message = visualizer.log_errors(epoch, last_scores, valid=valid)
+
+    if verbose:
+        print(message)
 
     return metrics, sample_win
