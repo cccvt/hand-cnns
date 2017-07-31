@@ -52,4 +52,4 @@ model.set_criterion(criterion)
 model.set_optimizer(optimizer)
 
 train.train_net(dataloader, model, criterion, opt, optimizer,
-                valid_dataloader=None)
+                valid_dataloader=val_dataloader)
