@@ -26,15 +26,50 @@ Not all frames are annotated !
 class GTEAGazePlus(data.Dataset):
     def __init__(self, transform=None, untransform=None,
                  root_folder="data/GTEAGazePlus", video_transform=None,
-                 no_action_label=False,
+                 no_action_label=False, original_labels=True,
                  seqs=['Ahmad', 'Alireza', 'Carlos',
                        'Rahul', 'Shaghayegh', 'Yin'],
                  clip_size=16, use_video=False):
         """
-        :param transform: transformation to apply to the images
-        :param use_video: whether to use video inputs or png inputs
+        Args:
+            transform: transformation to apply to the images
+            use_video (bool): whether to use video inputs or png inputs
         """
+
+        self.cvpr_labels = ['open_fridge', 'close_fridge',
+                            'put_cupPlateBowl',
+                            'put_spoonForkKnife_cupPlateBowl',
+                            'take_spoonForkKnife_cupPlateBowl',
+                            'take_cupPlateBowl', 'take_spoonForkKnife',
+                            'put_lettuce_cupPlateBowl',
+                            'read_recipe', 'take_plastic_spatula',
+                            'open_freezer', 'close_freezer',
+                            'put_plastic_spatula',
+                            'cut_tomato_spoonForkKnife',
+                            'put_spoonForkKnife',
+                            'take_tomato_cupPlateBowl',
+                            'turnon_tap', 'turnoff_tap',
+                            'take_cupPlateBowl_plate_container',
+                            'turnoff_burner', 'turnon_burner',
+                            'cut_pepper_spoonForkKnife',
+                            'put_tomato_cupPlateBowl',
+                            'put_milk_container', 'put_oil_container',
+                            'take_oil_container', 'close_oil_container',
+                            'open_oil_container', 'take_lettuce_container',
+                            'take_milk_container', 'open_fridge_drawer',
+                            'put_lettuce_container', 'close_fridge_drawer',
+                            'compress_sandwich',
+                            'pour_oil_oil_container_skillet',
+                            'take_bread_bread_container',
+                            'cut_mushroom_spoonForkKnife',
+                            'put_bread_cupPlateBowl', 'put_honey_container',
+                            'take_honey_container', 'open_microwave',
+                            'crack_egg_cupPlateBowl',
+                            'open_bread_container', 'open_honey_container']
+        # Label tags
         self.no_action_label = no_action_label
+        self.original_labels = original_labels
+
         # Tranform to apply to RGB image
         self.video_transform = video_transform
         # Reverse of transform for visualiztion during training
@@ -51,14 +86,21 @@ class GTEAGazePlus(data.Dataset):
         self.clip_size = clip_size
 
         # Compute classes
-        self.classes = self.get_classes(2)
+        if self.original_labels:
+            self.classes = self.get_cvpr_classes()
+        else:
+            self.classes = self.get_repeat_classes(2)
         self.action_clips = self.get_dense_actions(clip_size, self.classes)
 
         # Sanity check on computed class nb
-        if self.no_action_label:
-            self.class_nb = 33
+        if self.original_labels:
+            self.class_nb = len(self.cvpr_labels)
         else:
             self.class_nb = 32
+
+        if self.no_action_label:
+            self.class_nb += 1
+
         assert len(self.classes) == self.class_nb,\
             "{0} classes found, should be {1}".format(
                 len(self.classes), self.class_nb)
@@ -97,20 +139,57 @@ class GTEAGazePlus(data.Dataset):
 
         return clip
 
-    def inclusion_condition(self, action, objects):
-        return True
-
-    def get_classes(self, repetition_per_subj=2):
+    def get_repeat_classes(self, repetition_per_subj=2, seqs=None):
         """
         Gets the classes that are repeated at least
         repetition_per_subject times for each subject
+        """
+        subjects_classes = self._get_subj_classes(seqs=seqs)
+        repeated_subjects_classes = []
+        for subj_labels in subjects_classes:
+            subj_classes = self.get_repeated_annots(subj_labels,
+                                                    repetition_per_subj)
+
+            repeated_subjects_classes.append(subj_classes)
+        shared_classes = []
+        # Get classes present at least twice for the subject
+        first_subject_classes = repeated_subjects_classes.pop()
+        for subject_class in first_subject_classes:
+            shared = all(subject_class in subject_classes
+                         for subject_classes in repeated_subjects_classes)
+            if shared:
+                shared_classes.append(subject_class)
+        return shared_classes
+
+    def get_cvpr_classes(self, seqs=None):
+        subjects_classes = self._get_subj_classes(seqs=seqs)
+        all_classes = []
+        for subj_labels in subjects_classes:
+            # Remove internal spaces
+            for (action, obj, b, e) in subj_labels:
+                obj = _original_label_transform(obj)
+                action_str = '_'.join((action.replace(' ', ''),
+                                       '_'.join(obj)))
+                if action_str in self.cvpr_labels:
+                    all_classes.append((action, obj))
+        return list(set(all_classes))
+
+    def _get_subj_classes(self, seqs=None):
+        """Returns a list of label lists where the label lists are
+        grouped by subject
+        [[(action, obj, b, e), ... ] for subject 1, [],...]
         """
         annot_paths = [os.path.join(self.label_path, annot_file)
                        for annot_file in os.listdir(self.label_path)]
         subjects_classes = []
 
         # Get classes for each subject
-        for subject in self.all_seqs:
+        if seqs is None:
+            subjects = self.all_seqs
+        else:
+            subjects = seqs
+
+        for subject in subjects:
             subject_annot_files = [filepath for filepath in annot_paths
                                    if subject in filepath]
 
@@ -122,19 +201,8 @@ class GTEAGazePlus(data.Dataset):
             subject_labels = [label for sequence_labels in subject_lines
                               for label in sequence_labels]
 
-            # Get classes present at least twice for the subject
-            duplicate_classes = self.get_repeated_annots(subject_labels,
-                                                         repetition_per_subj)
-
-            subjects_classes.append(duplicate_classes)
-        shared_classes = []
-        first_subject_classes = subjects_classes.pop()
-        for subject_class in first_subject_classes:
-            shared = all(subject_class in subject_classes
-                         for subject_classes in subjects_classes)
-            if shared:
-                shared_classes.append(subject_class)
-        return shared_classes
+            subjects_classes.append(subject_labels)
+        return subjects_classes
 
     def get_repeated_annots(self, annot_lines, repetitions):
         """
@@ -176,8 +244,24 @@ class GTEAGazePlus(data.Dataset):
                 recipe = re.search('.*_(.*).txt', annot_file).group(1)
                 action_lines = gteaannots.process_lines(annot_file)
                 for action, objects, begin, end in action_lines:
+                    if self.original_labels:
+                        objects = _original_label_transform(objects)
                     if (action, objects) in action_object_classes:
                         for frame_idx in range(begin, end - frame_nb + 1):
                             actions.append((subject, recipe, action,
                                             objects, frame_idx))
         return actions
+
+
+def _original_label_transform(objects):
+    mutual_1 = ['fork', 'knife', 'spoon']
+    mutual_2 = ['cup', 'plate', 'bowl']
+    processed_obj = []
+    for obj in objects:
+        if obj in mutual_1:
+            processed_obj.append('spoonForkKnife')
+        elif obj in mutual_2:
+            processed_obj.append('cupPlateBowl')
+        else:
+            processed_obj.append(obj)
+    return tuple(processed_obj)
