@@ -97,7 +97,7 @@ if valid:
                                                    num_workers=opt.threads)
 
 # Load model
-resnet = models.resnet18(pretrained=True)
+resnet = models.resnet18(pretrained=opt.pretrained)
 model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb)
 
 # Load existing weights, opt.continue_training is epoch to load
