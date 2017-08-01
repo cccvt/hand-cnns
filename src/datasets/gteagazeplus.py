@@ -24,15 +24,14 @@ Not all frames are annotated !
 
 
 class GTEAGazePlus(data.Dataset):
-    def __init__(self, transform=None, untransform=None,
-                 root_folder="data/GTEAGazePlus", video_transform=None,
+    def __init__(self, root_folder="data/GTEAGazePlus", video_transform=None,
                  no_action_label=False, original_labels=True,
                  seqs=['Ahmad', 'Alireza', 'Carlos',
                        'Rahul', 'Shaghayegh', 'Yin'],
                  clip_size=16, use_video=False):
         """
         Args:
-            transform: transformation to apply to the images
+            video_transform: transformation to apply to the clips
             use_video (bool): whether to use video inputs or png inputs
         """
 
@@ -70,10 +69,9 @@ class GTEAGazePlus(data.Dataset):
         self.no_action_label = no_action_label
         self.original_labels = original_labels
 
-        # Tranform to apply to RGB image
+        # Tranform to apply to video
         self.video_transform = video_transform
-        # Reverse of transform for visualiztion during training
-        self.untransform = untransform
+
         self.path = root_folder
         self.use_video = use_video
         self.rgb_path = os.path.join(self.path, 'png')
