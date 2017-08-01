@@ -3,11 +3,11 @@ from src.nets.basenet import BaseNet
 
 
 class ResNetAdapt(BaseNet):
-    def __init__(self, opt, resnet, nb_out):
+    def __init__(self, opt, resnet, class_nb):
         super().__init__(opt)
         self.name = 'resnet_adapt'
         self.net = resnet
-        self.net.fc = nn.Linear(512, nb_out)
+        self.net.fc = nn.Linear(512, class_nb)
         self.input_size = (224, 224)
 
     def forward(self, x):

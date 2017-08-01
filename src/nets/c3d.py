@@ -1,10 +1,9 @@
 import torch.nn as nn
-from src.nets.basenet import BaseNet
 
 
-class C3D(BaseNet):
-    def __init__(self, class_nb, opt):
-        super(C3D, self).__init__(opt)
+class C3D(nn.Module):
+    def __init__(self, class_nb=487):
+        super(C3D, self).__init__()
         self.name = 'c3d'
 
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(3, 3, 3), padding=(1, 1, 1))

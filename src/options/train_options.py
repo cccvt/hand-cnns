@@ -23,19 +23,23 @@ class TrainOptions():
                                  loading')
 
         # Train params
-        self.parser.add_argument('--train', type=int, default=1,
-                                 help='1 for training, 2 for testing')
         self.parser.add_argument('--epochs', type=int, default=10,
                                  help='number of training epochs')
         self.parser.add_argument('--batch_size', type=int, default=2,
                                  help='input mini-batch size')
         self.parser.add_argument('--use_gpu', type=int, default=1,
-                                 help='1 to use gpu, 0 for cpu')
+                                 help='Whether to use gpu (1) or cpu (0)')
+        self.parser.add_argument('--train', type=int, default=1,
+                                 help='Wheter train (1) or just test (0)')
 
         # Valid params
         self.parser.add_argument('--leave_out', type=int, default=0,
                                  help="Index of sequence item to leave out\
                                  for validation")
+
+        # Net params
+        self.parser.add_argument('--pretrained', type=int, default=1,
+                                 help="Use pretrained weights for net (1)")
 
         # Optim params
         self.parser.add_argument('--lr', type=float, default=0.001,
@@ -63,8 +67,8 @@ class TrainOptions():
                                  at each epoch')
 
         # Load params
-        self.parser.add_argument('--continue_training', type=int, default=0,
-                                 help='1 to continue training from saved weights')
+        self.parser.add_argument('--continue_training', action='store_false',
+                                 help='Continue training from saved weights')
         self.parser.add_argument('--continue_epoch', type=int, default=0,
                                  help='Epoch to load for trianing continuation \
                                  latest if 0')
@@ -97,5 +101,9 @@ class TrainOptions():
                     option=str(k), value=str(v)))
             git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
             opt_file.write('git hash: {}\n'.format(git_hash.strip()))
+
+        if self.opt.pretrained and not self.opt.normalize:
+            raise ValueError('If using pretrained weights, normalization\
+                             should be applied (same as for pretraining)')
 
         return self.opt
