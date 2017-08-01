@@ -51,7 +51,11 @@ To get information about the various options, use
 
 ### Launch script
 
-Example command to launch script
+First launch visualization server
+
+`python -m visdom.server`
+
+Then launch training script
 
 `python c3d_train.py --exp_id my_first_launch --batch_size 8 --criterion CE --display_freq 10 --threads 2 --epochs 50`
 
