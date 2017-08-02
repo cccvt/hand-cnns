@@ -58,7 +58,7 @@ class GTEA(data.Dataset):
         if not self.no_action_label:
             self.remove_no_class()
 
-        assert len(self.classes) == self.class_nb,\
+        assert abs(len(self.classes) - self.class_nb) <= 1,\
             "{0} classes found, should be {1}".format(
                 len(self.classes), self.class_nb)
 
