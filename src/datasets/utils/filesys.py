@@ -18,8 +18,9 @@ def recursive_files_dataset(root, ext=".jpg", depth=3):
     Returns all the paths to the files with extension ext
     that are less deepely nested then depth
 
-    :param ext: extension of the files to keep
-    :param depth: maximum folder depth to explor
+    Args:
+        ext(str): extension of the files to keep
+        depth(int): maximum folder depth to explor
     """
     roots = [root]
     file_paths = []
