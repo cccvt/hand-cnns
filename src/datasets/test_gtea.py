@@ -1,3 +1,4 @@
+import cv2
 from src.datasets.gtea import GTEA
 
 
