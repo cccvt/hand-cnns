@@ -12,9 +12,9 @@ class TrainOptions():
 
     def initialize(self):
         # Input params
-        self.parser.add_argument('--dataset', type=str, default='gtea',
+        self.parser.add_argument('--dataset', type=str, default='gteagazeplus',
                                  help='dataset to use among\
-                                 (uciego|gtea|gteagazeplus)')
+                                 (uciego|gtea|gteagazeplus|smthgsmthg)')
         self.parser.add_argument('--normalize', type=int, default=1,
                                  help='use imageNet normalization values\
                                  for input during training')

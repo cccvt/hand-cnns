@@ -4,7 +4,7 @@ import numpy as np
 from operator import itemgetter
 
 
-def plot_hist(labels):
+def plot_hist(labels, percentage=False):
     """Plots histogram of labels where labels is a list of labels
     where each class is repeated as many times as it is present in
     the dataset
@@ -12,6 +12,9 @@ def plot_hist(labels):
     label_counter = Counter(labels).items()
     label_counter = sorted(label_counter, key=itemgetter(1))
     names, counts = zip(*label_counter)
+    if percentage:
+        sum_count = sum(counts)
+        counts = [100*count/sum_count for count in counts]
     indexes = np.arange(len(label_counter))
     plt.bar(indexes, counts, tick_label=names)
     plt.xticks(rotation=90)

@@ -104,6 +104,8 @@ class GTEAGazePlus(data.Dataset):
             "{0} classes found, should be {1}".format(
                 len(self.classes), self.class_nb)
 
+        self.untransform = None  # Needed for visualizer
+
     def __getitem__(self, index):
         # Load clip
         subject, recipe, action, objects, frame_idx = self.action_clips[index]
@@ -267,7 +269,7 @@ class GTEAGazePlus(data.Dataset):
         """
         labels = [self.get_class_str(action, obj)
                   for (subj, rec, action, obj, frm) in self.action_clips]
-        visualize.plot_hist(labels)
+        visualize.plot_hist(labels, percentage=True)
 
 
 def _original_label_transform(objects):

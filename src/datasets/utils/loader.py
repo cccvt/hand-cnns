@@ -84,6 +84,7 @@ def get_clip(video_capture, frame_begin, frame_nb):
 
 
 def get_stacked_frames(image_folder, frame_begin, frame_nb,
+                       frame_template="{frame:010d}.png",
                        use_open_cv=True, to_numpy=False):
     """ Returns numpy array/PIL image of stacked images with dimensions
     [channels, frames, height, width]
@@ -96,7 +97,6 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
             if PIL is used, PIL image are returned
     """
 
-    frame_template = "{frame:010d}.png"
     clip = []
     for idx in range(frame_nb):
         frame_idx = frame_begin + idx
@@ -105,7 +105,8 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
         if use_open_cv:
             img = cv2.imread(image_path)
             if img is None:
-                raise OpenCvError('Could not open image {0}'.format(image_path))
+                raise OpenCvError('Could not open\
+                                  image {0}'.format(image_path))
             img = img[:, :, ::-1]
         else:
             img = Image.open(image_path)
