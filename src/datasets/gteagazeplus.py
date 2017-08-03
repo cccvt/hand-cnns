@@ -180,7 +180,8 @@ class GTEAGazePlus(data.Dataset):
             for (action, obj, b, e) in subj_labels:
                 action_str = self.get_class_str(action, obj)
                 if action_str in self.cvpr_labels:
-                    all_classes.append((action, obj))
+                    all_classes.append((action,
+                                        _original_label_transform(obj)))
         return list(set(all_classes))
 
     def _get_subj_classes(self, seqs=None):
