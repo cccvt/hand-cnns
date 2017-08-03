@@ -32,6 +32,7 @@ dataset = gteagazeplus.GTEAGazePlus(video_transform=video_transform,
                                     no_action_label=False,
                                     original_labels=True,
                                     seqs=train_seqs)
+dataset.plot_hist()
 val_dataset = gteagazeplus.GTEAGazePlus(video_transform=video_transform,
                                         use_video=False, clip_size=16,
                                         no_action_label=False,

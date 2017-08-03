@@ -6,6 +6,7 @@ import torch.utils.data as data
 
 from src.datasets.utils import loader
 from src.datasets.utils import gteaannots
+from src.datasets.utils import visualize
 
 """
 Action labels are composed of a vert and a set of actions such as
@@ -159,15 +160,25 @@ class GTEAGazePlus(data.Dataset):
                 shared_classes.append(subject_class)
         return shared_classes
 
+    def get_class_str(self, action, objects):
+        """Transforms action and objects inputs
+        """
+        if self.original_labels:
+            objects = _original_label_transform(objects)
+        action_str = '_'.join((action.replace(' ', ''),
+                               '_'.join(objects)))
+        return action_str
+
     def get_cvpr_classes(self, seqs=None):
+        """Gets original cvpr classes as list of classes as
+        list of strings
+        """
         subjects_classes = self._get_subj_classes(seqs=seqs)
         all_classes = []
         for subj_labels in subjects_classes:
             # Remove internal spaces
             for (action, obj, b, e) in subj_labels:
-                obj = _original_label_transform(obj)
-                action_str = '_'.join((action.replace(' ', ''),
-                                       '_'.join(obj)))
+                action_str = self.get_class_str(action, obj)
                 if action_str in self.cvpr_labels:
                     all_classes.append((action, obj))
         return list(set(all_classes))
@@ -249,6 +260,13 @@ class GTEAGazePlus(data.Dataset):
                             actions.append((subject, recipe, action,
                                             objects, frame_idx))
         return actions
+
+    def plot_hist(self):
+        """Plots histogram of action classes as sampled in self.action_clips
+        """
+        labels = [self.get_class_str(action, obj)
+                  for (subj, rec, action, obj, frm) in self.action_clips]
+        visualize.plot_hist(labels)
 
 
 def _original_label_transform(objects):
