@@ -1,4 +1,21 @@
+from collections import Counter
 import matplotlib.pyplot as plt
+import numpy as np
+from operator import itemgetter
+
+
+def plot_hist(labels):
+    """Plots histogram of labels where labels is a list of labels
+    where each class is repeated as many times as it is present in
+    the dataset
+    """
+    label_counter = Counter(labels).items()
+    label_counter = sorted(label_counter, key=itemgetter(1))
+    names, counts = zip(*label_counter)
+    indexes = np.arange(len(label_counter))
+    plt.bar(indexes, counts, tick_label=names)
+    plt.xticks(rotation=90)
+    plt.show()
 
 
 def draw2d_annotated_img(img, annot, links, keep_joints=None):
