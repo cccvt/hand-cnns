@@ -1,8 +1,8 @@
-from collections import defaultdict
+from collections import Counter, defaultdict
 import os
+import re
 from torch.utils import data
 
-from src.datasets.utils import visualize
 from src.datasets.utils import gteaannots
 
 """
@@ -21,6 +21,7 @@ some object so as to regroup them ('cupPlateBowl' and
 'spoonForkKnife classes')
 ==> 44 action classes
 
+self.classes is computed and contains (action, (object1, ...)) tuples
 Not all frames are annotated !
 """
 
@@ -191,13 +192,30 @@ class GTEAGazePlus(data.Dataset):
                                '_'.join(objects)))
         return action_str
 
-    def plot_hist(self):
-        """Plots histogram of action classes as sampled in self.action_clips
-        """
-        labels = [self.get_class_str(action, obj)
-                  for (subj, rec, action, obj, frm) in self.action_clips]
-        visualize.plot_hist(labels, percentage=True)
+    def get_all_actions(self, action_object_classes):
+        """Extracts all possible actions in the format (action,
+        objects, subject, recipe, frame_idx) """
+        annot_paths = [os.path.join(self.label_path, annot_file)
+                       for annot_file in os.listdir(self.label_path)]
+        actions = []
+        # Get classes for each subject
+        for subject in self.seqs:
+            subject_annot_files = [filepath for filepath in annot_paths
+                                   if subject in filepath]
+            for annot_file in subject_annot_files:
+                recipe = re.search('.*_(.*).txt', annot_file).group(1)
+                action_lines = gteaannots.process_lines(annot_file)
+                for action, objects, begin, end in action_lines:
+                    if self.original_labels:
+                        objects = self.original_label_transform(objects)
+                    if (action, objects) in action_object_classes:
+                        actions.append((action, objects, subject, recipe,
+                                        begin, end))
+        return actions
 
-
-
-
+    def get_action_counts(self, actions):
+        c = Counter(actions)
+        counts = []
+        for classe in self.classes:
+            counts.append(c[classe])
+        return counts

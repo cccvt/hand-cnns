@@ -1,8 +1,8 @@
 import numpy as np
-import re
+import random
 import os
 
-from src.datasets.utils import loader, gteaannots
+from src.datasets.utils import loader, visualize
 from src.datasets.gteagazeplus import GTEAGazePlus
 
 
@@ -27,13 +27,24 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         self.video_path = os.path.join(self.path, 'avi_files')
         self.clip_size = clip_size
 
-        self.action_clips = self.get_dense_actions(clip_size, self.classes)
+        action_clips = self.get_all_actions(self.classes)
+        # Remove actions that are too short
+        self.action_clips = [(action, obj, subj, rec, beg, end)
+                             for (action, obj, subj, rec, beg, end)
+                             in action_clips
+                             if end - beg >= self.clip_size]
+        action_labels = [(action, obj) for (action, obj, subj, rec,
+                                            beg, end) in self.action_clips]
+        print(len(action_labels))
+        assert len(action_labels) > 100
+        self.class_counts = self.get_action_counts(action_labels)
+        assert sum(self.class_counts) == len(action_labels)
 
     def __getitem__(self, index):
         # Load clip
-        subject, recipe, action, objects, frame_idx = self.action_clips[index]
+        action, objects, subject, recipe, beg, end = self.action_clips[index]
         sequence_name = subject + '_' + recipe
-
+        frame_idx = random.randint(beg, end - self.clip_size)
         clip = self.get_clip(sequence_name, frame_idx, self.clip_size)
 
         # Apply video transform
@@ -66,7 +77,7 @@ class GTEAGazePlusVideo(GTEAGazePlus):
     def get_dense_actions(self, frame_nb, action_object_classes):
         """
         Gets dense list of all action movie clips by extracting
-        all possible tuples (subject, recipe, action, objects, begin_frame)
+        all possible tuples (action, objects, subject, recipe, begin_frame)
         with all begin_frame so that at least frame_nb frames belong
         to the given action
 
@@ -77,22 +88,17 @@ class GTEAGazePlusVideo(GTEAGazePlus):
 
         This gives all possible action blocks for the subjects in self.seqs
         """
-        annot_paths = [os.path.join(self.label_path, annot_file)
-                       for annot_file in os.listdir(self.label_path)]
-        actions = []
+        dense_actions = []
+        actions = self.get_all_actions(action_object_classes)
+        for action, objects, subject, recipe, begin, end in actions:
+            for frame_idx in range(begin, end - frame_nb + 1):
+                dense_actions.append((action, objects, subject,
+                                      recipe, frame_idx))
+        return dense_actions
 
-        # Get classes for each subject
-        for subject in self.seqs:
-            subject_annot_files = [filepath for filepath in annot_paths
-                                   if subject in filepath]
-            for annot_file in subject_annot_files:
-                recipe = re.search('.*_(.*).txt', annot_file).group(1)
-                action_lines = gteaannots.process_lines(annot_file)
-                for action, objects, begin, end in action_lines:
-                    if self.original_labels:
-                        objects = self.original_label_transform(objects)
-                    if (action, objects) in action_object_classes:
-                        for frame_idx in range(begin, end - frame_nb + 1):
-                            actions.append((subject, recipe, action,
-                                            objects, frame_idx))
-        return actions
+    def plot_hist(self):
+        """Plots histogram of action classes as sampled in self.action_clips
+        """
+        labels = [self.get_class_str(action, obj)
+                  for (action, obj, subj, rec, beg, end) in self.action_clips]
+        visualize.plot_hist(labels, proportion=True)
