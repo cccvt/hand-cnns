@@ -4,21 +4,26 @@ import numpy as np
 from operator import itemgetter
 
 
-def plot_hist(labels, percentage=False):
+def plot_hist(labels, proportion=True):
     """Plots histogram of labels where labels is a list of labels
     where each class is repeated as many times as it is present in
     the dataset
     """
-    label_counter = Counter(labels).items()
-    label_counter = sorted(label_counter, key=itemgetter(1))
-    names, counts = zip(*label_counter)
-    if percentage:
-        sum_count = sum(counts)
-        counts = [100*count/sum_count for count in counts]
-    indexes = np.arange(len(label_counter))
+    names, counts = compute_freqs(labels, proportion=proportion)
+    indexes = np.arange(len(names))
     plt.bar(indexes, counts, tick_label=names)
     plt.xticks(rotation=90)
     plt.show()
+
+
+def compute_freqs(labels, proportion=True):
+    label_counter = Counter(labels).items()
+    label_counter = sorted(label_counter, key=itemgetter(1))
+    names, counts = zip(*label_counter)
+    if proportion:
+        sum_count = sum(counts)
+        counts = [count/sum_count for count in counts]
+    return names, counts
 
 
 def draw2d_annotated_img(img, annot, links, keep_joints=None):

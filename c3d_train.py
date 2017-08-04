@@ -1,8 +1,8 @@
 import cv2
 import torch
 
-
-from src.datasets import gteagazeplus, something
+from src.datasets import something
+from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
 from src.datasets.utils import transforms
 from src.nets import c3d, c3d_adapt
 from src.netscripts import train
@@ -30,17 +30,14 @@ if opt.dataset == 'gteagazeplus':
                     'Rahul', 'Yin', 'Shaghayegh']
     train_seqs, valid_seqs = evaluation.leave_one_out(all_subjects,
                                                       leave_out_idx)
-    dataset = gteagazeplus.GTEAGazePlus(video_transform=video_transform,
-                                        use_video=False, clip_size=16,
-                                        no_action_label=False,
-                                        original_labels=True,
-                                        seqs=train_seqs)
-    dataset.plot_hist()
-    val_dataset = gteagazeplus.GTEAGazePlus(video_transform=video_transform,
-                                            use_video=False, clip_size=16,
-                                            no_action_label=False,
-                                            original_labels=True,
-                                            seqs=valid_seqs)
+    dataset = GTEAGazePlusVideo(video_transform=video_transform,
+                                use_video=False, clip_size=16,
+                                original_labels=True,
+                                seqs=train_seqs)
+    val_dataset = GTEAGazePlusVideo(video_transform=video_transform,
+                                    use_video=False, clip_size=16,
+                                    original_labels=True,
+                                    seqs=valid_seqs)
 elif opt.dataset == 'smthgsmthg':
     dataset = something.SomethingSomething(video_transform=video_transform,
                                            clip_size=16, split='train')
@@ -51,10 +48,13 @@ else:
     raise ValueError('the opt.dataset name provided {0} is not handled\
                      by this script'.format(opt._dataset))
 
-
+weights = [1/k for k in dataset.class_counts]
+sampler = torch.utils.data.sampler.WeightedRandomSampler(weights,
+                                                         len(dataset))
 # Initialize dataloaders
 dataloader = torch.utils.data.DataLoader(
-    dataset, shuffle=True, batch_size=opt.batch_size,
+    dataset, shuffle=True, sampler=sampler,
+    batch_size=opt.batch_size,
     num_workers=opt.threads, drop_last=True)
 
 val_dataloader = torch.utils.data.DataLoader(
