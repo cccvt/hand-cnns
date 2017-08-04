@@ -90,7 +90,7 @@ class Visualize():
 
         # Extract one image from stacked images
         if input_img.dim() == 4:
-            input_img = input_img[:, 0, :, :]*255
+            input_img = input_img[:, 0, :, :] * 255
         if win is None:
             win = self.vis.image(input_img,
                                  opts={'title': 'sample',
@@ -102,4 +102,13 @@ class Visualize():
                                        'caption': caption,
                                        'win_size': 256},
                                  win=win)
+        return win
+
+    def plot_mat(self, mat, win=None, title=''):
+        if win is None:
+            win = self.vis.heatmap(mat, win=win,
+                                   opts={'title': title})
+        else:
+            win = self.vis.heatmap(mat, win=win,
+                                   opts={'title': title})
         return win
