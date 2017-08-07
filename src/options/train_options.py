@@ -67,7 +67,7 @@ class TrainOptions():
                                  at each epoch')
 
         # Load params
-        self.parser.add_argument('--continue_training', action='store_false',
+        self.parser.add_argument('--continue_training', action='store_true',
                                  help='Continue training from saved weights')
         self.parser.add_argument('--continue_epoch', type=int, default=0,
                                  help='Epoch to load for trianing continuation \

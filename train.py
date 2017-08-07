@@ -3,7 +3,8 @@ import torch
 from torchvision import transforms
 import torchvision.models as models
 
-from src.datasets import gtea, gteagazeplus, gun
+from src.datasets import gtea, gun
+from src.datasets.gteagazeplusimage import GTEAGazePlusImage
 from src.options import train_options, error
 from src.nets import resnet_adapt, netutils
 from src.netscripts import train
@@ -20,7 +21,7 @@ img_stds = [0.229, 0.224, 0.225]
 normalize = transforms.Normalize(mean=img_means,
                                  std=img_stds)
 
-# Compute reverse of normalize transform
+# Compute reverse of normalize transfor
 unnormalize = Unnormalize(mean=img_means, std=img_stds)
 
 # Set input tranformations
@@ -57,14 +58,12 @@ elif opt.dataset == 'gteagazeplus':
                     'Rahul', 'Yin', 'Shaghayegh']
     train_seqs, valid_seqs = evaluation.leave_one_out(all_subjects,
                                                       leave_out_idx)
-    dataset = gteagazeplus.GTEAGazePlus(transform=transform,
-                                        untransform=unnormalize,
-                                        seqs=train_seqs,
-                                        no_action_label=False)
-    valid_dataset = gteagazeplus.GTEAGazePlus(transform=transform,
-                                              untransform=unnormalize,
-                                              seqs=valid_seqs,
-                                              no_action_label=False)
+    dataset = GTEAGazePlusImage(transform=transform,
+                                untransform=unnormalize,
+                                seqs=train_seqs)
+    valid_dataset = GTEAGazePlusImage(transform=transform,
+                                      untransform=unnormalize,
+                                      seqs=valid_seqs)
     valid = True
 
 elif opt.dataset == 'gun':
@@ -109,13 +108,13 @@ if opt.continue_training:
 
 
 if opt.lr != opt.new_lr:
-    model_params = model.lr_params()
+    model_params = model.lr_params(lr=opt.new_lr)
 else:
     model_params = model.parameters()
 
-netutils.print_net(model)
+# netutils.print_net(model)
 
-optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr,
+optimizer = torch.optim.SGD(model_params, lr=opt.lr,
                             momentum=opt.momentum)
 
 if opt.criterion == 'MSE':

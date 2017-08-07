@@ -36,6 +36,7 @@ class BaseNet(torch.nn.Module):
         load_path = self._netfile_path(self.name, epoch)
         if self.net is not None:
             self.net.load_state_dict(torch.load(load_path))
+            print('loaded net for epoch {0}'.format(epoch))
         else:
             self.load_state_dict(torch.load(load_path))
 
