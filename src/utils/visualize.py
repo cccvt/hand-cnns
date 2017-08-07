@@ -104,7 +104,13 @@ class Visualize():
                                  win=win)
         return win
 
-    def plot_mat(self, mat, win=None, title=''):
+    def plot_mat(self, mat, win=None, title='',
+                 normalize_row=True):
+        if normalize_row:
+            for i in range(mat.shape[0]):
+                norm_row = mat[i].sum() or 1
+                mat[i] = mat[i] / norm_row
+
         if win is None:
             win = self.vis.heatmap(mat, win=win,
                                    opts={'title': title})

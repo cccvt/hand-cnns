@@ -103,8 +103,8 @@ def data_pass(model, image, target, opt,
         pred_classes = output.data.max(1)[1].cpu().numpy()
         target_classes = target.data.max(1)[1].cpu().numpy()
         for idx in range(len(pred_classes)):
-            conf_mat[epoch, pred_classes[idx][0],
-                     target_classes[idx][0]] += 1
+            conf_mat[epoch, target_classes[idx][0],
+                     pred_classes[idx][0]] += 1
 
     # Display an image example in visdom
     if viz is not None and i % opt.display_freq == 0:
