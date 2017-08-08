@@ -21,10 +21,12 @@ class BaseNet(torch.nn.Module):
         """
         save_path = self._netfile_path(self.name, epoch)
         if self.net is not None:
+            self.net.eval()
             torch.save(self.net.cpu().state_dict(), save_path)
             if self.opt.use_gpu:
                 self.net.cuda()
         else:
+            self.eval()
             torch.save(self.cpu().state_dict(), save_path)
             if self.opt.use_gpu:
                 self.cuda()
@@ -35,9 +37,11 @@ class BaseNet(torch.nn.Module):
         """
         load_path = self._netfile_path(self.name, epoch)
         if self.net is not None:
+            self.net.eval()
             self.net.load_state_dict(torch.load(load_path))
             print('loaded net for epoch {0}'.format(epoch))
         else:
+            self.eval()
             self.load_state_dict(torch.load(load_path))
 
     def set_optimizer(self, optim):

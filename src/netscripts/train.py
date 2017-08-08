@@ -72,6 +72,7 @@ def train_net(dataloader, model, criterion, opt,
         # Save network weights
         if opt.save_latest:
             model.save('latest', opt)
+            print('loaded latest')
         if epoch % opt.save_freq == 0:
             model.save(epoch, opt)
 
@@ -121,6 +122,10 @@ def data_pass(model, image, target, opt,
 def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
                sample_win=None, train=True, verbose=False,
                conf_mat=None, conf_win=None):
+    if train:
+        model.train()
+    else:
+        model.eval()
     for i, (image, target) in enumerate(tqdm(dataloader, desc='iter')):
         metrics, sample_win,\
             conf_mat = data_pass(model, image, target,
