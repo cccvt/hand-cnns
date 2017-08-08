@@ -4,7 +4,7 @@ import torch
 from src.options import error
 
 
-class BaseNet(torch.nn.Module):
+class BaseNet():
     def __init__(self, opt):
         super().__init__()
         self.save_dir = os.path.join(opt.checkpoint_dir, opt.exp_id)
@@ -20,29 +20,35 @@ class BaseNet(torch.nn.Module):
         (self.fc for instance)
         """
         save_path = self._netfile_path(self.name, epoch)
-        if self.net is not None:
-            self.net.eval()
-            torch.save(self.net.cpu().state_dict(), save_path)
-            if self.opt.use_gpu:
-                self.net.cuda()
+        self.net.eval()
+        if self.optimizer is not None:
+            optimizer_state = self.optimizer.state_dict()
         else:
-            self.eval()
-            torch.save(self.cpu().state_dict(), save_path)
-            if self.opt.use_gpu:
-                self.cuda()
+            optimizer_state = None
+
+        checkpoint = {
+            'net': self.net.cpu().state_dict(),
+            'epoch': epoch,
+            'optimizer': optimizer_state
+        }
+        torch.save(checkpoint, save_path)
+
+        if self.opt.use_gpu:
+            self.net.cuda()
 
     def load(self, epoch):
         """
         Utility function to load network weights
         """
         load_path = self._netfile_path(self.name, epoch)
-        if self.net is not None:
-            self.net.eval()
-            self.net.load_state_dict(torch.load(load_path))
-            print('loaded net for epoch {0}'.format(epoch))
-        else:
-            self.eval()
-            self.load_state_dict(torch.load(load_path))
+        self.net.eval()
+
+        # Load checkpoint state
+        checkpoint = torch.load(load_path)
+        assert checkpoint['epoch'] == epoch
+        self.net.load_state_dict(checkpoint['net'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        print('loaded net from epoch {0}'.format(epoch))
 
     def set_optimizer(self, optim):
         self.optimizer = optim

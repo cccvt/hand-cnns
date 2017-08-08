@@ -68,10 +68,10 @@ if opt.pretrained:
 model = c3d_adapt.C3DAdapt(opt, c3dnet, dataset.class_nb)
 
 criterion = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.003)
+optimizer = torch.optim.SGD(model.net.parameters(), lr=0.003)
 
 model.set_criterion(criterion)
 model.set_optimizer(optimizer)
 
-train.train_net(dataloader, model, criterion, opt, optimizer,
+train.train_net(dataloader, model, opt,
                 valid_dataloader=val_dataloader)

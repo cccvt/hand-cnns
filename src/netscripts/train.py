@@ -7,8 +7,8 @@ from src.utils.evaluation import batch_topk_accuracy as topk
 from src.utils.evaluation import Metric
 
 
-def train_net(dataloader, model, criterion, opt,
-              optimizer=None, valid_dataloader=None,
+def train_net(dataloader, model, opt,
+              valid_dataloader=None,
               verbose=False):
     top1 = Metric('top1', func=lambda out, pred: topk(out, pred, 1))
     top5 = Metric('top5', func=lambda out, pred: topk(out, pred, 5))
@@ -24,8 +24,8 @@ def train_net(dataloader, model, criterion, opt,
     viz = Visualize(opt)
     if opt.use_gpu:
         # Transfert model to GPU
-        model = model.cuda()
-        criterion = criterion.cuda()
+        model.net = model.net.cuda()
+        model.criterion = model.criterion.cuda()
 
     if opt.train:
         epoch_nb = opt.epochs
@@ -72,7 +72,6 @@ def train_net(dataloader, model, criterion, opt,
         # Save network weights
         if opt.save_latest:
             model.save('latest', opt)
-            print('loaded latest')
         if epoch % opt.save_freq == 0:
             model.save(epoch, opt)
 
@@ -87,7 +86,7 @@ def data_pass(model, image, target, opt,
     image = model.prepare_var(image)
     target = model.prepare_var(target)
 
-    output = model.forward(image)
+    output = model.net.forward(image)
     loss = model.compute_loss(output, target)
 
     if train:
@@ -123,9 +122,9 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
                sample_win=None, train=True, verbose=False,
                conf_mat=None, conf_win=None):
     if train:
-        model.train()
+        model.net.train()
     else:
-        model.eval()
+        model.net.eval()
     for i, (image, target) in enumerate(tqdm(dataloader, desc='iter')):
         metrics, sample_win,\
             conf_mat = data_pass(model, image, target,
