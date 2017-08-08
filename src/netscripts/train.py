@@ -103,8 +103,8 @@ def data_pass(model, image, target, opt,
         pred_classes = output.data.max(1)[1].cpu().numpy()
         target_classes = target.data.max(1)[1].cpu().numpy()
         for idx in range(len(pred_classes)):
-            conf_mat[epoch, target_classes[idx][0],
-                     pred_classes[idx][0]] += 1
+            conf_mat[epoch, target_classes[idx],
+                     pred_classes[idx]] += 1
 
     # Display an image example in visdom
     if viz is not None and i % opt.display_freq == 0:
@@ -133,7 +133,8 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
                                  i=i, train=train)
 
     # Display confusion matrix
-    conf_win = viz.plot_mat(conf_mat[epoch], conf_win)
+    epoch_conf_mat = conf_mat[epoch]
+    conf_win = viz.plot_mat(epoch_conf_mat, conf_win)
 
     # Compute epoch scores and clear current scores
     for metric in metrics:
@@ -154,6 +155,9 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
     # Write scores to log file
     valid = True if train is False else False
     message = viz.log_errors(epoch, last_scores, valid=valid)
+
+    # Sanity check, top1 score should be the same as accuracy from conf_mat
+    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum()
 
     if verbose:
         print(message)

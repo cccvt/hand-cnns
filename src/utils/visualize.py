@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import time
 import visdom
 
@@ -106,6 +107,7 @@ class Visualize():
 
     def plot_mat(self, mat, win=None, title='',
                  normalize_row=True):
+        mat = np.copy(mat)
         if normalize_row:
             for i in range(mat.shape[0]):
                 norm_row = mat[i].sum() or 1
