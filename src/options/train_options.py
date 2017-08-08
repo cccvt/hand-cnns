@@ -49,7 +49,7 @@ class TrainOptions():
                                  typically, lr < new_lr')
         self.parser.add_argument('--momentum', type=float, default=0.9,
                                  help='Base learning rate for training')
-        self.parser.add_argument('--criterion', type=str, default='MSE',
+        self.parser.add_argument('--criterion', type=str, default='CE',
                                  help='(MSE for mean square |\
                                  CE for cross-entropy)')
 
