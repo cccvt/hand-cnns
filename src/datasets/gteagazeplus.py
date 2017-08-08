@@ -139,7 +139,7 @@ class GTEAGazePlus(data.Dataset):
                          for subject_classes in repeated_subjects_classes)
             if shared:
                 shared_classes.append(subject_class)
-        return shared_classes
+        return sorted(shared_classes)
 
     def get_repeated_annots(self, annot_lines, repetitions):
         """
@@ -168,7 +168,7 @@ class GTEAGazePlus(data.Dataset):
                 if action_str in self.cvpr_labels:
                     all_classes.append((action,
                                         self.original_label_transform(obj)))
-        return list(set(all_classes))
+        return sorted(list(set(all_classes)))
 
     def original_label_transform(self, objects):
         mutual_1 = ['fork', 'knife', 'spoon']
