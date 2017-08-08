@@ -99,14 +99,12 @@ if valid:
 resnet = models.resnet18(pretrained=opt.pretrained)
 model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb)
 
-
-
 if opt.lr != opt.new_lr:
     model_params = model.lr_params(lr=opt.new_lr)
 else:
     model_params = model.net.parameters()
-# TODO remove this which is used for debugging continue_training
-optimizer = torch.optim.SGD(model.net.parameters(), lr=opt.lr,
+
+optimizer = torch.optim.SGD(model_params, lr=opt.lr,
                             momentum=opt.momentum)
 
 if opt.criterion == 'MSE':
@@ -123,6 +121,7 @@ model.set_optimizer(optimizer)
 # Load existing weights, opt.continue_training is epoch to load
 if opt.continue_training:
     if opt.continue_epoch == 0:
+        model.net.eval()
         model.load('latest')
     else:
         model.load(opt.continue_epoch)

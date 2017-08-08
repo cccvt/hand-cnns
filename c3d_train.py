@@ -61,7 +61,7 @@ val_dataloader = torch.utils.data.DataLoader(
     val_dataset, shuffle=False, batch_size=opt.batch_size,
     num_workers=opt.threads, drop_last=True)
 
-# Initialize neural network
+# Initialize C3D neural network
 c3dnet = c3d.C3D()
 if opt.pretrained:
     c3dnet.load_state_dict(torch.load('data/c3d.pickle'))
@@ -72,6 +72,14 @@ optimizer = torch.optim.SGD(model.net.parameters(), lr=0.003)
 
 model.set_criterion(criterion)
 model.set_optimizer(optimizer)
+
+# Load existing weights, opt.continue_training is epoch to load
+if opt.continue_training:
+    if opt.continue_epoch == 0:
+        model.net.eval()
+        model.load('latest')
+    else:
+        model.load(opt.continue_epoch)
 
 train.train_net(dataloader, model, opt,
                 valid_dataloader=val_dataloader)

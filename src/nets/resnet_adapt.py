@@ -10,9 +10,6 @@ class ResNetAdapt(BaseNet):
         self.net.fc = nn.Linear(512, class_nb)
         self.input_size = (224, 224)
 
-    def forward(self, x):
-        return self.net(x)
-
     def lr_params(self, lr=0.01, new_layers=['fc']):
         """
         Fixes the learning rate of all layers in new_layers
