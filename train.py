@@ -28,34 +28,24 @@ def run_training(opt):
         transforms.ToTensor()
     ])
 
+    final_size = 224
     if opt.normalize:
         transformations.append(normalize)
-        first_transforms = [transforms.Scale(230), transforms.RandomCrop(224)]
-        transformations = first_transforms + transformations
+    first_transforms = [transforms.Scale(230),
+                        transforms.RandomCrop(final_size)]
+    transformations = first_transforms + transformations
 
     transform = transforms.Compose(transformations)
     base_transform = transforms.Compose([
+        transforms.Scale(final_size),
         transforms.ToTensor(),
-        normalize
+        normalize,
     ])
 
     # Index of sequence item to leave out for validation
     leave_out_idx = opt.leave_out
 
-    # Create dataset
-    if opt.dataset == 'gtea':
-        seqs = ['S1', 'S2', 'S3', 'S4']
-        train_seqs, valid_seqs = evaluation.leave_one_out(seqs, leave_out_idx)
-
-        dataset = gtea.GTEA(transform=transform, untransform=unnormalize,
-                            seqs=train_seqs, no_action_label=False)
-        valid_dataset = gtea.GTEA(transform=transform,
-                                  untransform=unnormalize,
-                                  normalize=normalize,
-                                  seqs=valid_seqs, no_action_label=False)
-        valid = True
-
-    elif opt.dataset == 'gteagazeplus':
+    if opt.dataset == 'gteagazeplus':
         # Create dataset
         all_subjects = ['Ahmad', 'Alireza', 'Carlos',
                         'Rahul', 'Yin', 'Shaghayegh']
