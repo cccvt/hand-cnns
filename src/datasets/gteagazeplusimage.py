@@ -10,7 +10,8 @@ class GTEAGazePlusImage(GTEAGazePlus):
     def __init__(self, root_folder="data/GTEAGazePlus",
                  original_labels=True, seqs=['Ahmad', 'Alireza', 'Carlos',
                                              'Rahul', 'Shaghayegh', 'Yin'],
-                 transform=None, untransform=None):
+                 transform=None, untransform=None,
+                 class_test=False):
         """
         Args:
             video_transform: transformation to apply to the clips
@@ -20,6 +21,7 @@ class GTEAGazePlusImage(GTEAGazePlus):
                          original_labels=original_labels,
                          seqs=seqs)
 
+        self.class_test = class_test
         # Set video params
         self.transform = transform
         self.untransform = untransform
@@ -38,6 +40,25 @@ class GTEAGazePlusImage(GTEAGazePlus):
         # Load clip
         action, objects, subject, recipe, beg, end = self.action_clips[index]
         sequence_name = subject + '_' + recipe
+
+        # One hot encoding
+        annot = np.zeros(self.class_nb)
+        class_idx = self.classes.index((action, objects))
+        annot[class_idx] = 1
+
+        # Return list of action tensors
+        if self.class_test:
+            imgs = []
+            for frame_idx in range(beg, end):
+                frame_name = "{frame:010d}.png".format(frame=frame_idx)
+                img_path = os.path.join(self.rgb_path,
+                                        sequence_name, frame_name)
+                img = loader.load_rgb_image(img_path)
+                if self.transform:
+                    img = self.transform(img)
+                imgs.append(img)
+            return imgs, annot
+
         frame_idx = random.randint(beg, end)
         frame_name = "{frame:010d}.png".format(frame=frame_idx)
         img_path = os.path.join(self.rgb_path, sequence_name, frame_name)
@@ -46,11 +67,6 @@ class GTEAGazePlusImage(GTEAGazePlus):
         # Apply transform
         if self.transform is not None:
             img = self.transform(img)
-
-        # One hot encoding
-        annot = np.zeros(self.class_nb)
-        class_idx = self.classes.index((action, objects))
-        annot[class_idx] = 1
         return img, annot
 
     def __len__(self):
