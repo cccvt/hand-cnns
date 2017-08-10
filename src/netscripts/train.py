@@ -162,7 +162,7 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
 
     # Sanity check, top1 score should be the same as accuracy from conf_mat
     # while accounting for last batch discrepancy
-    if abs(last_scores['top1'] - epoch_conf_mat.trace() / epoch_conf_mat.sum()) > 0.000:
+    if last_scores['top1'] != epoch_conf_mat.trace() / epoch_conf_mat.sum():
         import pdb; pdb.set_trace()
 
     if verbose:
