@@ -31,6 +31,8 @@ class TrainOptions():
                                  help='Whether to use gpu (1) or cpu (0)')
         self.parser.add_argument('--train', type=int, default=1,
                                  help='Wheter train (1) or just test (0)')
+        self.parser.add_argument('--weighted_training', action='store_true',
+                                 help="Use weighted sampling during training")
 
         # Valid params
         self.parser.add_argument('--leave_out', type=int, default=0,
@@ -79,10 +81,10 @@ class TrainOptions():
                                  in visdom')
 
 
-    def parse(self):
+    def parse(self, arguments=None):
         if not self.initialized:
             self.initialize()
-        self.opt = self.parser.parse_args()
+        self.opt = self.parser.parse_args(arguments)
 
         # Print  options
         args = vars(self.opt)

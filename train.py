@@ -83,16 +83,24 @@ def run_training(opt):
 
     print('Dataset size : {0}'.format(len(dataset)))
 
+    # Initialize sampler
+    if opt.weighted_training:
+        weights = [1/k for k in dataset.class_counts]
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights,
+                                                                 len(dataset))
+    else:
+        sampler = torch.utils.data.sampler.RandomSampler(dataset)
+
+    # Initialize dataloader
     dataloader = torch.utils.data.DataLoader(
-        dataset, shuffle=True, batch_size=opt.batch_size,
-        num_workers=opt.threads, drop_last=True)
+        dataset, batch_size=opt.batch_size,
+        num_workers=opt.threads, sampler=sampler)
 
     if valid:
         valid_dataloader = torch.utils.data.DataLoader(
             valid_dataset, shuffle=False,
             batch_size=opt.batch_size,
-            num_workers=opt.threads,
-            drop_last=True)
+            num_workers=opt.threads)
 
     # Load model
     resnet = models.resnet18(pretrained=opt.pretrained)

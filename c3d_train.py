@@ -47,18 +47,23 @@ def run_training(opt):
         raise ValueError('the opt.dataset name provided {0} is not handled\
                          by this script'.format(opt._dataset))
 
-    weights = [1 / k for k in dataset.class_counts]
-    sampler = torch.utils.data.sampler.WeightedRandomSampler(weights,
-                                                             len(dataset))
+    # Initialize sampler
+    if opt.weighted_training:
+        weights = [1 / k for k in dataset.class_counts]
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights,
+                                                                 len(dataset))
+    else:
+        sampler = torch.utils.data.sampler.RandomSampler(dataset)
+
     # Initialize dataloaders
     dataloader = torch.utils.data.DataLoader(
-        dataset, shuffle=True, sampler=sampler,
+        dataset, sampler=sampler,
         batch_size=opt.batch_size,
-        num_workers=opt.threads, drop_last=True)
+        num_workers=opt.threads)
 
     val_dataloader = torch.utils.data.DataLoader(
         val_dataset, shuffle=False, batch_size=opt.batch_size,
-        num_workers=opt.threads, drop_last=True)
+        num_workers=opt.threads)
 
     # Initialize C3D neural network
     c3dnet = c3d.C3D()
