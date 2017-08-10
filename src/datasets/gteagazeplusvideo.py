@@ -42,7 +42,6 @@ class GTEAGazePlusVideo(GTEAGazePlus):
                              if end - beg >= self.clip_size]
         action_labels = [(action, obj) for (action, obj, subj, rec,
                                             beg, end) in self.action_clips]
-        print(len(action_labels))
         assert len(action_labels) > 100
         self.class_counts = self.get_action_counts(action_labels)
         assert sum(self.class_counts) == len(action_labels)

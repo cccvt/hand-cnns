@@ -16,4 +16,4 @@ for leave_out in leave_outs:
                                 'run_res_leave_outs/gtea_lo_' +
                                 str(leave_out)])
 
-run_training(opt)
+    run_training(opt)
