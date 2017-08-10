@@ -95,9 +95,9 @@ def data_pass(model, image, target, opt,
     for metric in metrics:
         if metric.compute:
             score = metric.func(output.data, target.data)
-            metric.epoch_scores.append(score)
+            metric.epoch_scores.append((score.sum(), len(score)))
         if metric.name == 'loss':
-            metric.epoch_scores.append(loss.data[0])
+            metric.epoch_scores.append((loss.data[0]*len(score), len(score)))
 
     if conf_mat is not None:
         pred_classes = output.data.max(1)[1].cpu().numpy()
@@ -161,7 +161,9 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
     message = viz.log_errors(epoch, last_scores, valid=valid)
 
     # Sanity check, top1 score should be the same as accuracy from conf_mat
-    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum()
+    # while accounting for last batch discrepancy
+    if abs(last_scores['top1'] - epoch_conf_mat.trace() / epoch_conf_mat.sum()) > 0.000:
+        import pdb; pdb.set_trace()
 
     if verbose:
         print(message)
