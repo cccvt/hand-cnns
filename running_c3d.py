@@ -13,7 +13,7 @@ for leave_out in leave_outs:
                                 '--threads', '1',
                                 '--epochs', '26',
                                 '--exp_id',
-                                'run_res_leave_outs/gtea_lo_' +
+                                'run_c3d_leave_outs/gtea_lo_' +
                                 str(leave_out)])
 
 run_training(opt)

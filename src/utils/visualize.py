@@ -14,6 +14,9 @@ class Visualize():
         self.valid_log_path = os.path.join(opt.checkpoint_dir,
                                            opt.exp_id,
                                            'valid_log.txt')
+        self.valid_aggreg_log_path = os.path.join(opt.checkpoint_dir,
+                                                  opt.exp_id,
+                                                  'valid_aggreg.txt')
 
         # Initialize log files
         with open(self.train_log_path, "a") as log_file:
@@ -24,7 +27,21 @@ class Visualize():
             now = time.strftime("%c")
             log_file.write('==== Valid log at {0} ====\n'.format(now))
 
-    def log_errors(self, epoch, errors, valid=False):
+        with open(self.valid_aggreg_log_path, "a") as log_file:
+            now = time.strftime("%c")
+            log_file.write('==== Valid aggreg log at {0} ====\n'.format(now))
+
+    def log_errors(self, epoch, errors, valid=False, log_path=None):
+        """log_path overrides the destination path of the log
+        Args:
+            valid(bool): Whether to use the default valid or train log file
+                (overriden by log_paht)
+            errors(dict): in format {'error_name':error_score, ...}
+        """
+        if valid and log_path is not None:
+            raise ValueError('when log_path is specified, valid is not taken\
+                into account')
+
         now = time.strftime("%c")
         message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch,
                                                        t=now)
@@ -33,12 +50,13 @@ class Visualize():
                                                        err=v)
 
         # Write log message to correct file
-        if valid:
-            with open(self.valid_log_path, "a") as log_file:
-                log_file.write(message + '\n')
-        else:
-            with open(self.train_log_path, "a") as log_file:
-                log_file.write(message + '\n')
+        if log_path is None:
+            if valid:
+                log_path = self.valid_log_path
+            else:
+                log_path = self.train_log_path
+        with open(log_path, "a") as log_file:
+            log_file.write(message + '\n')
         return message
 
     def plot_errors(self, epochs, errors, title='score', win=None):

@@ -16,6 +16,7 @@ def train_net(dataloader, model, opt,
     loss_metric = Metric('loss', compute=False)
     metrics = [top1, top5, loss_metric]
     val_metrics = copy.deepcopy(metrics)
+    
 
     # visdom window handles
     sample_win = None
@@ -82,6 +83,9 @@ def train_net(dataloader, model, opt,
         valid_mean_score = test(valid_dataloader.dataset,
                                 model, frame_nb=10)
         valid_mean_scores.append(valid_mean_score)
+        viz.log_errors(epoch=epoch,
+                       errors={'val_aggr_err': valid_mean_score},
+                       log_path=viz.valid_aggreg_log_path)
         valid_mean_win = viz.plot_errors(np.array(list(range(epoch + 1))),
                                          np.array(valid_mean_scores),
                                          title='average aggreg acc',
