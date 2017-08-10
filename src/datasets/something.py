@@ -115,7 +115,7 @@ def get_samples(video_path):
 
 def get_split_ids(split_path):
     labels = np.loadtxt(split_path, usecols=0, delimiter=';')
-    return list(labels)
+    return sorted(list(labels))
 
 
 def get_split_labels(split_path):
