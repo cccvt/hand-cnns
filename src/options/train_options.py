@@ -97,7 +97,8 @@ class TrainOptions():
         exp_dir = os.path.join(self.opt.checkpoint_dir, self.opt.exp_id)
         filesys.mkdir(exp_dir)
         opt_path = os.path.join(exp_dir, 'opt.txt')
-        with open(opt_path, 'wt') as opt_file:
+        with open(opt_path, 'a') as opt_file:
+            opt_file.write('====== Options ======\n')
             for k, v in sorted(args.items()):
                 opt_file.write('{option}: {value}\n'.format(
                     option=str(k), value=str(v)))
