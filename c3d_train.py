@@ -16,6 +16,8 @@ def run_training(opt):
 
     scale_size = (128, 171)
     crop_size = (112, 112)
+    base_transform = transforms.Compose([transforms.Scale(crop_size),
+                                         transforms.ToTensor()])
     video_transform = transforms.Compose([transforms.Scale(scale_size),
                                           transforms.RandomCrop(crop_size),
                                           transforms.ToTensor()])
@@ -34,6 +36,7 @@ def run_training(opt):
                                     original_labels=True,
                                     seqs=train_seqs)
         val_dataset = GTEAGazePlusVideo(video_transform=video_transform,
+                                        base_transform=base_transform,
                                         use_video=False, clip_size=16,
                                         original_labels=True,
                                         seqs=valid_seqs)

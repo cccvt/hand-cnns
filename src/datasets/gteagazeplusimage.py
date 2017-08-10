@@ -1,6 +1,7 @@
-import numpy as np
 import random
 import os
+
+import numpy as np
 
 from src.datasets.utils import loader, visualize
 from src.datasets.gteagazeplus import GTEAGazePlus

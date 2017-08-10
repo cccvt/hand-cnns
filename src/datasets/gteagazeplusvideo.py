@@ -1,6 +1,7 @@
-import numpy as np
 import random
 import os
+
+import numpy as np
 
 from src.datasets.utils import loader, visualize
 from src.datasets.gteagazeplus import GTEAGazePlus
@@ -10,10 +11,14 @@ class GTEAGazePlusVideo(GTEAGazePlus):
     def __init__(self, root_folder="data/GTEAGazePlus",
                  original_labels=True, seqs=['Ahmad', 'Alireza', 'Carlos',
                                              'Rahul', 'Shaghayegh', 'Yin'],
-                 video_transform=None, clip_size=16, use_video=False):
+                 video_transform=None, base_transform=None,
+                 clip_size=16, use_video=False):
         """
         Args:
-            video_transform: transformation to apply to the clips
+            video_transform: transformation to apply to the clips during
+                training
+            base_transform: transformation to applay to the clips during
+                testing
             use_video (bool): whether to use video inputs or png inputs
         """
         super().__init__(root_folder=root_folder,
@@ -22,6 +27,8 @@ class GTEAGazePlusVideo(GTEAGazePlus):
 
         # Set video params
         self.video_transform = video_transform
+        self.base_transform = base_transform
+
         self.use_video = use_video
         self.rgb_path = os.path.join(self.path, 'png')
         self.video_path = os.path.join(self.path, 'avi_files')
@@ -60,7 +67,7 @@ class GTEAGazePlusVideo(GTEAGazePlus):
     def __len__(self):
         return len(self.action_clips)
 
-    def get_class_items(self, index, video_transform=None, frame_nb=None):
+    def get_class_items(self, index, frame_nb=None):
         # Load clip info
         action, objects, subject, recipe, beg, end = self.action_clips[index]
         sequence_name = subject + '_' + recipe
@@ -80,8 +87,8 @@ class GTEAGazePlusVideo(GTEAGazePlus):
 
         for frame_idx in frame_idxs:
             clip = self.get_clip(sequence_name, frame_idx, self.clip_size)
-            if video_transform is not None:
-                clip = video_transform(clip)
+            if self.base_transform is not None:
+                clip = self.base_transform(clip)
             clips.append(clip)
         return clips, class_idx
 

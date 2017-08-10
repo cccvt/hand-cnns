@@ -80,7 +80,6 @@ class TrainOptions():
                                  help='number of iters between displays of results\
                                  in visdom')
 
-
     def parse(self, arguments=None):
         if not self.initialized:
             self.initialize()
