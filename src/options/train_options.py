@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import os
 import subprocess
 
@@ -102,6 +103,7 @@ class TrainOptions():
                     option=str(k), value=str(v)))
             git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
             opt_file.write('git hash: {}\n'.format(git_hash.strip()))
+            opt_file.write('launched {}\n'.format(str(datetime.datetime.now())))
 
         if self.opt.pretrained and not self.opt.normalize:
             raise ValueError('If using pretrained weights, normalization\
