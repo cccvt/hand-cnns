@@ -10,19 +10,21 @@ class GTEAGazePlusImage(GTEAGazePlus):
     def __init__(self, root_folder="data/GTEAGazePlus",
                  original_labels=True, seqs=['Ahmad', 'Alireza', 'Carlos',
                                              'Rahul', 'Shaghayegh', 'Yin'],
-                 transform=None, untransform=None,
-                 class_test=False):
+                 transform=None, untransform=None, base_transform=None):
         """
         Args:
-            video_transform: transformation to apply to the clips
+            transform: transformations to apply during training
+            base_transform: transformations to apply during testing
+            untransform: transform to reapply after transformation
+                to visualize original image
             use_video (bool): whether to use video inputs or png inputs
         """
         super().__init__(root_folder=root_folder,
                          original_labels=original_labels,
                          seqs=seqs)
 
-        self.class_test = class_test
         # Set video params
+        self.base_transform = base_transform
         self.transform = transform
         self.untransform = untransform
         self.rgb_path = os.path.join(self.path, 'png')
@@ -46,19 +48,6 @@ class GTEAGazePlusImage(GTEAGazePlus):
         class_idx = self.classes.index((action, objects))
         annot[class_idx] = 1
 
-        # Return list of action tensors
-        if self.class_test:
-            imgs = []
-            for frame_idx in range(beg, end):
-                frame_name = "{frame:010d}.png".format(frame=frame_idx)
-                img_path = os.path.join(self.rgb_path,
-                                        sequence_name, frame_name)
-                img = loader.load_rgb_image(img_path)
-                if self.transform:
-                    img = self.transform(img)
-                imgs.append(img)
-            return imgs, annot
-
         frame_idx = random.randint(beg, end)
         frame_name = "{frame:010d}.png".format(frame=frame_idx)
         img_path = os.path.join(self.rgb_path, sequence_name, frame_name)
@@ -78,3 +67,35 @@ class GTEAGazePlusImage(GTEAGazePlus):
         labels = [self.get_class_str(action, obj)
                   for (action, obj, subj, rec, beg, end) in self.action_clips]
         visualize.plot_hist(labels, proportion=True)
+
+    def get_class_items(self, index, frame_nb=None):
+        """Get all images of an action clip as list of image
+        Args:
+            frame_nb(int): if indicates, number of frames to sample uniformly
+                in each action clap, if not present, frames are sampled densely
+        """
+        # Load clip info
+        action, objects, subject, recipe, beg, end = self.action_clips[index]
+        sequence_name = subject + '_' + recipe
+
+        # Get class index
+        class_idx = self.classes.index((action, objects))
+
+        # Return list of action tensors
+        imgs = []
+
+        if frame_nb is None:
+            frame_idxs = range(beg, end)
+        else:
+            frame_idxs = np.linspace(beg, end, frame_nb)
+            frame_idxs = [int(frame_idx) for frame_idx in frame_idxs]
+
+        for frame_idx in frame_idxs:
+            frame_name = "{frame:010d}.png".format(frame=frame_idx)
+            img_path = os.path.join(self.rgb_path,
+                                    sequence_name, frame_name)
+            img = loader.load_rgb_image(img_path)
+            if self.base_transform is not None:
+                img = self.base_transform(img)
+            imgs.append(img)
+        return imgs, class_idx

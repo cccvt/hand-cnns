@@ -34,6 +34,10 @@ def run_training(opt):
         transformations = first_transforms + transformations
 
     transform = transforms.Compose(transformations)
+    base_transform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
 
     # Index of sequence item to leave out for validation
     leave_out_idx = opt.leave_out
@@ -47,6 +51,7 @@ def run_training(opt):
                             seqs=train_seqs, no_action_label=False)
         valid_dataset = gtea.GTEA(transform=transform,
                                   untransform=unnormalize,
+                                  normalize=normalize,
                                   seqs=valid_seqs, no_action_label=False)
         valid = True
 
@@ -60,6 +65,7 @@ def run_training(opt):
                                     untransform=unnormalize,
                                     seqs=train_seqs)
         valid_dataset = GTEAGazePlusImage(transform=transform,
+                                          base_transform=base_transform,
                                           untransform=unnormalize,
                                           seqs=valid_seqs)
         valid = True

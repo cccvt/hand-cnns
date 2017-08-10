@@ -60,6 +60,31 @@ class GTEAGazePlusVideo(GTEAGazePlus):
     def __len__(self):
         return len(self.action_clips)
 
+    def get_class_items(self, index, video_transform=None, frame_nb=None):
+        # Load clip info
+        action, objects, subject, recipe, beg, end = self.action_clips[index]
+        sequence_name = subject + '_' + recipe
+        frame_idx = random.randint(beg, end - self.clip_size)
+
+        # Get class index
+        class_idx = self.classes.index((action, objects))
+
+        # Return list of action tensors
+        clips = []
+
+        if frame_nb is None:
+            frame_idxs = range(beg, end)
+        else:
+            frame_idxs = np.linspace(beg, end - self.clip_size, frame_nb)
+            frame_idxs = [int(frame_idx) for frame_idx in frame_idxs]
+
+        for frame_idx in frame_idxs:
+            clip = self.get_clip(sequence_name, frame_idx, self.clip_size)
+            if video_transform is not None:
+                clip = video_transform(clip)
+            clips.append(clip)
+        return clips, class_idx
+
     def get_clip(self, sequence_name, frame_begin, frame_nb):
         if self.use_video:
             video_path = os.path.join(self.video_path,

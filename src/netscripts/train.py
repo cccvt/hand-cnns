@@ -5,6 +5,7 @@ from tqdm import tqdm
 from src.utils.visualize import Visualize
 from src.utils.evaluation import batch_topk_accuracy as topk
 from src.utils.evaluation import Metric
+from src.netscripts.test import test
 
 
 def train_net(dataloader, model, opt,
@@ -40,6 +41,8 @@ def train_net(dataloader, model, opt,
     conf_win = None
     val_conf_win = None
 
+    valid_mean_scores = []
+    valid_mean_win = None
     for epoch in tqdm(range(epoch_nb), desc='epoch'):
         # Train for one epoch
         metrics, sample_win,\
@@ -75,6 +78,15 @@ def train_net(dataloader, model, opt,
         if epoch % opt.save_freq == 0:
             model.save(epoch, opt)
 
+        # Test with aggregation
+        valid_mean_score = test(valid_dataloader.dataset,
+                                model, frame_nb=10)
+        valid_mean_scores.append(valid_mean_score)
+        valid_mean_win = viz.plot_errors(np.array(list(range(epoch + 1))),
+                                         np.array(valid_mean_scores),
+                                         title='average aggreg acc',
+                                         win=valid_mean_win)
+
     if verbose:
         print('Done training')
 
@@ -97,7 +109,7 @@ def data_pass(model, image, target, opt,
             score = metric.func(output.data, target.data)
             metric.epoch_scores.append((score.sum(), len(score)))
         if metric.name == 'loss':
-            metric.epoch_scores.append((loss.data[0]*len(score), len(score)))
+            metric.epoch_scores.append((loss.data[0] * len(score), len(score)))
 
     if conf_mat is not None:
         pred_classes = output.data.max(1)[1].cpu().numpy()
@@ -162,8 +174,7 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
 
     # Sanity check, top1 score should be the same as accuracy from conf_mat
     # while accounting for last batch discrepancy
-    if last_scores['top1'] != epoch_conf_mat.trace() / epoch_conf_mat.sum():
-        import pdb; pdb.set_trace()
+    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum()
 
     if verbose:
         print(message)

@@ -36,11 +36,13 @@ class BaseNet():
         if self.opt.use_gpu:
             self.net.cuda()
 
-    def load(self, epoch):
+    def load(self, epoch, load_path=None):
         """
         Utility function to load network weights
         """
-        load_path = self._netfile_path(self.name, epoch)
+        if load_path is None:
+            load_path = self._netfile_path(self.name, epoch)
+
         self.net.eval()
 
         # Load checkpoint state
