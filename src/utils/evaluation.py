@@ -7,13 +7,14 @@ def batch_topk_accuracy(pred, ground_truth, k=1):
     Computes mean top-k accuracy for the batch
     for samples for which ground truth is provided
 
-    :param ground_truth: tensor of same dimension as pred
-    with a one hot encoding
-    :param pred: tensor with scores for all classes
-    :param k: number of predictions to keep
+    Args:
+        param ground_truth: tensor of same dimension as pred
+            with a one hot encoding
+        param pred: tensor with scores for all classes
+        param k(int): number of predictions to keep
     """
-    pred_val, topk_classes = pred.topk(k)
-    gt_vals, gt_classes = ground_truth.max(1)
+    _, topk_classes = pred.topk(k)
+    _, gt_classes = ground_truth.max(1)
     if k > 1:
         gt_classes_rep = gt_classes.unsqueeze(1).repeat(1, k)
     else:
@@ -26,6 +27,10 @@ def batch_topk_accuracy(pred, ground_truth, k=1):
 
 
 class Metric(object):
+    """
+    Metric object that stores the name, func and scores associated
+    to some metric
+    """
     def __init__(self, name, func=None, compute=True, win=None):
         self.name = name
         self.func = func
@@ -51,11 +56,12 @@ def leave_one_out(full_list, idx=0):
     Takes one list and returns the train list and the valid
     list containing just the item at idx
 
-    :param full_list: original list
-    :param idx: idx of validation item
-    :return train_list: full_list from which the validation
-    item has been removed
-    :return valid_list: list containing the validation item
+    Args:
+        param full_list(list): original list
+        param idx(int): idx of validation item
+        return train_list: full_list from which the validation
+            item has been removed
+        return valid_list: list containing the validation item
     """
     assert idx < len(full_list), "idx of validation item should\
     be smaller then len of original list"
