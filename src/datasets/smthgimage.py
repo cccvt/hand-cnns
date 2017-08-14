@@ -21,45 +21,29 @@ class SmthgImage(Smthg):
         super().__init__(root_folder=root_folder,
                          split=split)
 
-        # Set video params
+        # Set image params
         self.base_transform = base_transform
         self.transform = transform
         self.untransform = untransform
 
-        # Remove actions that are too short
-        assert len(action_labels) > 100
-        self.class_counts = self.get_action_counts(action_labels)
-        assert sum(self.class_counts) == len(action_labels)
-
     def __getitem__(self, index):
         # Load clip
-        action, objects, subject, recipe, beg, end = self.action_clips[index]
-        sequence_name = subject + '_' + recipe
+        clip_id, label, max_frame = self.sample_list[index]
 
         # One hot encoding
         annot = np.zeros(self.class_nb)
-        class_idx = self.classes.index((action, objects))
+        class_idx = self.classes.index(label)
         annot[class_idx] = 1
 
-        frame_idx = random.randint(beg, end)
-        frame_name = "{frame:010d}.png".format(frame=frame_idx)
-        img_path = os.path.join(self.rgb_path, sequence_name, frame_name)
+        frame_idx = random.randint(max_frame)
+        frame_name = self.frame_template.format(frame=frame_idx)
+        img_path = os.path.join(self.path_from_id(clip_id), frame_name)
         img = loader.load_rgb_image(img_path)
 
         # Apply transform
         if self.transform is not None:
             img = self.transform(img)
         return img, annot
-
-    def __len__(self):
-        return len(self.action_clips)
-
-    def plot_hist(self):
-        """Plots histogram of action classes as sampled in self.action_clips
-        """
-        labels = [self.get_class_str(action, obj)
-                  for (action, obj, subj, rec, beg, end) in self.action_clips]
-        visualize.plot_hist(labels, proportion=True)
 
     def get_class_items(self, index, frame_nb=None):
         """Get all images of an action clip as list of image
@@ -68,25 +52,24 @@ class SmthgImage(Smthg):
                 in each action clap, if not present, frames are sampled densely
         """
         # Load clip info
-        action, objects, subject, recipe, beg, end = self.action_clips[index]
-        sequence_name = subject + '_' + recipe
+        clip_id, label, max_frame = self.sample_list[index]
 
         # Get class index
-        class_idx = self.classes.index((action, objects))
+        class_idx = self.classes.index(label)
 
         # Return list of action tensors
         imgs = []
 
         if frame_nb is None:
-            frame_idxs = range(beg, end)
+            frame_idxs = range(max_frame)
         else:
-            frame_idxs = np.linspace(beg, end, frame_nb)
+            # Sample frame_nb frames uniformly in all clip frames
+            frame_idxs = np.linspace(0, max_frame, frame_nb)
             frame_idxs = [int(frame_idx) for frame_idx in frame_idxs]
 
         for frame_idx in frame_idxs:
-            frame_name = "{frame:010d}.png".format(frame=frame_idx)
-            img_path = os.path.join(self.rgb_path,
-                                    sequence_name, frame_name)
+            frame_name = self.frame_template.format(frame=frame_idx)
+            img_path = os.path.join(self.path_from_id(clip_idx), frame_name)
             img = loader.load_rgb_image(img_path)
             if self.base_transform is not None:
                 img = self.base_transform(img)

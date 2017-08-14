@@ -57,6 +57,8 @@ class Smthg(data.Dataset):
         self.class_nb = len(self.classes)
         assert self.class_nb == 174
 
+        self.frame_template = '{frame:05d}.jpg'
+
         # Collect samples
         self.cache_path = os.path.join(self.path, 'cache')
         self.sample_list = self.get_samples()
@@ -80,10 +82,11 @@ class Smthg(data.Dataset):
         return clip, annot
 
     def get_samples(self):
-        """Gets list of all movie clips
+        """Gets list of all movie clips in current split
         This returns the samples as (film_id, label, frame_nb) tuples
         """
-        all_samples_path = os.path.join(self.cache_path, 'all_samples.pickle')
+        pickle_name = 'all_samples_{split}.pickes'.format(split=self.split)
+        all_samples_path = os.path.join(self.cache_path, pickle_name)
         if os.path.isfile(all_samples_path):
             with open(all_samples_path, 'rb') as cache_file:
                 all_samples = pickle.load(cache_file)
@@ -91,13 +94,11 @@ class Smthg(data.Dataset):
             all_samples = []
 
             for film_id in tqdm(self.split_ids):
-                print(film_id)
                 film_path = self.path_from_id(film_id)
                 frame_nbs = [int(jpeg.split('.')[0])
                              for jpeg in os.listdir(film_path)]
                 max_frames = max(frame_nbs)
                 all_samples.append((film_id, self.label_dict[film_id], max_frames))
-        import pdb; pdb.set_trace()
         with open(all_samples_path, 'wb') as cache_file:
             pickle.dump(all_samples, cache_file)
         return all_samples
