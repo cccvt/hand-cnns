@@ -1,8 +1,8 @@
 import cv2
 import torch
 
-from src.datasets import something
 from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
+from src.datasets.smthgvideo import SmthgVideo
 from src.datasets.utils import transforms
 from src.nets import c3d, c3d_adapt
 from src.netscripts import train
@@ -41,11 +41,12 @@ def run_training(opt):
                                         original_labels=True,
                                         seqs=valid_seqs)
     elif opt.dataset == 'smthgsmthg':
-        dataset = something.SomethingSomething(video_transform=video_transform,
-                                               clip_size=16, split='train')
+        dataset = SmthgVideo(video_transform=video_transform,
+                             clip_size=16, split='train')
 
-        val_dataset = something.SomethingSomething(video_transform=video_transform,
-                                                   clip_size=16, split='valid')
+        val_dataset = SmthgVideo(video_transform=video_transform,
+                                 clip_size=16, split='valid',
+                                 base_transform=base_transform)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled\
                          by this script'.format(opt._dataset))

@@ -35,7 +35,7 @@ class SmthgImage(Smthg):
         class_idx = self.classes.index(label)
         annot[class_idx] = 1
 
-        frame_idx = random.randint(max_frame)
+        frame_idx = random.randint(1, max_frame)
         frame_name = self.frame_template.format(frame=frame_idx)
         img_path = os.path.join(self.path_from_id(clip_id), frame_name)
         img = loader.load_rgb_image(img_path)
@@ -64,7 +64,7 @@ class SmthgImage(Smthg):
             frame_idxs = range(max_frame)
         else:
             # Sample frame_nb frames uniformly in all clip frames
-            frame_idxs = np.linspace(0, max_frame, frame_nb)
+            frame_idxs = np.linspace(1, max_frame, frame_nb)
             frame_idxs = [int(frame_idx) for frame_idx in frame_idxs]
 
         for frame_idx in frame_idxs:

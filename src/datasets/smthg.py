@@ -101,6 +101,8 @@ class Smthg(data.Dataset):
                 all_samples.append((film_id, self.label_dict[film_id], max_frames))
         with open(all_samples_path, 'wb') as cache_file:
             pickle.dump(all_samples, cache_file)
+        print('Retreived {} samples for {} split in smthg dataset'.format(len(all_samples),
+            self.split))
         return all_samples
 
     def path_from_id(self, video_id):

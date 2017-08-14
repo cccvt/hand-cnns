@@ -48,6 +48,7 @@ def run_training(opt):
 
     if opt.dataset == 'gteagazeplus':
         # Create dataset
+        valid = True
         all_subjects = ['Ahmad', 'Alireza', 'Carlos',
                         'Rahul', 'Yin', 'Shaghayegh']
         train_seqs, valid_seqs = evaluation.leave_one_out(all_subjects,
@@ -79,14 +80,19 @@ def run_training(opt):
         valid = True
 
     elif opt.dataset == 'smthgsmthg':
-        dataset = SmthgImage(split='train')
-        valid_dataset = SmthgImage(split='valid')
+        dataset = SmthgImage(split='train', transform=transform,
+                             untransform=unnormalize, base_transform=base_transform)
+        valid_dataset = SmthgImage(
+            split='valid', transform=transform,
+            untransform=unnormalize,
+            base_transform=base_transform)
+        valid = True
 
     print('Dataset size : {0}'.format(len(dataset)))
 
     # Initialize sampler
     if opt.weighted_training:
-        weights = [1/k for k in dataset.class_counts]
+        weights = [1 / k for k in dataset.class_counts]
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights,
                                                                  len(dataset))
     else:
