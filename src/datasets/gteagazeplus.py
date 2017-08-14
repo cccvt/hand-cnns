@@ -194,7 +194,7 @@ class GTEAGazePlus(data.Dataset):
 
     def get_all_actions(self, action_object_classes):
         """Extracts all possible actions in the format (action,
-        objects, subject, recipe, frame_idx) """
+        objects, subject, recipe, first_frame, last_frame) """
         annot_paths = [os.path.join(self.label_path, annot_file)
                        for annot_file in os.listdir(self.label_path)]
         actions = []

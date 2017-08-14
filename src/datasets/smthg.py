@@ -1,13 +1,15 @@
 import csv
 import numpy as np
 import os
+import pickle
 import torch.utils.data as data
+from tqdm import tqdm
 
 from src.datasets.utils import loader
 from src.datasets.utils import visualize
 
 
-class SomethingSomething(data.Dataset):
+class Smthg(data.Dataset):
     def __init__(self, root_folder="data/smthg-smthg",
                  video_transform=None, split='train',
                  clip_size=16):
@@ -26,6 +28,7 @@ class SomethingSomething(data.Dataset):
         self.path = root_folder
         self.video_path = os.path.join(self.path,
                                        '20bn-something-something-v1')
+        self.split_video_path = os.path.join(self.path, 'split-dataset')
         self.label_path = os.path.join(self.path,
                                        'something-something-v1-labels.csv')
         self.train_path = os.path.join(self.path,
@@ -34,7 +37,6 @@ class SomethingSomething(data.Dataset):
                                        'something-something-v1-validation.csv')
         self.test_path = os.path.join(self.path,
                                       'something-something-v1-test.csv')
-        self.all_samples = get_samples(self.video_path)
         if split == 'test':
             self.split_path = self.test_path
         elif split == 'valid':
@@ -50,12 +52,14 @@ class SomethingSomething(data.Dataset):
         self.label_dict = get_split_labels(self.split_path)
 
         # Get class info
+        # sorted list of classes as template strings
         self.classes = sorted(list(set(self.label_dict.values())))
         self.class_nb = len(self.classes)
         assert self.class_nb == 174
 
         # Collect samples
-        self.sample_list = self.get_dense_samples(self.clip_size)
+        self.cache_path = os.path.join(self.path, 'cache')
+        self.sample_list = self.get_samples()
 
     def __len__(self):
         return len(self.sample_list)
@@ -75,23 +79,37 @@ class SomethingSomething(data.Dataset):
         annot[class_idx] = 1
         return clip, annot
 
-    def get_dense_samples(self, frame_nb=16, clip_stride=1):
-        """Gets list of all movie clips by extracting all clips with first
-        frames separated by clip_stride
-        This returns the samples as (film_id, frame_idx, label) tuples
-        where frame_idx is the idx of the first frame, and label is the
-        class label
+    def get_samples(self):
+        """Gets list of all movie clips
+        This returns the samples as (film_id, label, frame_nb) tuples
         """
-        samples = []
-        for film_id in self.split_ids:
-            film_path = os.path.join(self.video_path, str(int(film_id)))
-            frame_nbs = [int(jpeg.split('.')[0])
-                         for jpeg in os.listdir(film_path)]
-            max_frames = max(frame_nbs)
-            for frame_idx in range(1, max_frames - frame_nb + 1, clip_stride):
-                samples.append((film_id, frame_idx,
-                                self.label_dict[film_id]))
-        return samples
+        all_samples_path = os.path.join(self.cache_path, 'all_samples.pickle')
+        if os.path.isfile(all_samples_path):
+            with open(all_samples_path, 'rb') as cache_file:
+                all_samples = pickle.load(cache_file)
+        else:
+            all_samples = []
+
+            for film_id in tqdm(self.split_ids):
+                print(film_id)
+                film_path = self.path_from_id(film_id)
+                frame_nbs = [int(jpeg.split('.')[0])
+                             for jpeg in os.listdir(film_path)]
+                max_frames = max(frame_nbs)
+                all_samples.append((film_id, self.label_dict[film_id], max_frames))
+        import pdb; pdb.set_trace()
+        with open(all_samples_path, 'wb') as cache_file:
+            pickle.dump(all_samples, cache_file)
+        return all_samples
+
+    def path_from_id(self, video_id):
+        """ Retrieves path to video from idx when dataset is
+        split into first-digit folders
+        """
+        str_video_id = str(video_id)
+        # Reconstruct path in format video_folder/8/890 for instance
+        video_path = os.path.join(self.split_video_path, str_video_id[0], str_video_id)
+        return video_path
 
     def plot_hist(self):
         """Plots histogram of classes as sampled in self.sample_list
@@ -107,15 +125,11 @@ class SomethingSomething(data.Dataset):
         return clip
 
 
-def get_samples(video_path):
-    video_path, dirnames, filenames = next(os.walk(video_path))
-    dirnames = [int(dirname) for dirname in dirnames]
-    return dirnames
-
-
 def get_split_ids(split_path):
     labels = np.loadtxt(split_path, usecols=0, delimiter=';')
-    return sorted(list(labels))
+    labels = list(labels)
+    labels = [int(label) for label in labels]
+    return labels
 
 
 def get_split_labels(split_path):

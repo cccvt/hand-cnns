@@ -5,6 +5,7 @@ import torchvision.models as models
 
 from src.datasets import gtea, gun
 from src.datasets.gteagazeplusimage import GTEAGazePlusImage
+from src.datasets.smthgimage import SmthgImage
 from src.options import train_options, error
 from src.nets import resnet_adapt
 from src.netscripts import train
@@ -76,6 +77,10 @@ def run_training(opt):
         valid_dataset = gun.GUN(transform=transform, untransform=unnormalize,
                                 seqs=valid_seqs)
         valid = True
+
+    elif opt.dataset == 'smthgsmthg':
+        dataset = SmthgImage(split='train')
+        valid_dataset = SmthgImage(split='valid')
 
     print('Dataset size : {0}'.format(len(dataset)))
 
