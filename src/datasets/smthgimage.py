@@ -69,7 +69,7 @@ class SmthgImage(Smthg):
 
         for frame_idx in frame_idxs:
             frame_name = self.frame_template.format(frame=frame_idx)
-            img_path = os.path.join(self.path_from_id(clip_idx), frame_name)
+            img_path = os.path.join(self.path_from_id(clip_id), frame_name)
             img = loader.load_rgb_image(img_path)
             if self.base_transform is not None:
                 img = self.base_transform(img)
