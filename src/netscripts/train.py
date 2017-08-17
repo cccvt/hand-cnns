@@ -1,5 +1,7 @@
 import copy
 import numpy as np
+import pickle
+import os
 from tqdm import tqdm
 
 from src.utils.visualize import Visualize
@@ -16,7 +18,6 @@ def train_net(dataloader, model, opt,
     loss_metric = Metric('loss', compute=False)
     metrics = [top1, top5, loss_metric]
     val_metrics = copy.deepcopy(metrics)
-    
 
     # visdom window handles
     sample_win = None
@@ -78,6 +79,15 @@ def train_net(dataloader, model, opt,
             model.save('latest', opt)
         if epoch % opt.save_freq == 0:
             model.save(epoch, opt)
+
+        # Save confusion matrixes
+        save_dir = os.path.join(opt.checkpoint_dir, opt.exp_id)
+        train_conf_path = os.path.join(save_dir, 'train_conf_mat.pickle')
+        val_conf_path = os.path.join(save_dir, 'val_conf_mat.pickle')
+        with open(train_conf_path, 'wb') as train_conf_file:
+            pickle.dump(conf_mat, train_conf_file)
+        with open(val_conf_path, 'wb') as val_conf_file:
+            pickle.dump(conf_mat, val_conf_file)
 
         # Test with aggregation
         valid_mean_score = test(valid_dataloader.dataset,
@@ -178,9 +188,11 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
 
     # Sanity check, top1 score should be the same as accuracy from conf_mat
     # while accounting for last batch discrepancy
+
     if last_scores['top1'] != epoch_conf_mat.trace() / epoch_conf_mat.sum():
         import pdb; pdb.set_trace()
-    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum(), '{} is not {}'.format(last_scores['top1'], epoch_conf_mat.trace()/epoch_conf_mat.sum())
+    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum(
+    ), '{} is not {}'.format(last_scores['top1'], epoch_conf_mat.trace() / epoch_conf_mat.sum())
 
     if verbose:
         print(message)
