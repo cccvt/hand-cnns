@@ -11,9 +11,9 @@ for leave_out in leave_outs:
                                 '--lr', '0.0001',
                                 '--new_lr', '0.0001',
                                 '--threads', '1',
-                                '--epochs', '26',
+                                '--epochs', '50',
                                 '--exp_id',
-                                'run_res_leave_outs/gtea_lo_' +
+                                'run_res_leave_outs_resnet50/gtea_lo_' +
                                 str(leave_out)])
 
     run_training(opt)

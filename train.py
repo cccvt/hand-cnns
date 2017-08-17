@@ -110,7 +110,7 @@ def run_training(opt):
             num_workers=opt.threads)
 
     # Load model
-    resnet = models.resnet18(pretrained=opt.pretrained)
+    resnet = models.resnet50(pretrained=opt.pretrained)
     model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb)
 
     if opt.lr != opt.new_lr:

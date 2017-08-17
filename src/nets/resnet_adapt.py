@@ -7,7 +7,8 @@ class ResNetAdapt(BaseNet):
         super().__init__(opt)
         self.name = 'resnet_adapt'
         self.net = resnet
-        self.net.fc = nn.Linear(512, class_nb)
+        in_features_nb = self.net.fc.in_features
+        self.net.fc = nn.Linear(in_features_nb, class_nb)
         self.input_size = (224, 224)
 
     def lr_params(self, lr=0.01, new_layers=['fc']):
