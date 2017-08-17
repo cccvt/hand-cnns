@@ -8,10 +8,10 @@ for lr in lrs:
                                 '--dataset', 'smthgsmthg',
                                 '--lr', str(lr),
                                 '--new_lr', str(lr),
-                                '--threads', '1',
+                                '--threads', '3',
                                 '--epochs', '101',
                                 '--exp_id',
-                                'run_c3d_smthg/lr_' +
+                                'run_c3d_smthg_debug/lr_' +
                                 str(lr)])
 
     run_training(opt)

@@ -31,7 +31,7 @@ class SmthgVideo(Smthg):
         self.sample_list = [(clip_id, label, max_frame)
                             for (clip_id, label, max_frame)
                             in self.sample_list
-                            if max_frame >= self.clip_size]
+                            if max_frame >= self.clip_size + 1]
 
     def __getitem__(self, index):
         # Load clip

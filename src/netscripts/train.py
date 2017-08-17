@@ -178,7 +178,9 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
 
     # Sanity check, top1 score should be the same as accuracy from conf_mat
     # while accounting for last batch discrepancy
-    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum()
+    if last_scores['top1'] != epoch_conf_mat.trace() / epoch_conf_mat.sum():
+        import pdb; pdb.set_trace()
+    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum(), '{} is not {}'.format(last_scores['top1'], epoch_conf_mat.trace()/epoch_conf_mat.sum())
 
     if verbose:
         print(message)
