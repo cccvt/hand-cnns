@@ -11,7 +11,7 @@ for lr in lrs:
                                 '--threads', '10',
                                 '--epochs', '51',
                                 '--exp_id',
-                                'run_res_smthg/lr_' +
+                                'run_res_smthg_resnet50/lr_' +
                                 str(lr)])
 
     run_training(opt)
