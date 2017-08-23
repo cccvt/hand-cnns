@@ -7,8 +7,6 @@ class TrainOptions(BaseOptions):
         # Train params
         self.parser.add_argument('--epochs', type=int, default=10,
                                  help='number of training epochs')
-        self.parser.add_argument('--use_gpu', type=int, default=1,
-                                 help='Whether to use gpu (1) or cpu (0)')
         self.parser.add_argument('--weighted_training', action='store_true',
                                  help="Use weighted sampling during training")
 
