@@ -49,11 +49,12 @@ class Smthg(data.Dataset):
 
         # Get split info
         self.split_ids = get_split_ids(self.split_path)
-        self.label_dict = get_split_labels(self.split_path)
+        self.label_dict = get_split_labels(self.split, self.split_path)
 
         # Get class info
         # sorted list of classes as template strings
-        self.classes = sorted(list(set(self.label_dict.values())))
+        valid_label_dict = get_split_labels('valid', self.valid_path)
+        self.classes = sorted(list(set(valid_label_dict.values())))
         self.class_nb = len(self.classes)
         assert self.class_nb == 174
 
@@ -98,11 +99,12 @@ class Smthg(data.Dataset):
                 frame_nbs = [int(jpeg.split('.')[0])
                              for jpeg in os.listdir(film_path)]
                 max_frames = max(frame_nbs)
-                all_samples.append((film_id, self.label_dict[film_id], max_frames))
+                label = self.label_dict[film_id]
+                all_samples.append((film_id, label, max_frames))
         with open(all_samples_path, 'wb') as cache_file:
             pickle.dump(all_samples, cache_file)
         print('Retreived {} samples for {} split in smthg dataset'.format(len(all_samples),
-            self.split))
+                                                                          self.split))
         return all_samples
 
     def path_from_id(self, video_id):
@@ -111,7 +113,8 @@ class Smthg(data.Dataset):
         """
         str_video_id = str(video_id)
         # Reconstruct path in format video_folder/8/890 for instance
-        video_path = os.path.join(self.split_video_path, str_video_id[0], str_video_id)
+        video_path = os.path.join(
+            self.split_video_path, str_video_id[0], str_video_id)
         return video_path
 
     def plot_hist(self):
@@ -128,17 +131,19 @@ class Smthg(data.Dataset):
         return clip
 
 
+def get_split_labels(split, split_path):
+    label_dict = {}
+    with open(split_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=';')
+        for row in csv_reader:
+            if split != 'test':
+                label_dict[int(row[0])] = row[1]
+            else:
+                label_dict[int(row[0])] = None
+    return label_dict
+
 def get_split_ids(split_path):
     labels = np.loadtxt(split_path, usecols=0, delimiter=';')
     labels = list(labels)
     labels = [int(label) for label in labels]
     return labels
-
-
-def get_split_labels(split_path):
-    label_dict = {}
-    with open(split_path) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=';')
-        for row in csv_reader:
-            label_dict[int(row[0])] = row[1]
-    return label_dict

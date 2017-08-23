@@ -36,7 +36,7 @@ class BaseNet():
         if self.opt.use_gpu:
             self.net.cuda()
 
-    def load(self, epoch, load_path=None):
+    def load(self, epoch=0, load_path=None):
         """
         Utility function to load network weights
         """
@@ -47,7 +47,10 @@ class BaseNet():
 
         # Load checkpoint state
         checkpoint = torch.load(load_path)
-        assert checkpoint['epoch'] == epoch
+        if load_path == None:
+            assert checkpoint['epoch'] == epoch
+        else:
+            epoch = checkpoint['epoch']
         self.net.load_state_dict(checkpoint['net'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         print('loaded net from epoch {0}'.format(epoch))

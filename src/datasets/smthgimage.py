@@ -55,7 +55,10 @@ class SmthgImage(Smthg):
         clip_id, label, max_frame = self.sample_list[index]
 
         # Get class index
-        class_idx = self.classes.index(label)
+        if self.split == 'test':
+            class_idx = 0
+        else:
+            class_idx = self.classes.index(label)
 
         # Return list of action tensors
         imgs = []

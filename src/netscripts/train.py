@@ -30,10 +30,7 @@ def train_net(dataloader, model, opt,
         model.net = model.net.cuda()
         model.criterion = model.criterion.cuda()
 
-    if opt.train:
         epoch_nb = opt.epochs
-    else:
-        epoch_nb = 1
 
     # Initialize conf_mat
     classes = dataloader.dataset.classes
@@ -91,7 +88,8 @@ def train_net(dataloader, model, opt,
 
         # Test with aggregation
         valid_mean_score = test(valid_dataloader.dataset,
-                                model, frame_nb=10)
+                                model, frame_nb=10,
+                                opt=opt)
         valid_mean_scores.append(valid_mean_score)
         viz.log_errors(epoch=epoch,
                        errors={'val_aggr_err': valid_mean_score},

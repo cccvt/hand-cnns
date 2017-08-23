@@ -12,6 +12,9 @@ class BaseOptions():
         self.initialized = False
 
     def initialize(self):
+
+        self.parser.add_argument('--use_gpu', type=int, default=1,
+                                 help='Whether to use gpu (1) or cpu (0)')
         # Input params
         self.parser.add_argument('--dataset', type=str, default='gteagazeplus',
                                  help='dataset to use among\
@@ -31,6 +34,10 @@ class BaseOptions():
         self.parser.add_argument('--exp_id', type=str, default='experiment',
                                  help='name of experiment, determines where\
                                  to store experiment data')
+
+        # Averaging params
+        self.parser.add_argument('--frame_nb', type=int,
+                                 default=10, help='number of frames to average at test time')
 
     def parse(self, arguments=None):
         if not self.initialized:
