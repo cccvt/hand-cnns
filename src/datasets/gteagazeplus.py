@@ -67,7 +67,7 @@ class GTEAGazePlus(data.Dataset):
         self.untransform = None  # Needed for visualizer
 
         self.path = root_folder
-        self.label_path = os.path.join(self.path, 'labels')
+        self.label_path = os.path.join(self.path, 'labels_cleaned')
         self.all_seqs = ['Ahmad', 'Alireza', 'Carlos',
                          'Rahul', 'Yin', 'Shaghayegh']
 
@@ -147,7 +147,8 @@ class GTEAGazePlus(data.Dataset):
         returns list of (action, objects) tuples for the (action, objects)
         that appear at least repetitions time
         """
-        action_labels = [(act, obj) for (act, obj, b, e) in annot_lines]
+        action_labels = [self.get_class_str(act, self.original_label_transform(obj))
+                         for (act, obj, b, e) in annot_lines]
         counted_labels = defaultdict(int)
         for label in action_labels:
             counted_labels[label] += 1
