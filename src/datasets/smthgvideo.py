@@ -58,7 +58,10 @@ class SmthgVideo(Smthg):
         frame_idx = random.randint(1, max_frame - self.clip_size)
 
         # Get class index
-        class_idx = self.classes.index(label)
+        if self.split == 'test':
+            class_idx = 0
+        else:
+            class_idx = self.classes.index(label)
 
         # Return list of action tensors
         clips = []
