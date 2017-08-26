@@ -30,7 +30,8 @@ class GTEAGazePlus(data.Dataset):
     def __init__(self, root_folder="data/GTEAGazePlus",
                  original_labels=True,
                  seqs=['Ahmad', 'Alireza', 'Carlos',
-                       'Rahul', 'Shaghayegh', 'Yin']):
+                       'Rahul', 'Shaghayegh', 'Yin'],
+                 use_flows=False):
 
         self.cvpr_labels = ['open_fridge', 'close_fridge',
                             'put_cupPlateBowl',
@@ -72,6 +73,7 @@ class GTEAGazePlus(data.Dataset):
                          'Rahul', 'Yin', 'Shaghayegh']
 
         self.seqs = seqs
+        self.use_flow = use_flow
 
         # Compute classes
         if self.original_labels:

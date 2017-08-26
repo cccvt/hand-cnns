@@ -69,21 +69,6 @@ class Smthg(data.Dataset):
     def __len__(self):
         return len(self.sample_list)
 
-    def __getitem__(self, index):
-        # Load clip
-        film_id, frame_idx, label = self.sample_list[index]
-        clip = self.get_clip(film_id, frame_idx, self.clip_size)
-
-        # Apply video transform
-        if self.video_transform is not None:
-            clip = self.video_transform(clip)
-
-        # One hot label encoding
-        annot = np.zeros(self.class_nb)
-        class_idx = self.classes.index(label)
-        annot[class_idx] = 1
-        return clip, annot
-
     def get_samples(self):
         """Gets list of all movie clips in current split
         This returns the samples as (film_id, label, frame_nb) tuples
@@ -129,21 +114,6 @@ class Smthg(data.Dataset):
         """
         labels = [label for (film_id, frame_idx, label) in self.sample_list]
         visualize.plot_hist(labels)
-
-    def get_clip(self, film_id, frame_begin, frame_nb):
-        folder_path = os.path.join(self.video_path, str(int(film_id)))
-        if self.use_flows:
-            clip = loader.get_stacked_flow_arrays(folder_path, frame_begin,
-                                                  frame_nb,
-                                                  flow_x_template="{frame:05d}_x.jpg",
-                                                  flow_y_template="{frame:05d}_y.jpg",
-                                                  minmax_filename="minmax.pickle")
-
-        else:
-            clip = loader.get_stacked_frames(folder_path, frame_begin, frame_nb,
-                                             frame_template="{frame:05d}.jpg",
-                                             use_open_cv=False)
-        return clip
 
 
 def get_split_labels(split, split_path):

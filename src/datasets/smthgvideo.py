@@ -1,9 +1,7 @@
 import random
-import os
-
 import numpy as np
 
-from src.datasets.utils import loader, visualize
+from src.datasets.utils import loader
 from src.datasets.smthg import Smthg
 
 
@@ -79,13 +77,17 @@ class SmthgVideo(Smthg):
             clips.append(clip)
         return clips, class_idx
 
-    def get_clip(self, clip_idx, frame_idx, frame_nb):
+    def get_clip(self, clip_idx, frame_begin, frame_nb):
         clip_path = self.path_from_id(clip_idx)
         if self.use_flows:
-            clip = loader.get_stacked_numpy_arrays(clip_path, frame_idx,
-                                                   frame_nb)
+            clip = loader.get_stacked_flow_arrays(clip_path, frame_begin,
+                                                  frame_nb,
+                                                  flow_x_template="{frame:05d}x.jpg",
+                                                  flow_y_template="{frame:05d}y.jpg",
+                                                  minmax_filename="minmax.pickle")
+
         else:
-            clip = loader.get_stacked_frames(clip_path, frame_idx,
+            clip = loader.get_stacked_frames(clip_path, frame_begin,
                                              frame_nb, use_open_cv=False,
                                              frame_template=self.frame_template)
 

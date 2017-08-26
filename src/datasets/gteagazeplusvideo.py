@@ -12,7 +12,7 @@ class GTEAGazePlusVideo(GTEAGazePlus):
                  original_labels=True, seqs=['Ahmad', 'Alireza', 'Carlos',
                                              'Rahul', 'Shaghayegh', 'Yin'],
                  video_transform=None, base_transform=None,
-                 clip_size=16, use_video=False):
+                 clip_size=16, use_video=False, use_flow=False):
         """
         Args:
             video_transform: transformation to apply to the clips during
@@ -23,13 +23,14 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         """
         super().__init__(root_folder=root_folder,
                          original_labels=original_labels,
-                         seqs=seqs)
+                         seqs=seqs, use_flow=use_flow)
 
         # Set video params
         self.video_transform = video_transform
         self.base_transform = base_transform
 
         self.use_video = use_video
+        self.flow_path = os.path.join(self.path, 'flow-farneback')
         self.rgb_path = os.path.join(self.path, 'png')
         self.video_path = os.path.join(self.path, 'avi_files')
         self.clip_size = clip_size
@@ -92,16 +93,25 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         return clips, class_idx
 
     def get_clip(self, sequence_name, frame_begin, frame_nb):
-        if self.use_video:
-            video_path = os.path.join(self.video_path,
-                                      sequence_name + '.avi')
-            video_capture = loader.get_video_capture(video_path)
-            clip = loader.get_clip(video_capture, frame_begin, frame_nb)
+        if self.use_flow:
+            # Retrieve stacked flow frames
+            flow_path = os.path.join(self.flow_path, sequence_name)
+            clip = loader.get_stacked_flow_arrays(flow_path, frame_begin, frame_nb,
+                                                  flow_x_template="{frame:010d}x.jpg",
+                                                  flow_y_template="{frame:010d}y.jpg",
+                                                  minmax_filename="minmax.pickle")
         else:
-            png_path = os.path.join(self.rgb_path,
-                                    sequence_name)
-            clip = loader.get_stacked_frames(png_path, frame_begin, frame_nb,
-                                             use_open_cv=False)
+            # Retrieve stacked rgb frames
+            if self.use_video:
+                video_path = os.path.join(self.video_path,
+                                          sequence_name + '.avi')
+                video_capture = loader.get_video_capture(video_path)
+                clip = loader.get_clip(video_capture, frame_begin, frame_nb)
+            else:
+                png_path = os.path.join(self.rgb_path,
+                                        sequence_name)
+                clip = loader.get_stacked_frames(png_path, frame_begin, frame_nb,
+                                                 use_open_cv=False)
 
         return clip
 
