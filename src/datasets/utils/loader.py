@@ -1,6 +1,7 @@
 import cv2
 import os
 import numpy as np
+import pickle
 from PIL import Image
 
 
@@ -90,8 +91,8 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
     [channels, frames, height, width]
 
     Args:
-        image_folder (str): folder containing the images in format
-            00{frame}.png
+        image_folder (str): folder containing the images
+            in format frame_template
         frame_nb (int): number of consecutive frames to stack
         use_open_cv (bool): wheter to use opencv or PIl image reader
             if PIL is used, PIL image are returned
@@ -112,6 +113,70 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
             img = Image.open(image_path)
             if to_numpy:
                 img = np.asarray(img)
+        clip.append(img)
+
+    return clip
+
+
+def get_stacked_flow_arrays(image_folder, frame_begin, frame_nb,
+                            flow_x_template="{frame:05d}_x.jpg",
+                            flow_y_template="{frame:05d}_y.jpg",
+                            minmax_filename=None):
+    """
+    Retrives flow data from folder where x and y flows are
+    stored separately as jpg files with values normalized
+    to [0, 255]
+    """
+    clip = []
+    # Retrieve minmax dict in format {frame_idx: [min_x, max_x, min_y, max_y]}
+    if minmax_filename is not None:
+        with open(os.path.join(image_folder,
+                               minmax_filename)) as minmax_file:
+            minmax = pickle.load(minmax_file)
+    for idx in range(frame_nb):
+        frame_idx = frame_begin + idx
+        flow_x_path = os.path.join(image_folder,
+                                   flow_x_template.format(frame=frame_idx))
+        flow_y_path = os.path.join(image_folder,
+                                   flow_y_template.format(frame=frame_idx))
+        flow_x = np.asarray(Image.open(flow_x_path))
+        flow_y = np.asarray(Image.open(flow_y_path))
+        if minmax_filename is not None:
+            frame_minmax = minmax[frame_idx]
+
+            flow_x = cv2.normalize(flow_x, flow_x,
+                                   alpha=frame_minmax[0],
+                                   beta=frame_minmax[1],
+                                   norm_type=cv2.NORM_MINMAX)
+            flow_y = cv2.normalize(flow_y, flow_y,
+                                   alpha=frame_minmax[2],
+                                   beta=frame_minmax[3],
+                                   norm_type=cv2.NORM_MINMAX)
+
+        flow = np.stack((flow_x, flow_y), axis=2)
+        clip.append(flow)
+    return clip
+
+
+def get_stacked_numpy_arrays(image_folder, frame_begin, frame_nb,
+                             frame_template="{frame:05d}.pickle"):
+    """ Returns list of stacked numpy arrays with dimensions
+    by reading files created by np.save from folder image_folder
+
+    Args:
+        image_folder (str): folder containing the images in format
+            in format frame_template
+        frame_nb (int): number of consecutive frames to stack
+        use_open_cv (bool): wheter to use opencv or PIl image reader
+            if PIL is used, PIL image are returned
+    """
+
+    clip = []
+    for idx in range(frame_nb):
+        frame_idx = frame_begin + idx
+        image_path = os.path.join(image_folder,
+                                  frame_template.format(frame=frame_idx))
+        img = np.load(image_path)
         clip.append(img)
 
     return clip

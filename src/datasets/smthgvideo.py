@@ -10,7 +10,7 @@ from src.datasets.smthg import Smthg
 class SmthgVideo(Smthg):
     def __init__(self, root_folder="data/smthg-smthg", split='train',
                  video_transform=None, base_transform=None,
-                 clip_size=16, use_video=False):
+                 clip_size=16, use_flows=False):
         """
         Args:
             video_transform: transformation to apply to the clips during
@@ -19,7 +19,7 @@ class SmthgVideo(Smthg):
                 testing
         """
         super().__init__(root_folder=root_folder,
-                         split=split)
+                         split=split, use_flows=use_flows)
 
         # Set video params
         self.video_transform = video_transform
@@ -81,7 +81,12 @@ class SmthgVideo(Smthg):
 
     def get_clip(self, clip_idx, frame_idx, frame_nb):
         clip_path = self.path_from_id(clip_idx)
-        clip = loader.get_stacked_frames(clip_path, frame_idx,
-                                         frame_nb, use_open_cv=False,
-                                         frame_template=self.frame_template)
+        if self.use_flows:
+            clip = loader.get_stacked_numpy_arrays(clip_path, frame_idx,
+                                                   frame_nb)
+        else:
+            clip = loader.get_stacked_frames(clip_path, frame_idx,
+                                             frame_nb, use_open_cv=False,
+                                             frame_template=self.frame_template)
+
         return clip

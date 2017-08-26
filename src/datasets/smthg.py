@@ -12,13 +12,14 @@ from src.datasets.utils import visualize
 class Smthg(data.Dataset):
     def __init__(self, root_folder="data/smthg-smthg",
                  video_transform=None, split='train',
-                 clip_size=16):
+                 clip_size=16, use_flows=False):
         """
         Args:
             split(str): train/valid/test
             video_transform : transforms to successively apply
         """
         self.video_transform = video_transform
+        self.use_flows = use_flows
         self.split = split
         self.clip_size = clip_size
         self.class_nb = None
@@ -29,6 +30,7 @@ class Smthg(data.Dataset):
         self.video_path = os.path.join(self.path,
                                        '20bn-something-something-v1')
         self.split_video_path = os.path.join(self.path, 'split-dataset')
+        self.split_flow_path = os.path.join(self.path, 'flow-farneback')
         self.label_path = os.path.join(self.path,
                                        'something-something-v1-labels.csv')
         self.train_path = os.path.join(self.path,
@@ -110,11 +112,16 @@ class Smthg(data.Dataset):
     def path_from_id(self, video_id):
         """ Retrieves path to video from idx when dataset is
         split into first-digit folders
+        Depending on self.use_flows returns path to rgb or flow folder
         """
         str_video_id = str(video_id)
         # Reconstruct path in format video_folder/8/890 for instance
-        video_path = os.path.join(
-            self.split_video_path, str_video_id[0], str_video_id)
+        if self.use_flow:
+            video_path = os.path.join(self.split_flow_path,
+                                      str_video_id[0], str_video_id)
+        else:
+            video_path = os.path.join(
+                self.split_video_path, str_video_id[0], str_video_id)
         return video_path
 
     def plot_hist(self):
@@ -125,9 +132,17 @@ class Smthg(data.Dataset):
 
     def get_clip(self, film_id, frame_begin, frame_nb):
         folder_path = os.path.join(self.video_path, str(int(film_id)))
-        clip = loader.get_stacked_frames(folder_path, frame_begin, frame_nb,
-                                         frame_template="{frame:05d}.jpg",
-                                         use_open_cv=False)
+        if self.use_flows:
+            clip = loader.get_stacked_flow_arrays(folder_path, frame_begin,
+                                                  frame_nb,
+                                                  flow_x_template="{frame:05d}_x.jpg",
+                                                  flow_y_template="{frame:05d}_y.jpg",
+                                                  minmax_filename="minmax.pickle")
+
+        else:
+            clip = loader.get_stacked_frames(folder_path, frame_begin, frame_nb,
+                                             frame_template="{frame:05d}.jpg",
+                                             use_open_cv=False)
         return clip
 
 
@@ -141,6 +156,7 @@ def get_split_labels(split, split_path):
             else:
                 label_dict[int(row[0])] = None
     return label_dict
+
 
 def get_split_ids(split_path):
     labels = np.loadtxt(split_path, usecols=0, delimiter=';')
