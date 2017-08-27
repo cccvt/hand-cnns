@@ -28,6 +28,9 @@ class ToTensor(object):
     to a torch.FloatTensor of shape (C x H x W) in the range [0, 1.0]
     """
 
+    def __init__(self, channel_nb=3):
+        self.channel_nb = channel_nb
+
     def __call__(self, clip):
         """
         Args: clip (list of numpy.ndarray): clip (list of images)
@@ -36,14 +39,14 @@ class ToTensor(object):
         # Retrieve shape
         if isinstance(clip[0], np.ndarray):
             h, w, c = clip[0].shape
-            assert c == 3, 'should receive 3 channels, got {0}'.format(c)
+            assert c == self.channel_nb, 'should receive 3 channels, got {0}'.format(c)
         elif isinstance(clip[0], PIL.Image.Image):
             w, h = clip[0].size
         else:
             raise TypeError('Expected numpy.ndarray or PIL.Image\
             but got list of {0}'.format(type(clip[0])))
 
-        np_clip = np.zeros([3, len(clip), int(h), int(w)])
+        np_clip = np.zeros([self.channel_nb, len(clip), int(h), int(w)])
 
         # Convert
         for img_idx, img in enumerate(clip):

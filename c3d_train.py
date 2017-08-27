@@ -16,11 +16,15 @@ def run_training(opt):
 
     scale_size = (128, 171)
     crop_size = (112, 112)
+    if opt.use_flow:
+        channel_nb = 2
+    else:
+        channel_nb = 3
     base_transform = transforms.Compose([transforms.Scale(crop_size),
-                                         transforms.ToTensor()])
+                                         transforms.ToTensor(channel_nb=channel_nb)])
     video_transform = transforms.Compose([transforms.Scale(scale_size),
                                           transforms.RandomCrop(crop_size),
-                                          transforms.ToTensor()])
+                                          transforms.ToTensor(channel_nb=channel_nb)])
 
     # Initialize datasets
     leave_out_idx = opt.leave_out
@@ -34,19 +38,22 @@ def run_training(opt):
         dataset = GTEAGazePlusVideo(video_transform=video_transform,
                                     use_video=False, clip_size=16,
                                     original_labels=True,
-                                    seqs=train_seqs)
+                                    seqs=train_seqs, use_flow=opt.use_flow)
         val_dataset = GTEAGazePlusVideo(video_transform=video_transform,
                                         base_transform=base_transform,
                                         use_video=False, clip_size=16,
                                         original_labels=True,
-                                        seqs=valid_seqs)
+                                        seqs=valid_seqs,
+                                        use_flow=opt.use_flow)
     elif opt.dataset == 'smthgsmthg':
         dataset = SmthgVideo(video_transform=video_transform,
-                             clip_size=16, split='train')
+                             clip_size=16, split='train',
+                             use_flow=opt.use_flow)
 
         val_dataset = SmthgVideo(video_transform=video_transform,
                                  clip_size=16, split='valid',
-                                 base_transform=base_transform)
+                                 base_transform=base_transform,
+                                 use_flow=opt.use_flow)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled\
                          by this script'.format(opt._dataset))
@@ -73,7 +80,7 @@ def run_training(opt):
     c3dnet = c3d.C3D()
     if opt.pretrained:
         c3dnet.load_state_dict(torch.load('data/c3d.pickle'))
-    model = c3d_adapt.C3DAdapt(opt, c3dnet, dataset.class_nb)
+    model = c3d_adapt.C3DAdapt(opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.net.parameters(), lr=0.003)
@@ -90,7 +97,8 @@ def run_training(opt):
             model.load(opt.continue_epoch)
 
     train.train_net(dataloader, model, opt,
-                    valid_dataloader=val_dataloader)
+                    valid_dataloader=val_dataloader,
+                    visualize=opt.visualize)
 
 
 if __name__ == '__main__':

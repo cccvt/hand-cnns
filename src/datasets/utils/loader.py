@@ -131,7 +131,7 @@ def get_stacked_flow_arrays(image_folder, frame_begin, frame_nb,
     # Retrieve minmax dict in format {frame_idx: [min_x, max_x, min_y, max_y]}
     if minmax_filename is not None:
         with open(os.path.join(image_folder,
-                               minmax_filename)) as minmax_file:
+                               minmax_filename), 'rb') as minmax_file:
             minmax = pickle.load(minmax_file)
     for idx in range(frame_nb):
         frame_idx = frame_begin + idx
@@ -139,8 +139,10 @@ def get_stacked_flow_arrays(image_folder, frame_begin, frame_nb,
                                    flow_x_template.format(frame=frame_idx))
         flow_y_path = os.path.join(image_folder,
                                    flow_y_template.format(frame=frame_idx))
-        flow_x = np.asarray(Image.open(flow_x_path))
-        flow_y = np.asarray(Image.open(flow_y_path))
+        img_flow_x = Image.open(flow_x_path)
+        img_flow_y = Image.open(flow_y_path)
+        flow_x = np.asarray(img_flow_x).astype(np.float32)
+        flow_y = np.asarray(img_flow_y).astype(np.float32)
         if minmax_filename is not None:
             frame_minmax = minmax[frame_idx]
 

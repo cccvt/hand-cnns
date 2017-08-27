@@ -31,7 +31,7 @@ class GTEAGazePlus(data.Dataset):
                  original_labels=True,
                  seqs=['Ahmad', 'Alireza', 'Carlos',
                        'Rahul', 'Shaghayegh', 'Yin'],
-                 use_flows=False):
+                 use_flow=False):
 
         self.cvpr_labels = ['open_fridge', 'close_fridge',
                             'put_cupPlateBowl',

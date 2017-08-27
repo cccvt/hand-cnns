@@ -25,6 +25,8 @@ class BaseOptions():
         self.parser.add_argument('--threads', type=int, default=4,
                                  help='number of threads used for data\
                                  loading')
+        self.parser.add_argument('--use_flow', type=int, default=0,
+                                 help='Whether to use flow or RGB')
         self.parser.add_argument('--batch_size', type=int, default=2,
                                  help='input mini-batch size')
         # Save params
@@ -38,6 +40,10 @@ class BaseOptions():
         # Averaging params
         self.parser.add_argument('--frame_nb', type=int,
                                  default=10, help='number of frames to average at test time')
+
+        # Display params
+        self.parser.add_argument('--visdom', type=int,
+                                 default=1, help='0 to disable visdom plots')
 
     def parse(self, arguments=None):
         if not self.initialized:

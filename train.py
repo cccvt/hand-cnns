@@ -141,7 +141,8 @@ def run_training(opt):
             model.load(opt.continue_epoch)
 
     train.train_net(dataloader, model, opt,
-                    valid_dataloader=valid_dataloader)
+                    valid_dataloader=valid_dataloader,
+                    visualize=opt.visualize)
 
 
 if __name__ == "__main__":
