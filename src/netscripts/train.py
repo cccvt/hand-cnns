@@ -12,7 +12,8 @@ from src.netscripts.test import test
 
 def train_net(dataloader, model, opt,
               valid_dataloader=None,
-              verbose=False, visualize=True):
+              verbose=False, visualize=True,
+              test_aggreg=True):
     """
     Args:
         visualize(bool): whether to display in visdom
@@ -96,20 +97,21 @@ def train_net(dataloader, model, opt,
             pickle.dump(conf_mat, val_conf_file)
 
         # Test with aggregation
-        valid_mean_score = test(valid_dataloader.dataset,
-                                model, frame_nb=10,
-                                opt=opt)
-        valid_mean_scores.append(valid_mean_score)
+        if test_aggreg:
+            valid_mean_score = test(valid_dataloader.dataset,
+                                    model, frame_nb=10,
+                                    opt=opt)
+            valid_mean_scores.append(valid_mean_score)
 
-        # Display and save validations info
-        viz.log_errors(epoch=epoch,
-                       errors={'val_aggr_err': valid_mean_score},
-                       log_path=viz.valid_aggreg_log_path)
-        if vizualize:
-            valid_mean_win = viz.plot_errors(np.array(list(range(epoch + 1))),
-                                             np.array(valid_mean_scores),
-                                             title='average aggreg acc',
-                                             win=valid_mean_win)
+            # Display and save validations info
+            viz.log_errors(epoch=epoch,
+                           errors={'val_aggr_err': valid_mean_score},
+                           log_path=viz.valid_aggreg_log_path)
+            if visualize:
+                valid_mean_win = viz.plot_errors(np.array(list(range(epoch + 1))),
+                                                 np.array(valid_mean_scores),
+                                                 title='average aggreg acc',
+                                                 win=valid_mean_win)
 
     if verbose:
         print('Done training')

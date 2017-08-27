@@ -14,6 +14,9 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--leave_out', type=int, default=0,
                                  help="Index of sequence item to leave out\
                                  for validation")
+        self.parser.add_argument('--test_aggreg', type=int, default=1,
+                                 help="0 to disable aggregation test during\
+                                 training")
 
         # Net params
         self.parser.add_argument('--pretrained', type=int, default=1,

@@ -142,7 +142,8 @@ def run_training(opt):
 
     train.train_net(dataloader, model, opt,
                     valid_dataloader=valid_dataloader,
-                    visualize=opt.visualize)
+                    visualize=opt.visualize,
+                    test_aggreg=opt.test_aggreg)
 
 
 if __name__ == "__main__":
