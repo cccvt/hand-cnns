@@ -14,7 +14,7 @@ for leave_out in leave_outs:
                                 '--epochs', '51',
                                 '--use_flow', '1',
                                 '--exp_id',
-                                'running-c3d-gtea-flow-farneback-leave-outs/gtea_lo_' +
+                                'run_c3d_gtea_flow_farneback_leave_outs/gtea_lo_' +
                                 str(leave_out),
                                 '--visualize', '0'])
 

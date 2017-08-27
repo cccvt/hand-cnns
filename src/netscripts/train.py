@@ -199,7 +199,7 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
             win = viz.plot_errors(np.array(list(range(len(scores)))),
                                   scores, title=plt_title,
                                   win=metric.win)
-        metric.win = win
+            metric.win = win
 
     # Write scores to log file
     valid = True if train is False else False
