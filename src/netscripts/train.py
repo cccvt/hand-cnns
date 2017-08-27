@@ -12,7 +12,11 @@ from src.netscripts.test import test
 
 def train_net(dataloader, model, opt,
               valid_dataloader=None,
-              verbose=False):
+              verbose=False, visualize=True):
+    """
+    Args:
+        visualize(bool): whether to display in visdom
+    """
     top1 = Metric('top1', func=lambda out, pred: topk(out, pred, 1))
     top5 = Metric('top5', func=lambda out, pred: topk(out, pred, 5))
     loss_metric = Metric('loss', compute=False)
@@ -51,9 +55,11 @@ def train_net(dataloader, model, opt,
                                             conf_win=conf_win,
                                             sample_win=sample_win,
                                             train=True,
-                                            verbose=False)
-        conf_win = viz.plot_mat(conf_mat[epoch], win=conf_win,
-                                title='train conf mat')
+                                            verbose=False,
+                                            visualize=visualize)
+        if visualize:
+            conf_win = viz.plot_mat(conf_mat[epoch], win=conf_win,
+                                    title='train conf mat')
 
         if valid_dataloader is not None:
             # Validation for one epoch
@@ -67,9 +73,12 @@ def train_net(dataloader, model, opt,
                                                         viz=viz,
                                                         sample_win=val_win,
                                                         train=False,
-                                                        verbose=False)
-        val_conf_win = viz.plot_mat(val_conf_mat[epoch], win=val_conf_win,
-                                    title='val conf mat')
+                                                        verbose=False,
+                                                        visualize=visualize)
+        # Display valid conf mat
+        if visualize:
+            val_conf_win = viz.plot_mat(val_conf_mat[epoch], win=val_conf_win,
+                                        title='val conf mat')
 
         # Save network weights
         if opt.save_latest:
@@ -91,13 +100,16 @@ def train_net(dataloader, model, opt,
                                 model, frame_nb=10,
                                 opt=opt)
         valid_mean_scores.append(valid_mean_score)
+
+        # Display and save validations info
         viz.log_errors(epoch=epoch,
                        errors={'val_aggr_err': valid_mean_score},
                        log_path=viz.valid_aggreg_log_path)
-        valid_mean_win = viz.plot_errors(np.array(list(range(epoch + 1))),
-                                         np.array(valid_mean_scores),
-                                         title='average aggreg acc',
-                                         win=valid_mean_win)
+        if vizualize:
+            valid_mean_win = viz.plot_errors(np.array(list(range(epoch + 1))),
+                                             np.array(valid_mean_scores),
+                                             title='average aggreg acc',
+                                             win=valid_mean_win)
 
     if verbose:
         print('Done training')
@@ -106,7 +118,12 @@ def train_net(dataloader, model, opt,
 def data_pass(model, image, target, opt,
               dataloader, epoch, i=0, metrics=None,
               viz=None, conf_mat=None,
-              sample_win=None, train=True):
+              sample_win=None, train=True,
+              visualize=True):
+    """
+    Args:
+        visualize(bool): whether to display in visdom
+    """
     image = model.prepare_var(image)
     target = model.prepare_var(target)
 
@@ -131,20 +148,21 @@ def data_pass(model, image, target, opt,
                      pred_classes[idx]] += 1
 
     # Display an image example in visdom
-    if viz is not None and i % opt.display_freq == 0:
-        sample_win = viz.plot_sample(image.data,
-                                     target.data,
-                                     output.data,
-                                     dataloader.dataset.classes,
-                                     sample_win,
-                                     unnormalize=dataloader.dataset.untransform)
+    if visualize:
+        if viz is not None and i % opt.display_freq == 0:
+            sample_win = viz.plot_sample(image.data,
+                                         target.data,
+                                         output.data,
+                                         dataloader.dataset.classes,
+                                         sample_win,
+                                         unnormalize=dataloader.dataset.untransform)
 
     return metrics, sample_win, conf_mat
 
 
 def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
                sample_win=None, train=True, verbose=False,
-               conf_mat=None, conf_win=None):
+               conf_mat=None, conf_win=None, visualize=True):
     if train:
         model.net.train()
     else:
@@ -158,11 +176,13 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
                                  viz=viz,
                                  conf_mat=conf_mat,
                                  sample_win=sample_win,
-                                 i=i, train=train)
+                                 i=i, train=train,
+                                 visualize=visualize)
 
     # Display confusion matrix
     epoch_conf_mat = conf_mat[epoch]
-    conf_win = viz.plot_mat(epoch_conf_mat, conf_win)
+    if visualize:
+        conf_win = viz.plot_mat(epoch_conf_mat, conf_win)
 
     # Compute epoch scores and clear current scores
     for metric in metrics:
@@ -175,9 +195,10 @@ def epoch_pass(dataloader, model, opt, epoch, metrics, viz,
     for metric in metrics:
         plt_title = 'valid ' + metric.name if train is False else metric.name
         scores = np.array(metric.evolution)
-        win = viz.plot_errors(np.array(list(range(len(scores)))),
-                              scores, title=plt_title,
-                              win=metric.win)
+        if visualize:
+            win = viz.plot_errors(np.array(list(range(len(scores)))),
+                                  scores, title=plt_title,
+                                  win=metric.win)
         metric.win = win
 
     # Write scores to log file
