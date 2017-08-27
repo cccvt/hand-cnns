@@ -11,10 +11,11 @@ for leave_out in leave_outs:
                                 '--lr', '0.00001',
                                 '--new_lr', '0.00001',
                                 '--threads', '8',
-                                '--epochs', '101',
+                                '--epochs', '51',
                                 '--use_flow', '1',
                                 '--exp_id',
-                                'gtea-debug-flow/gtea_lo_' +
-                                str(leave_out)])
+                                'running-c3d-gtea-flow-farneback-leave-outs/gtea_lo_' +
+                                str(leave_out),
+                                '--visualize', '0'])
 
     run_training(opt)

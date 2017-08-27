@@ -42,7 +42,7 @@ class BaseOptions():
                                  default=10, help='number of frames to average at test time')
 
         # Display params
-        self.parser.add_argument('--visdom', type=int,
+        self.parser.add_argument('--visualize', type=int,
                                  default=1, help='0 to disable visdom plots')
 
     def parse(self, arguments=None):
