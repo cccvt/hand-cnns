@@ -68,12 +68,19 @@ class GTEAGazePlus(data.Dataset):
         self.untransform = None  # Needed for visualizer
 
         self.path = root_folder
+        self.flow_path = os.path.join(self.path, 'flow-farneback')
+        self.rgb_path = os.path.join(self.path, 'png')
+        self.video_path = os.path.join(self.path, 'avi_files')
         self.label_path = os.path.join(self.path, 'labels_cleaned')
         self.all_seqs = ['Ahmad', 'Alireza', 'Carlos',
                          'Rahul', 'Yin', 'Shaghayegh']
 
         self.seqs = seqs
         self.use_flow = use_flow
+        self.flow_x_template = "{frame:010d}x.jpg"
+        self.flow_y_template = "{frame:010d}y.jpg"
+        self.minmax_filename = "minmax.pickle"
+        
 
         # Compute classes
         if self.original_labels:

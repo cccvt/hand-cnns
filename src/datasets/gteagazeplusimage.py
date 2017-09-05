@@ -50,9 +50,16 @@ class GTEAGazePlusImage(GTEAGazePlus):
         annot[class_idx] = 1
 
         frame_idx = random.randint(beg, end)
-        frame_name = "{frame:010d}.png".format(frame=frame_idx)
-        img_path = os.path.join(self.rgb_path, sequence_name, frame_name)
-        img = loader.load_rgb_image(img_path)
+        if self.use_flow:
+            flow_base_path = os.path.join(self.flow_path, sequence_name)
+            img = loader.load_flow(base_folder, frame_idx,
+                                   flow_x_template=self.flow_x_template,
+                                   flow_y_template=self.flow_y_template,
+                                   minmax_filename=self.minmax_filename)
+        else:
+            frame_name = "{frame:010d}.png".format(frame=frame_idx)
+            img_path = os.path.join(self.rgb_path, sequence_name, frame_name)
+            img = loader.load_rgb_image(img_path)
 
         # Apply transform
         if self.transform is not None:

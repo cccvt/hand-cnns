@@ -30,9 +30,6 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         self.base_transform = base_transform
 
         self.use_video = use_video
-        self.flow_path = os.path.join(self.path, 'flow-farneback')
-        self.rgb_path = os.path.join(self.path, 'png')
-        self.video_path = os.path.join(self.path, 'avi_files')
         self.clip_size = clip_size
 
         action_clips = self.get_all_actions(self.classes)
@@ -97,9 +94,9 @@ class GTEAGazePlusVideo(GTEAGazePlus):
             # Retrieve stacked flow frames
             flow_path = os.path.join(self.flow_path, sequence_name)
             clip = loader.get_stacked_flow_arrays(flow_path, frame_begin, frame_nb,
-                                                  flow_x_template="{frame:010d}x.jpg",
-                                                  flow_y_template="{frame:010d}y.jpg",
-                                                  minmax_filename="minmax.pickle")
+                                                  flow_x_template=self.flow_x_template,
+                                                  flow_y_template=self.flow_y_template,
+                                                  minmax_filename=self.minmax_filename)
         else:
             # Retrieve stacked rgb frames
             if self.use_video:
