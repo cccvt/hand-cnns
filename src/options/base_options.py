@@ -40,6 +40,9 @@ class BaseOptions():
         # Averaging params
         self.parser.add_argument('--frame_nb', type=int,
                                  default=10, help='number of frames to average at test time')
+        self.parser.add_argument('--clip_spacing', type=int,
+                                 default=1, help='When using clip, how many frames to skip\
+                                 between consecutive frames')
 
         # Display params
         self.parser.add_argument('--visualize', type=int,

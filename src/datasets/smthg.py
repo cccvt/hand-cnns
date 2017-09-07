@@ -101,7 +101,7 @@ class Smthg(data.Dataset):
         """
         str_video_id = str(video_id)
         # Reconstruct path in format video_folder/8/890 for instance
-        if self.use_flow:
+        if self.use_flows:
             video_path = os.path.join(self.split_flow_path,
                                       str_video_id[0], str_video_id)
         else:
