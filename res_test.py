@@ -6,7 +6,7 @@ from src.datasets.smthgimage import SmthgImage
 
 from src.netscripts import test
 from src.nets import resnet_adapt
-from src.options import test_options
+from src.options import base_options, image_options, test_options
 from src.utils.normalize import Unnormalize
 
 
@@ -61,5 +61,11 @@ def run_testing(opt):
 
 
 if __name__ == "__main__":
-    opt = test_options.TestOptions().parse()
+    # Initialize base options
+    options = base_options.BaseOptions()
+
+    # Add test options and parse
+    test_options.add_test_options(options)
+    image_options.add_image_options(options)
+    opt = options.parse()
     run_testing(opt)

@@ -12,14 +12,14 @@ from src.datasets.utils import visualize
 class Smthg(data.Dataset):
     def __init__(self, root_folder="data/smthg-smthg",
                  video_transform=None, split='train',
-                 clip_size=16, use_flows=False):
+                 clip_size=16, use_flow=False):
         """
         Args:
             split(str): train/valid/test
             video_transform : transforms to successively apply
         """
         self.video_transform = video_transform
-        self.use_flows = use_flows
+        self.use_flow = use_flow
         self.split = split
         self.clip_size = clip_size
         self.class_nb = None
@@ -97,11 +97,11 @@ class Smthg(data.Dataset):
     def path_from_id(self, video_id):
         """ Retrieves path to video from idx when dataset is
         split into first-digit folders
-        Depending on self.use_flows returns path to rgb or flow folder
+        Depending on self.use_flow returns path to rgb or flow folder
         """
         str_video_id = str(video_id)
         # Reconstruct path in format video_folder/8/890 for instance
-        if self.use_flows:
+        if self.use_flow:
             video_path = os.path.join(self.split_flow_path,
                                       str_video_id[0], str_video_id)
         else:

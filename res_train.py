@@ -3,10 +3,10 @@ import torch
 from torchvision import transforms
 import torchvision.models as models
 
-from src.datasets import gtea, gun
+from src.datasets import gun
 from src.datasets.gteagazeplusimage import GTEAGazePlusImage
 from src.datasets.smthgimage import SmthgImage
-from src.options import train_options, error
+from src.options import base_options, image_options, train_options, error
 from src.nets import resnet_adapt
 from src.netscripts import train
 from src.utils.normalize import Unnormalize
@@ -147,5 +147,11 @@ def run_training(opt):
 
 
 if __name__ == "__main__":
-    opt = train_options.TrainOptions().parse()
+    # Initialize base options
+    options = base_options.BaseOptions()
+
+    # Add train options and parse
+    train_options.add_train_options(options)
+    image_options.add_image_options(options)
+    opt = options.parse()
     run_training(opt)

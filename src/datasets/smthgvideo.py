@@ -8,7 +8,7 @@ from src.datasets.smthg import Smthg
 class SmthgVideo(Smthg):
     def __init__(self, root_folder="data/smthg-smthg", split='train',
                  video_transform=None, base_transform=None,
-                 clip_size=16, use_flows=False, frame_spacing=1):
+                 clip_size=16, use_flow=False, frame_spacing=1):
         """
         Args:
             video_transform: transformation to apply to the clips during
@@ -18,7 +18,7 @@ class SmthgVideo(Smthg):
            frame_spacing(int): time spacing between consecutive frames in clip
         """
         super().__init__(root_folder=root_folder,
-                         split=split, use_flows=use_flows)
+                         split=split, use_flow=use_flow)
 
         # Set video params
         self.video_transform = video_transform
@@ -83,7 +83,7 @@ class SmthgVideo(Smthg):
     def get_clip(self, clip_idx, frame_begin):
         clip_path = self.path_from_id(clip_idx)
         frame_nb = self.clip_size
-        if self.use_flows:
+        if self.use_flow:
             clip = loader.get_stacked_flow_arrays(clip_path, frame_begin,
                                                   frame_nb, 
                                                   flow_x_template="{frame:05d}x.jpg",
