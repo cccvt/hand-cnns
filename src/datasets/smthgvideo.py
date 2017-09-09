@@ -23,7 +23,7 @@ class SmthgVideo(Smthg):
         # Set video params
         self.video_transform = video_transform
         self.base_transform = base_transform
-        self.frame_spacing = 1
+        self.frame_spacing = frame_spacing
 
         self.clip_size = clip_size
 

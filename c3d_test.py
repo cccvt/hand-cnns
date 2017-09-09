@@ -2,7 +2,7 @@ import cv2
 import torch
 
 from src.datasets.smthgvideo import SmthgVideo
-from src.datasets.utils import transforms
+from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
 from src.netscripts import test
 from src.options import base_options, video_options, test_options
@@ -11,11 +11,13 @@ from src.options import base_options, video_options, test_options
 def run_testing(opt):
     scale_size = (128, 171)
     crop_size = (112, 112)
-    base_transform = transforms.Compose([transforms.Scale(crop_size),
-                                         transforms.ToTensor()])
-    video_transform = transforms.Compose([transforms.Scale(scale_size),
-                                          transforms.RandomCrop(crop_size),
-                                          transforms.ToTensor()])
+    base_transform_list = [video_transforms.Scale(crop_size),
+                           volume_transforms.ToTensor()]
+    base_transform = video_transforms.Compose(base_transform_list)
+    video_transform_list = [video_transforms.Scale(scale_size),
+                            video_transforms.RandomCrop(crop_size),
+                            volume_transforms.ToTensor()]
+    video_transform = video_transforms.Compose(video_transform_list)
 
     dataset = SmthgVideo(video_transform=video_transform,
                          base_transform=base_transform,

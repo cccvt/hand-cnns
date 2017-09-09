@@ -3,7 +3,7 @@ import torch
 
 from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
 from src.datasets.smthgvideo import SmthgVideo
-from src.datasets.utils import transforms
+from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
 from src.netscripts import train
 from src.options import base_options, train_options, video_options
@@ -20,11 +20,13 @@ def run_training(opt):
         channel_nb = 2
     else:
         channel_nb = 3
-    base_transform = transforms.Compose([transforms.Scale(crop_size),
-                                         transforms.ToTensor(channel_nb=channel_nb)])
-    video_transform = transforms.Compose([transforms.Scale(scale_size),
-                                          transforms.RandomCrop(crop_size),
-                                          transforms.ToTensor(channel_nb=channel_nb)])
+    base_transform_list = [video_transforms.Scale(crop_size),
+                           volume_transforms.ToTensor(channel_nb=channel_nb)]
+    base_transform = video_transforms.Compose(base_transform_list)
+    video_transform_list = [video_transforms.Scale(scale_size),
+                            video_transforms.RandomCrop(crop_size),
+                            volume_transforms.ToTensor(channel_nb=channel_nb)]
+    video_transform = video_transforms.Compose(video_transform_list)
 
     # Initialize datasets
     leave_out_idx = opt.leave_out
@@ -81,7 +83,8 @@ def run_training(opt):
     c3dnet = c3d.C3D()
     if opt.pretrained:
         c3dnet.load_state_dict(torch.load('data/c3d.pickle'))
-    model = c3d_adapt.C3DAdapt(opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
+    model = c3d_adapt.C3DAdapt(
+        opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.net.parameters(), lr=0.003)

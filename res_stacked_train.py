@@ -5,7 +5,7 @@ import torchvision.models as models
 from src.datasets import gun
 from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
 from src.datasets.smthgvideo import SmthgVideo
-from src.datasets.utils import transforms
+from src.datasets.utils import video_transforms, stack_transforms
 from src.options import base_options, video_options, train_options, error
 from src.nets import resnet_adapt
 from src.netscripts import train
@@ -26,11 +26,14 @@ def run_training(opt):
         channel_nb = 3
 
     stack_nb = 10  # As found empirically in going deeper into first-person activity recognition
-    base_transform = transforms.Compose([transforms.Scale(final_size),
-                                         transforms.ToStackedTensor(channel_nb=channel_nb)])
-    video_transform = transforms.Compose([transforms.Scale(scale_size),
-                                          transforms.RandomCrop((final_size, final_size)),
-                                          transforms.ToStackedTensor(channel_nb=channel_nb)])
+    base_transform_list = [video_transforms.Scale(final_size),
+                           stack_transforms.ToStackedTensor(channel_nb=channel_nb)]
+    base_transform = video_transforms.Compose(base_transform_list)
+    video_transform_list = [video_transforms.Scale(scale_size),
+                            video_transforms.RandomCrop(
+                                (final_size, final_size)),
+                            stack_transforms.ToStackedTensor(channel_nb=channel_nb)]
+    video_transform = video_transforms.Compose(video_transform_list)
 
     # Initialize dataset
     if opt.dataset == 'gteagazeplus':
