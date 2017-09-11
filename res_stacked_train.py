@@ -6,7 +6,7 @@ from src.datasets import gun
 from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
 from src.datasets.smthgvideo import SmthgVideo
 from src.datasets.utils import video_transforms, stack_transforms
-from src.options import base_options, video_options, train_options, error
+from src.options import base_options, video_options, train_options, error, stack_options
 from src.nets import resnet_adapt
 from src.netscripts import train
 from src.utils.normalize import Unnormalize
@@ -25,7 +25,6 @@ def run_training(opt):
     else:
         channel_nb = 3
 
-    stack_nb = 10  # As found empirically in going deeper into first-person activity recognition
     base_transform_list = [video_transforms.Scale(final_size),
                            stack_transforms.ToStackedTensor(channel_nb=channel_nb)]
     base_transform = video_transforms.Compose(base_transform_list)
@@ -42,23 +41,24 @@ def run_training(opt):
         train_seqs, valid_seqs = evaluation.leave_one_out(all_subjects,
                                                           leave_out_idx)
         dataset = GTEAGazePlusVideo(video_transform=video_transform,
-                                    use_video=False, clip_size=stack_nb,
+                                    use_video=False, clip_size=opt.stack_nb,
                                     original_labels=True,
                                     seqs=train_seqs, use_flow=opt.use_flow)
         val_dataset = GTEAGazePlusVideo(video_transform=video_transform,
                                         base_transform=base_transform,
-                                        use_video=False, clip_size=stack_nb,
+                                        use_video=False,
+                                        clip_size=opt.stack_nb,
                                         original_labels=True,
                                         seqs=valid_seqs,
                                         use_flow=opt.use_flow)
     elif opt.dataset == 'smthgsmthg':
         dataset = SmthgVideo(video_transform=video_transform,
-                             clip_size=stack_nb, split='train',
+                             clip_size=opt.stack_nb, split='train',
                              use_flow=opt.use_flow,
                              frame_spacing=opt.clip_spacing)
 
         val_dataset = SmthgVideo(video_transform=video_transform,
-                                 clip_size=stack_nb, split='valid',
+                                 clip_size=opt.stack_nb, split='valid',
                                  base_transform=base_transform,
                                  use_flow=opt.use_flow)
     else:
@@ -88,7 +88,7 @@ def run_training(opt):
     # Load model
     resnet = models.resnet50(pretrained=opt.pretrained)
     model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb,
-                                     in_channels=channel_nb * stack_nb)
+                                     in_channels=channel_nb * opt.stack_nb)
     if opt.lr != opt.new_lr:
         model_params = model.lr_params(lr=opt.new_lr)
     else:
@@ -129,5 +129,6 @@ if __name__ == "__main__":
     # Add train options and parse
     train_options.add_train_options(options)
     video_options.add_video_options(options)
+    stack_options.add_stack_options(options)
     opt = options.parse()
     run_training(opt)

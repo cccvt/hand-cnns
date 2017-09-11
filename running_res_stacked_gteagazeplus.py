@@ -24,6 +24,7 @@ for leave_out in leave_outs:
                          'run_res_stack_gtea_flow_farneback_leave_outs/gtea_lo_' +
                          str(leave_out),
                          '--visualize', '0',
+                         '--stack_nb', '10',
                          '--test_aggreg', '0'])
 
     run_training(opt)
