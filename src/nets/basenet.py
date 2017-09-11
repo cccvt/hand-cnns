@@ -54,6 +54,7 @@ class BaseNet():
         self.net.load_state_dict(checkpoint['net'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         print('loaded net from epoch {0}'.format(epoch))
+        return epoch
 
     def set_optimizer(self, optim):
         self.optimizer = optim

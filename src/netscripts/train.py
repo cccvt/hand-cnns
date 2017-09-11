@@ -35,19 +35,36 @@ def train_net(dataloader, model, opt,
         model.net = model.net.cuda()
         model.criterion = model.criterion.cuda()
 
-        epoch_nb = opt.epochs
+        last_epoch = opt.epochs
 
     # Initialize conf_mat
     classes = dataloader.dataset.classes
     class_nb = len(classes)
-    conf_mat = np.zeros((epoch_nb, class_nb, class_nb))
-    val_conf_mat = np.zeros((epoch_nb, class_nb, class_nb))
     conf_win = None
     val_conf_win = None
 
     valid_mean_scores = []
     valid_mean_win = None
-    for epoch in tqdm(range(epoch_nb), desc='epoch'):
+
+    # Load stored conf mat and determine start epoch
+    if opt.continue_training:
+        start_epoch = opt.continue_epoch
+        with open(os.path.join(opt.checkpoint_dir, 'train_conf_mat.pickle'), 'rb') as conf_mat:
+            stored_conf_mat = pickle.load(conf_mat)
+        with open(os.path.join(opt.checkpoint_dir, 'val_conf_mat.pickle'), 'rb') as conf_mat:
+            stored_val_conf_mat = pickle.load(conf_mat)
+    else:
+        start_epoch = 0
+
+    conf_mat = np.zeros((last_epoch - start_epoch + 1,
+                         class_nb, class_nb))
+    val_conf_mat = np.zeros((last_epoch - start_epoch + 1,
+                            class_nb, class_nb))
+    if opt.continue_training:
+        conf_mat = np.concatenate([conf_mat, stored_conf_mat])
+        val_conf_mat = np.concatenate([val_conf_mat, stored_val_conf_mat])
+    
+    for epoch in tqdm(range(start_epoch, last_epoch), desc='epoch'):
         # Train for one epoch
         metrics, sample_win,\
             conf_mat, conf_win = epoch_pass(dataloader, model, opt,

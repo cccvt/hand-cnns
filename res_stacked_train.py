@@ -112,9 +112,12 @@ def run_training(opt):
     if opt.continue_training:
         if opt.continue_epoch == 0:
             model.net.eval()
-            model.load('latest')
+            opt.continue_epoch = model.load('latest')
         else:
-            model.load(opt.continue_epoch)
+            continue_epoch = model.load(opt.continue_epoch)
+            assert continue_epoch == opt.continue_epoch, 'stored epoch {}\
+                    same as in name {}'.format(continue_epoch,
+                                               opt.continue_epoch)
 
     train.train_net(dataloader, model, opt,
                     valid_dataloader=val_dataloader,
