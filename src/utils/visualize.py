@@ -110,7 +110,9 @@ class Visualize():
         # Extract one image from stacked images
         if input_img.dim() == 4:
             input_img = input_img[:, 0, :, :] * 255
-        if input_img.shape[0] == 2:
+
+        # if non canonical number of channels (not 3), extract first channel
+        if input_img.shape[0] != 3:
             input_img = input_img[0, :, :]
         if win is None:
             win = self.vis.image(input_img,
