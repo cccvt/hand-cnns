@@ -40,6 +40,7 @@ if __name__ == "__main__":
     if opt.gteagazeplus:
         template_aggreg = os.path.join(opt.checkpoint, 'gtea_lo_{}/valid_aggreg.txt')
         template_valid = os.path.join(opt.checkpoint, 'gtea_lo_{}/valid_log.txt')
+        template_train = os.path.join(opt.checkpoint, 'gtea_lo_{}/train_log.txt')
         if opt.aggreg:
             for leave_out in range(6):
                 print(leave_out)
@@ -57,6 +58,17 @@ if __name__ == "__main__":
                 loss_log = {loss_name: loss_values}
                 plot_logs(logs)
                 plot_logs(loss_log)
+        if opt.train:
+            for leave_out in range(6):
+                print(leave_out)
+                log_file = template_train.format(str(leave_out))
+                logs = process_logs(log_file)
+                loss_name = 'loss'
+                loss_values = logs.pop(loss_name)
+                loss_log = {loss_name: loss_values}
+                plot_logs(logs)
+                plot_logs(loss_log)
+
     else:
         aggreg_file = os.path.join(opt.checkpoint, 'valid_aggreg.txt')
         valid_file = os.path.join(opt.checkpoint, 'valid_log.txt')
