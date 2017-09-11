@@ -2,6 +2,7 @@ import argparse
 import datetime
 import os
 import subprocess
+import sys
 
 from src.utils import filesys
 
@@ -64,7 +65,8 @@ class BaseOptions():
                     option=str(k), value=str(v)))
             git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
             opt_file.write('git hash: {}\n'.format(git_hash.strip()))
-            opt_file.write('launched {}\n'.format(
+            opt_file.write('launched {} at {}\n'.format(
+                str(sys.argv[0]),
                 str(datetime.datetime.now())))
 
         return self.opt

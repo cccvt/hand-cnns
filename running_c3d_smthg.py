@@ -22,6 +22,6 @@ for lr in lrs:
                          str(lr),
                          '--visualize', '0',
                          '--test_aggreg', '0',
-                         '--clip_spacing', '3'])
+                         '--clip_spacing', '1'])
 
     run_training(opt)

@@ -36,8 +36,8 @@ class SmthgVideo(Smthg):
     def __getitem__(self, index):
         # Load clip
         clip_id, label, max_frame = self.sample_list[index]
-        frame_idx = random.randint(1, max_frame - self.clip_size
-                                   - self.frame_spacing + 1)
+        frame_idx = random.randint(1,
+                                   max_frame - self.clip_size * self.frame_spacing)
         clip = self.get_clip(clip_id, frame_idx)
 
         # Apply video transform
@@ -85,7 +85,7 @@ class SmthgVideo(Smthg):
         frame_nb = self.clip_size
         if self.use_flow:
             clip = loader.get_stacked_flow_arrays(clip_path, frame_begin,
-                                                  frame_nb, 
+                                                  frame_nb,
                                                   flow_x_template="{frame:05d}x.jpg",
                                                   flow_y_template="{frame:05d}y.jpg",
                                                   minmax_filename="minmax.pickle")
