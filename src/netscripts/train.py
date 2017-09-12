@@ -49,9 +49,13 @@ def train_net(dataloader, model, opt,
     # Load stored conf mat and determine start epoch
     if opt.continue_training:
         start_epoch = opt.continue_epoch
-        with open(os.path.join(opt.checkpoint_dir, 'train_conf_mat.pickle'), 'rb') as conf_mat:
+        with open(os.path.join(opt.checkpoint_dir,
+                  opt.exp_id,
+                  'train_conf_mat.pickle'), 'rb') as conf_mat:
             stored_conf_mat = pickle.load(conf_mat)
-        with open(os.path.join(opt.checkpoint_dir, 'val_conf_mat.pickle'), 'rb') as conf_mat:
+        with open(os.path.join(opt.checkpoint_dir,
+                  opt.exp_id,
+                  'val_conf_mat.pickle'), 'rb') as conf_mat:
             stored_val_conf_mat = pickle.load(conf_mat)
     else:
         start_epoch = 0
