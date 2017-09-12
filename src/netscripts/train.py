@@ -46,27 +46,16 @@ def train_net(dataloader, model, opt,
     valid_mean_scores = []
     valid_mean_win = None
 
-    # Load stored conf mat and determine start epoch
     if opt.continue_training:
         start_epoch = opt.continue_epoch
-        with open(os.path.join(opt.checkpoint_dir,
-                  opt.exp_id,
-                  'train_conf_mat.pickle'), 'rb') as conf_mat:
-            stored_conf_mat = pickle.load(conf_mat)
-        with open(os.path.join(opt.checkpoint_dir,
-                  opt.exp_id,
-                  'val_conf_mat.pickle'), 'rb') as conf_mat:
-            stored_val_conf_mat = pickle.load(conf_mat)
     else:
         start_epoch = 0
 
-    conf_mat = np.zeros((last_epoch - start_epoch + 1,
+    # Conf mat are overwritten when training is continued
+    conf_mat = np.zeros((last_epoch,
                          class_nb, class_nb))
-    val_conf_mat = np.zeros((last_epoch - start_epoch + 1,
+    val_conf_mat = np.zeros((last_epoch,
                             class_nb, class_nb))
-    if opt.continue_training:
-        conf_mat = np.concatenate([conf_mat, stored_conf_mat])
-        val_conf_mat = np.concatenate([val_conf_mat, stored_val_conf_mat])
     
     for epoch in tqdm(range(start_epoch, last_epoch), desc='epoch'):
         # Train for one epoch
