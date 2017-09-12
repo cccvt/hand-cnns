@@ -94,7 +94,7 @@ class BaseNet():
         Constructs path to file where to save/load the network's
         weights
         """
-        net_filename = '{net}_epoch{ep}.pth'.format(net=network_name,
+        net_filename = '{net}_epoch{ep:04d}.pth'.format(net=network_name,
                                                     ep=epoch)
         file_path = os.path.join(self.save_dir, net_filename)
         return file_path
