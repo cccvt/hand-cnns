@@ -18,9 +18,10 @@ for lr in lrs:
                          '--threads', '3',
                          '--epochs', '101',
                          '--exp_id',
-                         'run_c3d_smthg_spacing_3/lr_' +
+                         'run_c3d_smthg_flow/lr_' +
                          str(lr),
                          '--visualize', '0',
+                         '--use_flow', '1',
                          '--test_aggreg', '0',
                          '--clip_spacing', '1'])
 
