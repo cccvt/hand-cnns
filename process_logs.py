@@ -51,6 +51,19 @@ def process_logs(log_path, vis=True,
     return sorted(iter_scores, key=itemgetter(0))
 
 
+def print_iter_scores(all_iter_scores, iter_nb):
+    """
+    Args:
+        all_iter_scores (list): in format 
+            [{score_name, [fold1_score, fold2_score,...]}, /..]
+    """
+    # Display iter scores
+    for loss, value in all_iter_scores.items():
+        print('{loss} : {m} at iter {it} ({values})'
+              .format(m=np.mean(value), it=iter_nb,
+                      loss=loss, values=value))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--checkpoint', type=str,
@@ -87,43 +100,39 @@ if __name__ == "__main__":
                 for loss, value in leave_out_iter_scores:
                     all_iter_scores[loss].append(value)
 
-            # Display iter scores
-            for loss, value in all_iter_scores.items():
-                print(loss)
-                print('mean {m} for loss {loss} \
-                        ({values})'.format(m=np.mean(value),
-                                           loss=loss, values=value))
+        # Display iter scores
+            print('==== Aggreg scores ====')
+            print_iter_scores(all_iter_scores, opt.score_iter)
 
         if opt.valid:
-            valid_scores = []
+            all_iter_scores = defaultdict(list)
             for leave_out in range(6):
                 print(leave_out)
                 log_file = template_valid.format(str(leave_out))
-                logs = get_logs(log_file)
-                loss_name = 'loss'
-                loss_values = logs.pop(loss_name)
-                loss_log = {loss_name: loss_values}
-                if opt.vis:
-                    plot_logs(logs)
-                    plot_logs(loss_log)
-                valid_scores.append(logs['top1'][opt.score_iter])
-            print(valid_scores)
-            print('mean of valid scores : {}'.format(np.mean(valid_scores)))
+                leave_out_iter_scores = process_logs(log_file, pop_loss='loss',
+                                                     score_iter=opt.score_iter,
+                                                     vis=opt.vis)
+                for loss, value in leave_out_iter_scores:
+                    all_iter_scores[loss].append(value)
+
+            # Display iter scores
+            print('==== Valid scores ====')
+            print_iter_scores(all_iter_scores, opt.score_iter)
+
         if opt.train:
-            train_scores = []
+            all_iter_scores = defaultdict(list)
             for leave_out in range(6):
                 print(leave_out)
                 log_file = template_train.format(str(leave_out))
-                logs = get_logs(log_file)
-                loss_name = 'loss'
-                loss_values = logs.pop(loss_name)
-                loss_log = {loss_name: loss_values}
-                if opt.vis:
-                    plot_logs(logs)
-                    plot_logs(loss_log)
-                train_scores.append(logs['top1'][opt.score_iter])
-            print(train_scores)
-            print('mean of train scores: {}'.format(np.mean(train_scores)))
+                leave_out_iter_scores = process_logs(log_file, pop_loss='loss',
+                                                     score_iter=opt.score_iter,
+                                                     vis=opt.vis)
+                for loss, value in leave_out_iter_scores:
+                    all_iter_scores[loss].append(value)
+
+            # Display iter scores
+            print('==== Train scores ====')
+            print_iter_scores(all_iter_scores, opt.score_iter)
 
     else:
         aggreg_file = os.path.join(opt.checkpoint, 'valid_aggreg.txt')
