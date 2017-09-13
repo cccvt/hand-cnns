@@ -2,7 +2,7 @@ from c3d_train import run_training
 from src.options import base_options, train_options, video_options
 
 
-leave_outs = list(range(1, 6))
+leave_outs = list(range(0, 6))
 
 
 for leave_out in leave_outs:
@@ -17,13 +17,13 @@ for leave_out in leave_outs:
                          '--leave_out', str(leave_out),
                          '--lr', '0.0001',
                          '--new_lr', '0.0001',
-                         '--threads', '4',
-                         '--epochs', '51',
-                         '--use_flow', '1',
+                         '--threads', '10',
+                         '--epochs', '101',
+                         '--use_flow', '0',
                          '--exp_id',
-                         'run_c3d_gtea_flow_farneback_leave_outs/gtea_lo_' +
+                         'run_c3d_gtea_rgb_frame_leave_outs/gtea_lo_' +
                          str(leave_out),
                          '--visualize', '0',
-                         '--test_aggreg', '0'])
+                         '--test_aggreg', '1'])
 
     run_training(opt)
