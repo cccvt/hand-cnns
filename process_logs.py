@@ -47,6 +47,9 @@ def process_logs(log_path, vis=True,
         plot_logs(logs)
     iter_scores = []
     for score_name, score_values in logs.items():
+        assert len(score_values) > score_iter, 'index {} out of\
+                range for score_values of len {}'.format(score_iter,
+                                                         len(score_values))
         iter_scores.append((score_name, score_values[score_iter]))
     return sorted(iter_scores, key=itemgetter(0))
 
@@ -140,10 +143,29 @@ if __name__ == "__main__":
         train_file = os.path.join(opt.checkpoint, 'train_log.txt')
         if opt.aggreg:
             aggreg_logs = get_logs(aggreg_file)
-            plot_logs(aggreg_logs)
+            iter_scores = process_logs(aggreg_file,
+                                       score_iter=opt.score_iter,
+                                       vis=opt.vis)
+            print('==== Aggreg scores ====')
+            for loss, val in iter_scores:
+                print('{val}: {loss}'.format(val=val, loss=loss))
+
         if opt.valid:
             valid_logs = get_logs(valid_file)
-            plot_logs(valid_logs)
+            iter_scores = process_logs(valid_file, pop_loss='loss',
+                                       score_iter=opt.score_iter,
+                                       vis=opt.vis)
+
+            # Display iter scores
+            print('==== Valid scores ====')
+            for loss, val in iter_scores:
+                print('{val}: {loss}'.format(val=val, loss=loss))
+
         if opt.train:
             train_logs = get_logs(train_file)
-            plot_logs(train_logs)
+            iter_scores = process_logs(train_file, pop_loss='loss',
+                                       score_iter=opt.score_iter,
+                                       vis=opt.vis)
+            print('==== Train scores ====')
+            for loss, val in iter_scores:
+                print('{val}: {loss}'.format(val=val, loss=loss))
