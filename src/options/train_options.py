@@ -6,9 +6,6 @@ def add_train_options(options):
                         help="Use weighted sampling during training")
 
     # Valid params
-    parser.add_argument('--leave_out', type=int, default=0,
-                        help="Index of sequence item to leave out\
-                             for validation")
     parser.add_argument('--test_aggreg', type=int, default=1,
                         help="0 to disable aggregation test during\
                              training")

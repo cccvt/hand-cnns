@@ -44,6 +44,11 @@ class BaseOptions():
         self.parser.add_argument('--visualize', type=int,
                                  default=1, help='0 to disable visdom plots')
 
+        # GTEAGaze+ specific option
+        self.parser.add_argument('--leave_out', type=int, default=0,
+                                 help="Index of sequence item to leave out\
+                                 for validation")
+
     def parse(self, arguments=None):
         self.opt = self.parser.parse_args(arguments)
 
