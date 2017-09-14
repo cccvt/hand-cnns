@@ -16,7 +16,7 @@ for lr in lrs:
                          '--dataset', 'smthgsmthg',
                          '--lr', str(lr),
                          '--new_lr', str(lr),
-                         '--threads', '10',
+                         '--threads', '8',
                          '--epochs', '101',
                          '--use_flow', '1',
                          '--exp_id',
@@ -25,6 +25,8 @@ for lr in lrs:
                          '--visualize', '0',
                          '--display_freq', '100',
                          '--stack_nb', '10',
-                         '--test_aggreg', '0'])
+                         '--continue_training',
+                         '--continue_epoch', '0',
+                         '--test_aggreg', '1'])
 
     run_training(opt)
