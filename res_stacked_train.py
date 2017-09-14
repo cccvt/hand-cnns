@@ -109,9 +109,9 @@ def run_training(opt):
     if opt.continue_training:
         if opt.continue_epoch == 0:
             model.net.eval()
-            opt.continue_epoch = model.load('latest')
+            opt.continue_epoch = model.load(latest=True)
         else:
-            continue_epoch = model.load(opt.continue_epoch)
+            continue_epoch = model.load(epoch=opt.continue_epoch)
             assert continue_epoch == opt.continue_epoch, 'stored epoch {}\
                     same as in name {}'.format(continue_epoch,
                                                opt.continue_epoch)

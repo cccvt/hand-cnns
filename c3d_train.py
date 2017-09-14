@@ -96,9 +96,9 @@ def run_training(opt):
     if opt.continue_training:
         if opt.continue_epoch == 0:
             model.net.eval()
-            model.load('latest')
+            model.load(latest=True)
         else:
-            model.load(opt.continue_epoch)
+            model.load(epoch=opt.continue_epoch)
 
     train.train_net(dataloader, model, opt,
                     valid_dataloader=val_dataloader,

@@ -93,7 +93,7 @@ def train_net(dataloader, model, opt,
 
         # Save network weights
         if opt.save_latest:
-            model.save('latest', opt)
+            model.save(epoch, opt, latest=True)
         if epoch % opt.save_freq == 0:
             model.save(epoch, opt)
 

@@ -12,14 +12,19 @@ class BaseNet():
         self.net = None
         self.opt = opt
 
-    def save(self, epoch, opt):
+    def save(self, epoch, opt, latest=False):
         """
         Utility function to save network weights
         If necessary, network should be stored as self.net property
         otherwise, uses the layers at the first level
         (self.fc for instance)
         """
-        save_path = self._netfile_path(self.name, epoch)
+        if latest:
+            # Saves latest epoch with "latest" in path
+            save_path = self._netfile_path(self.name, 'latest')
+        else:
+            save_path = self._netfile_path(self.name, epoch)
+
         self.net.eval()
         if self.optimizer is not None:
             optimizer_state = self.optimizer.state_dict()
@@ -36,18 +41,31 @@ class BaseNet():
         if self.opt.use_gpu:
             self.net.cuda()
 
-    def load(self, epoch=0, load_path=None):
+    def load(self, epoch=0, load_path=None, latest=False):
         """
         Utility function to load network weights
+        
+        Args:
+            load_path: path of checkpoint to load, is set, epoch and
+                latest are ignored
+            epoch: epoch to load
+            latest: whether to use file with 'latest' suffix, if true
+                epoch is ignored
         """
         if load_path is None:
-            load_path = self._netfile_path(self.name, epoch)
+            # If load_path not specified load either latest or by epoch
+            if latest:
+                checkpoint_path = self._netfile_path(self.name, 'latest')
+            else:
+                checkpoint_path = self._netfile_path(self.name, epoch)
+        else:
+            checkpoint_path = load_path
 
         self.net.eval()
 
         # Load checkpoint state
-        checkpoint = torch.load(load_path)
-        if load_path == None:
+        checkpoint = torch.load(checkpoint_path)
+        if load_path is not None:
             assert checkpoint['epoch'] == epoch
         else:
             epoch = checkpoint['epoch']
