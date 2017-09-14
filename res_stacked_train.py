@@ -14,9 +14,6 @@ from src.utils import evaluation
 
 
 def run_training(opt):
-    # Index of sequence item to leave out for validation
-    leave_out_idx = opt.leave_out
-
     # Set input tranformations
     scale_size = (240, 320)
     final_size = 224
@@ -39,7 +36,7 @@ def run_training(opt):
         all_subjects = ['Ahmad', 'Alireza', 'Carlos',
                         'Rahul', 'Yin', 'Shaghayegh']
         train_seqs, valid_seqs = evaluation.leave_one_out(all_subjects,
-                                                          leave_out_idx)
+                                                          opt.leave_out)
         dataset = GTEAGazePlusVideo(video_transform=video_transform,
                                     use_video=False, clip_size=opt.stack_nb,
                                     original_labels=True,
