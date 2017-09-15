@@ -21,7 +21,7 @@ def run_testing(opt):
 
     dataset = SmthgVideo(video_transform=video_transform,
                          base_transform=base_transform,
-                         clip_size=16, split='test')
+                         clip_size=16, split=opt.split)
 
     # Initialize C3D neural network
     c3dnet = c3d.C3D()
