@@ -1,6 +1,8 @@
 import csv
-import numpy as np
 import os
+import pickle
+
+import numpy as np
 import torch
 from torch.utils.data.dataloader import default_collate
 from tqdm import tqdm
@@ -16,12 +18,16 @@ def save_preds(predictions, prediction_file):
         writer.writerows(predictions.items())
 
 
-def test(dataset, model, viz=None, frame_nb=4, opt=None, save_predictions=False):
+def test(dataset, model, viz=None, frame_nb=4,
+         opt=None, save_predictions=False):
     """Performs average pooling on each action clip sample
     """
     sample_scores = []
     if save_predictions:
+        # Save final class
         predictions = {}
+        # Save predicted scores (for future averaging)
+        prediction_scores = {}
     for idx in tqdm(range(len(dataset)), desc='sample'):
         imgs, class_idx = dataset.get_class_items(idx, frame_nb=frame_nb)
         batches = [imgs[beg:beg + opt.batch_size]
@@ -47,11 +53,16 @@ def test(dataset, model, viz=None, frame_nb=4, opt=None, save_predictions=False)
         if save_predictions:
             sample_idx, _, _ = dataset.sample_list[idx]
             predictions[sample_idx] = dataset.classes[best_idx[0]]
+            prediction_scores[sample_idx] = mean_scores
 
     if save_predictions:
         save_dir = os.path.join(
             opt.checkpoint_dir, opt.exp_id, 'predictions.csv')
         save_preds(predictions, save_dir)
+        save_scores_path = os.path.join(
+            opt.checkpoint_dir, opt.exp_id, 'prediction_scores.pickle')
+        with open(save_scores_path, 'wb') as score_file:
+            pickle.dump(prediction_scores, score_file)
 
     assert len(sample_scores) == len(dataset)
     mean_scores = np.mean(sample_scores)
