@@ -68,7 +68,6 @@ class GTEAGazePlus(data.Dataset):
         self.untransform = None  # Needed for visualizer
 
         self.path = root_folder
-        self.flow_path = os.path.join(self.path, 'flow-farneback')
         self.rgb_path = os.path.join(self.path, 'png')
         self.video_path = os.path.join(self.path, 'avi_files')
         self.label_path = os.path.join(self.path, 'labels_cleaned')
@@ -76,12 +75,26 @@ class GTEAGazePlus(data.Dataset):
                          'Rahul', 'Yin', 'Shaghayegh']
 
         self.seqs = seqs
+
+        # Flow settings
         self.use_flow = use_flow
+        self.flow_type = "tvl1"  # in [farn | tvl1]
+        if self.flow_type == "farn":
+            self.flow_path = os.path.join(self.path, 'flow-farneback')
+            self.minmax_filename = "minmax.pickle"
+        elif self.flow_type == "tvl1":
+            self.flow_path = os.path.join(self.path, 'tvl1-flow')
+            self.minmax_filename = "minmax.txt"
+        self.rescale_flows = False
+
+        # When minmax_filename is set to none, no rescaling (from [0, 255] to
+        # [min, max] is applied
+        if not self.rescale_flows:
+            self.minmax_filename = None
+
         self.flow_x_template = "{frame:010d}x.jpg"
         self.flow_y_template = "{frame:010d}y.jpg"
-        self.minmax_filename = "minmax.pickle"
         
-
         # Compute classes
         if self.original_labels:
             self.classes = self.get_cvpr_classes()

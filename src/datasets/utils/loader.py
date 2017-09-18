@@ -153,10 +153,19 @@ def get_stacked_flow_arrays(image_folder, frame_begin, frame_nb,
     """
     clip = []
     # Retrieve minmax dict in format {frame_idx: [min_x, max_x, min_y, max_y]}
-    if minmax_filename is not None:
+    # from pickle file
+    if minmax_filename is not None and minmax_filename.endswith('.pickle'):
         with open(os.path.join(image_folder,
                                minmax_filename), 'rb') as minmax_file:
             minmax = pickle.load(minmax_file)
+    # Loads tvl1 minmax
+    if minmax_filename is not None and minmax_filename.endswith('.txt'):
+        minmax = {}
+        minmax_array = np.loadtxt(os.path.join(image_folder,
+                                               minmax_filename))
+        for i, row in enumerate(minmax_array):
+            minmax[i + 1] = list(row)
+
     for idx in range(frame_nb):
         frame_idx = frame_begin + idx
         flow_x, flow_y = load_normalized_flow_images(image_folder, frame_idx,

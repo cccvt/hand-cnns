@@ -75,5 +75,5 @@ class StackNormalize(object):
         Returns:
             Tensor: Normalized stack of image of image
         """
-        t.sub_(self.mean).div_(self.std)
+        tensor.sub_(self.mean).div_(self.std)
         return tensor

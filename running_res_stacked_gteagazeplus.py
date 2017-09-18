@@ -22,13 +22,11 @@ for leave_out in leave_outs:
                          '--epochs', '101',
                          '--use_flow', '1',
                          '--exp_id',
-                         'run_res_stack_gtea_flow_farneback_leave_outs/gtea_lo_' +
+                         'run_res_stack_gtea_flow_tvl1_leave_outs/gtea_lo_' +
                          str(leave_out),
-                         '--visualize', '0',
-                         '--display_freq', '2',
+                         '--visualize', '1',
+                         '--display_freq', '4',
                          '--stack_nb', '10',
-                         '--test_aggreg', '0',
-                         '--continue_training',
-                         '--continue_epoch', '50'])
+                         '--test_aggreg', '0'])
 
     run_training(opt)
