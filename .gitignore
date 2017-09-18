@@ -2,6 +2,7 @@ src/.cache
 
 data
 checkpoints
+predictions
 
 test/.cache
 
