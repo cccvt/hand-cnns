@@ -39,7 +39,7 @@ def run_testing(opt):
                                     original_labels=True,
                                     seqs=train_seqs, use_flow=opt.use_flow)
 
-    # Initialize C3D neural network
+    # Initialize neural network
     resnet = models.resnet50()
     model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb,
                                      in_channels=channel_nb * opt.stack_nb)

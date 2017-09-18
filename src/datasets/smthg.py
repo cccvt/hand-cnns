@@ -73,7 +73,7 @@ class Smthg(data.Dataset):
         """Gets list of all movie clips in current split
         This returns the samples as (film_id, label, frame_nb) tuples
         """
-        pickle_name = 'all_samples_{split}.pickes'.format(split=self.split)
+        pickle_name = 'all_samples_{split}.pickle'.format(split=self.split)
         all_samples_path = os.path.join(self.cache_path, pickle_name)
         if os.path.isfile(all_samples_path):
             with open(all_samples_path, 'rb') as cache_file:
@@ -81,7 +81,7 @@ class Smthg(data.Dataset):
         else:
             all_samples = []
 
-            for film_id in tqdm(self.split_ids):
+            for film_id in tqdm(sorted(self.split_ids)):
                 film_path = self.path_from_id(film_id)
                 frame_nbs = [int(jpeg.split('.')[0])
                              for jpeg in os.listdir(film_path)]
