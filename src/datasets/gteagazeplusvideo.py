@@ -12,7 +12,8 @@ class GTEAGazePlusVideo(GTEAGazePlus):
                  original_labels=True, seqs=['Ahmad', 'Alireza', 'Carlos',
                                              'Rahul', 'Shaghayegh', 'Yin'],
                  video_transform=None, base_transform=None,
-                 clip_size=16, use_video=False, use_flow=False):
+                 clip_size=16, use_video=False, use_flow=False,
+                 flow_type=None):
         """
         Args:
             video_transform: transformation to apply to the clips during
@@ -23,7 +24,8 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         """
         super().__init__(root_folder=root_folder,
                          original_labels=original_labels,
-                         seqs=seqs, use_flow=use_flow)
+                         seqs=seqs, use_flow=use_flow,
+                         flow_type=flow_type)
 
         # Set video params
         self.video_transform = video_transform

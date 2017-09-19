@@ -1,6 +1,7 @@
 import argparse
 import math
 import os
+import re
 
 from matplotlib import pyplot as plt
 from matplotlib import animation
@@ -24,7 +25,8 @@ def update_image_filters(idx, axes, weights_list):
     return axes
 
 
-def update_flow_filters(frame_idx, filter_idx, axes, weights_list):
+def update_flow_filters(frame_idx, filter_idx, axes,
+                        weights_list, cmap='gray'):
     """Print flow filter evolution over epochs
     """
     for epoch_idx, epoch_weights in enumerate(weights_list):
@@ -33,12 +35,22 @@ def update_flow_filters(frame_idx, filter_idx, axes, weights_list):
         y_idx = frame_idx * 2 + 1
         x_weights = weights[x_idx]
         y_weights = weights[y_idx]
-        axes[0, epoch_idx].imshow(x_weights)
-        axes[1, epoch_idx].imshow(y_weights)
+        axes[0, epoch_idx].imshow(x_weights, cmap=cmap)
+        axes[1, epoch_idx].imshow(y_weights, cmap=cmap)
 
         # Hide axis
-        axes[0, epoch_idx].axis('off')
-        axes[1, epoch_idx].axis('off')
+        if epoch_idx > 0:
+            axes[0, epoch_idx].axis('off')
+            axes[1, epoch_idx].axis('off')
+
+        else:
+            # Add y axis title
+            axes[0, 0].set_ylabel('x flow')
+            axes[1, 0].set_ylabel('y flow')
+            axes[0, 0].set_xticks([])
+            axes[0, 0].set_yticks([])
+            axes[1, 0].set_xticks([])
+            axes[1, 0].set_yticks([])
     return axes
 
 
@@ -75,8 +87,14 @@ if __name__ == "__main__":
         print('{}: {}'.format(k, v))
 
     checkpoint_files = os.listdir(args.checkpoint)
-    saved_pth_paths = sorted([filename for filename in checkpoint_files
-                              if filename.endswith('.pth')])
+    saved_pth_paths = [filename for filename in checkpoint_files
+                       if filename.endswith('.pth')]
+    # Keep only numbered epochs
+    saved_pth_paths = [path for path in saved_pth_paths
+                       if 'latest' not in path]
+    # Sort by increasing epoch nb
+    saved_pth_paths = sorted(
+        saved_pth_paths, key=lambda l: int(re.findall(r'\d+', l)[0]))
 
     # Create filter result folder
     filter_path = os.path.join(args.checkpoint, 'filter-gifs')
@@ -125,10 +143,14 @@ if __name__ == "__main__":
         anim.save('test_img.avi')
     else:
         print('creating flow filter animations')
-        fig, axes = plt.subplots(2, epoch_nb)
-        flow_nb = 10
+        conv1_weights_list = conv1_weights_list[::5]
+        flow_nb = len(conv1_weights_list)
+        fig, axes = plt.subplots(2, flow_nb)
+        suptitle = fig.suptitle("filter {}".format(0), fontsize=12)
+        print(len(conv1_weights_list))
         print('{} filters in first conv'.format(filter_nb))
         for filter_idx in range(filter_nb):
+            suptitle.set_text("filter {}".format(filter_idx))
             anim = animation.FuncAnimation(fig, update_flow_filters, flow_nb,
                                            fargs=(filter_idx, axes,
                                                   conv1_weights_list),

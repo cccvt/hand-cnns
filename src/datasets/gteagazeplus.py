@@ -31,7 +31,13 @@ class GTEAGazePlus(data.Dataset):
                  original_labels=True,
                  seqs=['Ahmad', 'Alireza', 'Carlos',
                        'Rahul', 'Shaghayegh', 'Yin'],
-                 use_flow=False):
+                 use_flow=False, flow_type=None,
+                 rescale_flows=True):
+        """
+        Args:
+            use_flow (bool): Whether to use flow or RGB as input
+            flow_type (str): in [farn | tvl1]
+        """
 
         self.cvpr_labels = ['open_fridge', 'close_fridge',
                             'put_cupPlateBowl',
@@ -78,14 +84,14 @@ class GTEAGazePlus(data.Dataset):
 
         # Flow settings
         self.use_flow = use_flow
-        self.flow_type = "tvl1"  # in [farn | tvl1]
+        self.flow_type = flow_type
+        self.rescale_flows = rescale_flows
         if self.flow_type == "farn":
             self.flow_path = os.path.join(self.path, 'flow-farneback')
             self.minmax_filename = "minmax.pickle"
         elif self.flow_type == "tvl1":
             self.flow_path = os.path.join(self.path, 'tvl1-flow')
             self.minmax_filename = "minmax.txt"
-        self.rescale_flows = False
 
         # When minmax_filename is set to none, no rescaling (from [0, 255] to
         # [min, max] is applied

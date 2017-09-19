@@ -19,14 +19,17 @@ for leave_out in leave_outs:
                          '--lr', '0.0001',
                          '--new_lr', '0.0001',
                          '--threads', '10',
-                         '--epochs', '101',
+                         '--epochs', '201',
                          '--use_flow', '1',
+                         '--flow_type', 'tvl1',
                          '--exp_id',
                          'run_res_stack_gtea_flow_tvl1_leave_outs/gtea_lo_' +
                          str(leave_out),
                          '--visualize', '1',
                          '--display_freq', '4',
                          '--stack_nb', '10',
+                         '--continue_training',
+                         '--continue_epoch', '100',
                          '--test_aggreg', '0'])
 
     run_training(opt)
