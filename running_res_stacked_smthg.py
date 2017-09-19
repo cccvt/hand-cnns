@@ -19,14 +19,14 @@ for lr in lrs:
                          '--threads', '8',
                          '--epochs', '101',
                          '--use_flow', '1',
+                         '--flow_type', 'tvl1',
                          '--exp_id',
                          'run_res_stack_smthg_flow_farneback/lr_' +
+                         'train/stack/flow-tvl1/smthg/lr_' +
                          str(lr),
-                         '--visualize', '0',
+                         '--visualize', '1',
                          '--display_freq', '100',
                          '--stack_nb', '10',
-                         '--continue_training',
-                         '--continue_epoch', '0',
-                         '--test_aggreg', '1'])
+                         '--test_aggreg', '0'])
 
     run_training(opt)

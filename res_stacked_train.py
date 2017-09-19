@@ -41,7 +41,8 @@ def run_training(opt):
                                     use_video=False, clip_size=opt.stack_nb,
                                     original_labels=True,
                                     seqs=train_seqs, use_flow=opt.use_flow,
-                                    flow_type=opt.flow_type)
+                                    flow_type=opt.flow_type,
+                                    rescale_flows=opt.rescale_flows)
         val_dataset = GTEAGazePlusVideo(video_transform=video_transform,
                                         base_transform=base_transform,
                                         use_video=False,
@@ -49,7 +50,8 @@ def run_training(opt):
                                         original_labels=True,
                                         seqs=valid_seqs,
                                         use_flow=opt.use_flow,
-                                        flow_type=opt.flow_type)
+                                        flow_type=opt.flow_type,
+                                        rescale_flows=opt.rescale_flows)
     elif opt.dataset == 'smthgsmthg':
         dataset = SmthgVideo(video_transform=video_transform,
                              clip_size=opt.stack_nb, split='train',

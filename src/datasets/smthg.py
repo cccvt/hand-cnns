@@ -12,14 +12,14 @@ from src.datasets.utils import visualize
 class Smthg(data.Dataset):
     def __init__(self, root_folder="data/smthg-smthg",
                  video_transform=None, split='train',
-                 clip_size=16, use_flow=False):
+                 clip_size=16, use_flow=False,
+                 flow_type='farn', rescale_flows=True):
         """
         Args:
             split(str): train/valid/test
             video_transform : transforms to successively apply
         """
         self.video_transform = video_transform
-        self.use_flow = use_flow
         self.split = split
         self.clip_size = clip_size
         self.class_nb = None
@@ -30,7 +30,6 @@ class Smthg(data.Dataset):
         self.video_path = os.path.join(self.path,
                                        '20bn-something-something-v1')
         self.split_video_path = os.path.join(self.path, 'split-dataset')
-        self.split_flow_path = os.path.join(self.path, 'flow-farneback')
         self.label_path = os.path.join(self.path,
                                        'something-something-v1-labels.csv')
         self.train_path = os.path.join(self.path,
@@ -48,6 +47,26 @@ class Smthg(data.Dataset):
         else:
             raise ValueError('split should be one of train/test/valid\
                 but received {0}'.format(split))
+
+        # Flow options
+        self.use_flow = use_flow
+        self.flow_type = flow_type
+        self.rescale_flows = rescale_flows
+        if self.flow_type == "farn":
+            self.split_flow_path = os.path.join(self.path, 'flow-farneback')
+            self.minmax_filename = "minmax.pickle"
+        elif self.flow_type == "tvl1":
+            self.split_flow_path = os.path.join(self.path, 'split-tvl1')
+            self.minmax_filename = "minmax.txt"
+        else:
+            raise ValueError("Unknown flow type {}".format(flow_type))
+        # When minmax_filename is set to none, no rescaling (from [0, 255] to
+        # [min, max] is applied
+        if not self.rescale_flows:
+            self.minmax_filename = None
+
+        self.flow_x_template = "{frame:05d}x.jpg"
+        self.flow_y_template = "{frame:05d}y.jpg"
 
         # Get split info
         self.split_ids = get_split_ids(self.split_path)

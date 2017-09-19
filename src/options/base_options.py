@@ -25,6 +25,10 @@ class BaseOptions():
                                  loading')
         self.parser.add_argument('--use_flow', type=int, default=0,
                                  help='Whether to use flow or RGB')
+        self.parser.add_argument('--flow_type', type=str, default='tvl1',
+                                 help='in [farn|tvl1]')
+        self.parser.add_argument('--rescale_flows', type=int, default='0',
+                                 help='0 to stay in [0,255], 1 for [min,max]')
         self.parser.add_argument('--batch_size', type=int, default=2,
                                  help='input mini-batch size')
         # Save params
