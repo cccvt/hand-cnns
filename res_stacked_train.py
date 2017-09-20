@@ -56,12 +56,16 @@ def run_training(opt):
         dataset = SmthgVideo(video_transform=video_transform,
                              clip_size=opt.stack_nb, split='train',
                              use_flow=opt.use_flow,
+                             flow_type=opt.flow_type,
+                             rescale_flows=opt.rescale_flows,
                              frame_spacing=opt.clip_spacing)
 
         val_dataset = SmthgVideo(video_transform=video_transform,
                                  clip_size=opt.stack_nb, split='valid',
-                                 base_transform=base_transform,
-                                 use_flow=opt.use_flow)
+                                 use_flow=opt.use_flow,
+                                 flow_type=opt.flow_type,
+                                 rescale_flows=opt.rescale_flows,
+                                 base_transform=base_transform)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled\
                          by this script'.format(opt._dataset))

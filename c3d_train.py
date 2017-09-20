@@ -40,23 +40,32 @@ def run_training(opt):
         dataset = GTEAGazePlusVideo(video_transform=video_transform,
                                     use_video=False, clip_size=16,
                                     original_labels=True,
-                                    seqs=train_seqs, use_flow=opt.use_flow)
+                                    use_flow=opt.use_flow,
+                                    flow_type=opt.flow_type,
+                                    rescale_flows=opt.rescale_flows,
+                                    seqs=train_seqs)
         val_dataset = GTEAGazePlusVideo(video_transform=video_transform,
                                         base_transform=base_transform,
                                         use_video=False, clip_size=16,
                                         original_labels=True,
                                         seqs=valid_seqs,
-                                        use_flow=opt.use_flow)
+                                        use_flow=opt.use_flow,
+                                        flow_type=opt.flow_type,
+                                        rescale_flows=opt.rescale_flows)
     elif opt.dataset == 'smthgsmthg':
         dataset = SmthgVideo(video_transform=video_transform,
                              clip_size=16, split='train',
                              use_flow=opt.use_flow,
+                             flow_type=opt.flow_type,
+                             rescale_flows=opt.rescale_flows,
                              frame_spacing=opt.clip_spacing)
 
         val_dataset = SmthgVideo(video_transform=video_transform,
                                  clip_size=16, split='valid',
                                  base_transform=base_transform,
-                                 use_flow=opt.use_flow)
+                                 use_flow=opt.use_flow,
+                                 flow_type=opt.flow_type,
+                                 rescale_flows=opt.rescale_flows)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled\
                          by this script'.format(opt._dataset))

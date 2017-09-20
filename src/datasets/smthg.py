@@ -101,7 +101,7 @@ class Smthg(data.Dataset):
             all_samples = []
 
             for film_id in tqdm(sorted(self.split_ids)):
-                film_path = self.path_from_id(film_id)
+                film_path = self.jpg_path_from_id(film_id)
                 frame_nbs = [int(jpeg.split('.')[0])
                              for jpeg in os.listdir(film_path)]
                 max_frames = max(frame_nbs)
@@ -124,7 +124,12 @@ class Smthg(data.Dataset):
             video_path = os.path.join(self.split_flow_path,
                                       str_video_id[0], str_video_id)
         else:
-            video_path = os.path.join(
+            video_path = self.jpg_path_from_id(video_id)
+        return video_path
+
+    def jpg_path_from_id(self, video_id):
+        str_video_id = str(video_id)
+        video_path = os.path.join(
                 self.split_video_path, str_video_id[0], str_video_id)
         return video_path
 
