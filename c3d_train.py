@@ -20,12 +20,16 @@ def run_training(opt):
         channel_nb = 2
     else:
         channel_nb = 3
-    base_transform_list = [video_transforms.Scale(crop_size),
-                           volume_transforms.ToTensor(channel_nb=channel_nb)]
+    base_transform_list = [
+        video_transforms.Scale(crop_size),
+        volume_transforms.ToTensor(channel_nb=channel_nb)
+    ]
     base_transform = video_transforms.Compose(base_transform_list)
-    video_transform_list = [video_transforms.Scale(scale_size),
-                            video_transforms.RandomCrop(crop_size),
-                            volume_transforms.ToTensor(channel_nb=channel_nb)]
+    video_transform_list = [
+        video_transforms.Scale(scale_size),
+        video_transforms.RandomCrop(crop_size),
+        volume_transforms.ToTensor(channel_nb=channel_nb)
+    ]
     video_transform = video_transforms.Compose(video_transform_list)
 
     # Initialize datasets
@@ -33,39 +37,50 @@ def run_training(opt):
 
     # Initialize dataset
     if opt.dataset == 'gteagazeplus':
-        all_subjects = ['Ahmad', 'Alireza', 'Carlos',
-                        'Rahul', 'Yin', 'Shaghayegh']
-        train_seqs, valid_seqs = evaluation.leave_one_out(all_subjects,
-                                                          leave_out_idx)
-        dataset = GTEAGazePlusVideo(video_transform=video_transform,
-                                    use_video=False, clip_size=16,
-                                    original_labels=True,
-                                    use_flow=opt.use_flow,
-                                    flow_type=opt.flow_type,
-                                    rescale_flows=opt.rescale_flows,
-                                    seqs=train_seqs)
-        val_dataset = GTEAGazePlusVideo(video_transform=video_transform,
-                                        base_transform=base_transform,
-                                        use_video=False, clip_size=16,
-                                        original_labels=True,
-                                        seqs=valid_seqs,
-                                        use_flow=opt.use_flow,
-                                        flow_type=opt.flow_type,
-                                        rescale_flows=opt.rescale_flows)
+        all_subjects = [
+            'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
+        ]
+        train_seqs, valid_seqs = evaluation.leave_one_out(
+            all_subjects, leave_out_idx)
+        dataset = GTEAGazePlusVideo(
+            base_transform=base_transform,
+            clip_size=16,
+            flow_type=opt.flow_type,
+            original_labels=True,
+            rescale_flows=opt.rescale_flows,
+            seqs=train_seqs,
+            use_flow=opt.use_flow,
+            use_video=False,
+            video_transform=video_transform)
+        val_dataset = GTEAGazePlusVideo(
+            base_transform=base_transform,
+            clip_size=16,
+            flow_type=opt.flow_type,
+            original_labels=True,
+            rescale_flows=opt.rescale_flows,
+            seqs=valid_seqs,
+            use_flow=opt.use_flow,
+            use_video=False,
+            video_transform=video_transform)
     elif opt.dataset == 'smthgsmthg':
-        dataset = SmthgVideo(video_transform=video_transform,
-                             clip_size=16, split='train',
-                             use_flow=opt.use_flow,
-                             flow_type=opt.flow_type,
-                             rescale_flows=opt.rescale_flows,
-                             frame_spacing=opt.clip_spacing)
+        dataset = SmthgVideo(
+            base_transfrom=base_transform,
+            clip_size=16,
+            flow_type=opt.flow_type,
+            frame_spacing=opt.clip_spacing,
+            rescale_flows=opt.rescale_flows,
+            split='train',
+            use_flow=opt.use_flow,
+            video_transform=video_transform)
 
-        val_dataset = SmthgVideo(video_transform=video_transform,
-                                 clip_size=16, split='valid',
-                                 base_transform=base_transform,
-                                 use_flow=opt.use_flow,
-                                 flow_type=opt.flow_type,
-                                 rescale_flows=opt.rescale_flows)
+        val_dataset = SmthgVideo(
+            base_transform=base_transform,
+            clip_size=16,
+            flow_type=opt.flow_type,
+            rescale_flows=opt.rescale_flows,
+            split='valid',
+            use_flow=opt.use_flow,
+            video_transform=video_transform)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled\
                          by this script'.format(opt._dataset))
@@ -73,19 +88,22 @@ def run_training(opt):
     # Initialize sampler
     if opt.weighted_training:
         weights = [1 / k for k in dataset.class_counts]
-        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights,
-                                                                 len(dataset))
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(
+            weights, len(dataset))
     else:
         sampler = torch.utils.data.sampler.RandomSampler(dataset)
 
     # Initialize dataloaders
     dataloader = torch.utils.data.DataLoader(
-        dataset, sampler=sampler,
+        dataset,
+        sampler=sampler,
         batch_size=opt.batch_size,
         num_workers=opt.threads)
 
     val_dataloader = torch.utils.data.DataLoader(
-        val_dataset, shuffle=False, batch_size=opt.batch_size,
+        val_dataset,
+        shuffle=False,
+        batch_size=opt.batch_size,
         num_workers=opt.threads)
 
     # Initialize C3D neural network
@@ -109,10 +127,13 @@ def run_training(opt):
         else:
             model.load(epoch=opt.continue_epoch)
 
-    train.train_net(dataloader, model, opt,
-                    valid_dataloader=val_dataloader,
-                    visualize=opt.visualize,
-                    test_aggreg=opt.test_aggreg)
+    train.train_net(
+        dataloader,
+        model,
+        opt,
+        valid_dataloader=val_dataloader,
+        visualize=opt.visualize,
+        test_aggreg=opt.test_aggreg)
 
 
 if __name__ == '__main__':

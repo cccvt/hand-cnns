@@ -11,21 +11,36 @@ from src.options import base_options, video_options, test_options
 def run_testing(opt):
     scale_size = (128, 171)
     crop_size = (112, 112)
-    base_transform_list = [video_transforms.Scale(crop_size),
-                           volume_transforms.ToTensor()]
+    if opt.use_flow:
+        in_channels = 2
+    else:
+        in_channels = 3
+    base_transform_list = [
+        video_transforms.Scale(crop_size),
+        volume_transforms.ToTensor(channel_nb=in_channels)
+    ]
     base_transform = video_transforms.Compose(base_transform_list)
-    video_transform_list = [video_transforms.Scale(scale_size),
-                            video_transforms.RandomCrop(crop_size),
-                            volume_transforms.ToTensor()]
+    video_transform_list = [
+        video_transforms.Scale(scale_size),
+        video_transforms.RandomCrop(crop_size),
+        volume_transforms.ToTensor()
+    ]
     video_transform = video_transforms.Compose(video_transform_list)
 
-    dataset = SmthgVideo(video_transform=video_transform,
-                         base_transform=base_transform,
-                         clip_size=16, split=opt.split)
+    dataset = SmthgVideo(
+        base_transform=base_transform,
+        clip_size=16,
+        flow_type=opt.flow_type,
+        rescale_flows=opt.rescale_flows,
+        split=opt.split,
+        use_flow=opt.use_flow,
+        video_transform=video_transform)
 
     # Initialize C3D neural network
     c3dnet = c3d.C3D()
-    model = c3d_adapt.C3DAdapt(opt, c3dnet, dataset.class_nb)
+
+    model = c3d_adapt.C3DAdapt(
+        opt, c3dnet, dataset.class_nb, in_channels=in_channels)
 
     optimizer = torch.optim.SGD(model.net.parameters(), lr=1)
 
@@ -37,8 +52,9 @@ def run_testing(opt):
         model.net.cuda()
     model.load(load_path=opt.checkpoint_path)
 
-    test.test(dataset, model, opt=opt, frame_nb=opt.frame_nb,
-              save_predictions=True)
+    accuracy = test.test(
+        dataset, model, opt=opt, frame_nb=opt.frame_nb, save_predictions=True)
+    print('Computed accuracy: {}'.format(accuracy))
 
 
 if __name__ == '__main__':
