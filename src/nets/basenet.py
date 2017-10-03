@@ -44,7 +44,7 @@ class BaseNet():
     def load(self, epoch=0, load_path=None, latest=False):
         """
         Utility function to load network weights
-        
+
         Args:
             load_path: path of checkpoint to load, is set, epoch and
                 latest are ignored
@@ -65,8 +65,9 @@ class BaseNet():
 
         # Load checkpoint state
         checkpoint = torch.load(checkpoint_path)
-        if load_path is not None:
-            assert checkpoint['epoch'] == epoch
+        if load_path is None:
+            assert checkpoint['epoch'] == epoch, '{} should be {}'.format(
+                checkpoint['epoch'], epoch)
         else:
             epoch = checkpoint['epoch']
         self.net.load_state_dict(checkpoint['net'])
@@ -96,8 +97,7 @@ class BaseNet():
             target_vals, target_idxs = target.max(1)
             loss = self.criterion(output, target_idxs.view(-1))
         else:
-            raise error.ArgumentError(
-                '{0} is not among known error\
+            raise error.ArgumentError('{0} is not among known error\
                 functions'.format(self.opt.criterion))
         return loss
 
@@ -113,10 +113,10 @@ class BaseNet():
         weights
         """
         if epoch is int:
-            net_filename = '{net}_epoch_{ep:04d}.pth'.format(net=network_name,
-                                                             ep=int(epoch))
+            net_filename = '{net}_epoch_{ep:04d}.pth'.format(
+                net=network_name, ep=int(epoch))
         else:
-            net_filename = '{net}_epoch_{ep}.pth'.format(net=network_name,
-                                                         ep=epoch)
+            net_filename = '{net}_epoch_{ep}.pth'.format(
+                net=network_name, ep=epoch)
         file_path = os.path.join(self.save_dir, net_filename)
         return file_path
