@@ -1,16 +1,35 @@
-import pickle
+import argparse
 import os
+import pickle
 
 import numpy as np
 import torch
 
 from src.datasets.smthg import Smthg
 from src.netscripts.test import save_preds
+from src.utils import options
 
-split = 'test'
-# split = 'valid'
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    'score_paths',
+    type=str,
+    nargs='+',
+    help='Name of the split (int [test|valid])')
+parser.add_argument(
+    '--split',
+    type=str,
+    default='test',
+    help='Name of the split (int [test|valid])')
+parser.add_argument(
+    '--destination_folder',
+    type=str,
+    default='checkpoints/test/debug_aggreg',
+    help='')
+args = parser.parse_args()
 
-if split == 'test':
+options.process_args(args, args.destination_folder)
+
+if args.split == 'test':
     evaluate = False
 else:
     evaluate = True
@@ -18,26 +37,16 @@ else:
 # softmax = torch.nn.Softmax()
 softmax = None
 
-dataset = Smthg(split=split)
+dataset = Smthg(split=args.split)
 
-if split == 'test':
-    c3d_scores_path = 'checkpoints/test/c3d_rgb_smthgsmthg_epoch25/prediction_scores.pickle'
-    stacked_flow_scores_path = 'checkpoints/test/res_stack_flow_smthg_epoch60/prediction_test_scores.pickle'
-else:
-    c3d_scores_path = 'checkpoints/test/c3d_rgb_smthgsmthg_valid_epoch25/prediction_scores.pickle'
-    stacked_flow_scores_path = 'checkpoints/test/res_stack_flow_smthg_epoch60/prediction_scores.pickle'
-
-with open(c3d_scores_path, 'rb') as c3d_file:
-    c3d_scores = pickle.load(c3d_file)
-    print("Got {} scores from {}".format(len(c3d_scores), c3d_scores_path))
-
-with open(stacked_flow_scores_path, 'rb') as stack_file:
-    stacked_flow_scores = pickle.load(stack_file)
-    print("Got {} scores from {}".format(len(stacked_flow_scores), stacked_flow_scores_path))
-
+all_scores = []
+for path in args.score_paths:
+    with open(path, 'rb') as f:
+        scores = pickle.load(f)
+        print("Got {} scores from {}".format(len(scores), path))
+        all_scores.append(scores)
 
 mean_preds = {}
-all_scores = [c3d_scores, stacked_flow_scores]
 
 if evaluate:
     conf_mat = np.zeros((dataset.class_nb, dataset.class_nb))
@@ -67,7 +76,8 @@ if evaluate:
     acc = conf_mat.trace() / conf_mat.sum()
     print("accuracy {}".format(acc))
 
-
-prediction_file = 'predictions/c3d_stack_{split}.csv'.format(split=split)
+prediction_file = os.path.join(
+    args.destination_folder,
+    'predictions_{split}.csv'.format(split=args.split))
 
 save_preds(mean_preds, prediction_file)
