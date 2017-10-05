@@ -27,7 +27,8 @@ parser.add_argument(
     help='')
 args = parser.parse_args()
 
-options.process_args(args, args.destination_folder)
+save_folder = os.path.join(args.destination_folder, args.split)
+options.process_args(args, save_folder)
 
 if args.split == 'test':
     evaluate = False
@@ -45,6 +46,8 @@ for path in args.score_paths:
         scores = pickle.load(f)
         print("Got {} scores from {}".format(len(scores), path))
         all_scores.append(scores)
+
+sanity = [len(score) == len(dataset) for score in all_scores]
 
 mean_preds = {}
 
@@ -77,7 +80,6 @@ if evaluate:
     print("accuracy {}".format(acc))
 
 prediction_file = os.path.join(
-    args.destination_folder,
-    'predictions_{split}.csv'.format(split=args.split))
+    save_folder, 'predictions_{split}.csv'.format(split=args.split))
 
 save_preds(mean_preds, prediction_file)
