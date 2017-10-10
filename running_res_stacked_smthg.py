@@ -14,8 +14,8 @@ opt = options.parse([
     '--batch_size', '8', '--dataset', 'smthgsmthg', '--lr', lr, '--new_lr', lr,
     '--threads', '8', '--epochs', '200', '--use_flow', '1', '--flow_type',
     'tvl1', '--exp_id', 'train/stack/flow-tvl1/smthg/run_stack_5' + lr,
-    '--visualize', '1', '--display_freq', '100', '--stack_nb', '5',
-    '--test_aggreg', '0'
+    '--visualize', '0', '--display_freq', '100', '--stack_nb', '5',
+    '--test_aggreg', '1', '--continue_training', '--continue_epoch', '100'
 ])
 
 run_training(opt)
