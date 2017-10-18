@@ -18,8 +18,13 @@ def save_preds(predictions, prediction_file):
         writer.writerows(predictions.items())
 
 
-def test(dataset, model, viz=None, frame_nb=4,
-         opt=None, save_predictions=False):
+def test(dataset,
+         model,
+         viz=None,
+         frame_nb=4,
+         opt=None,
+         save_predictions=False,
+         smthg=True):
     """Performs average pooling on each action clip sample
     """
     sample_scores = []
@@ -30,8 +35,10 @@ def test(dataset, model, viz=None, frame_nb=4,
         prediction_scores = {}
     for idx in tqdm(range(len(dataset)), desc='sample'):
         imgs, class_idx = dataset.get_class_items(idx, frame_nb=frame_nb)
-        batches = [imgs[beg:beg + opt.batch_size]
-                   for beg in range(0, len(imgs), opt.batch_size)]
+        batches = [
+            imgs[beg:beg + opt.batch_size]
+            for beg in range(0, len(imgs), opt.batch_size)
+        ]
         outputs = []
         for batch in batches:
             batch = default_collate(imgs)
@@ -51,16 +58,22 @@ def test(dataset, model, viz=None, frame_nb=4,
         else:
             sample_scores.append(0)
         if save_predictions:
-            sample_idx, _, _ = dataset.sample_list[idx]
-            predictions[sample_idx] = dataset.classes[best_idx[0]]
-            prediction_scores[sample_idx] = mean_scores
+            if opt.dataset == "smthgsmthg":
+                sample_idx, _, _ = dataset.sample_list[idx]
+                predictions[sample_idx] = dataset.classes[best_idx[0]]
+                prediction_scores[sample_idx] = mean_scores
+            elif opt.dataset == "gteagazeplus":
+                prediction_scores[idx] = mean_scores
+            else:
+                raise ValueError(
+                    'dataset {} not recognized'.format(opt.dataset))
 
     if save_predictions:
-        save_dir = os.path.join(
-            opt.checkpoint_dir, opt.exp_id, 'predictions.csv')
+        save_dir = os.path.join(opt.checkpoint_dir, opt.exp_id,
+                                'predictions.csv')
         save_preds(predictions, save_dir)
-        save_scores_path = os.path.join(
-            opt.checkpoint_dir, opt.exp_id, 'prediction_scores.pickle')
+        save_scores_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
+                                        'prediction_scores.pickle')
         with open(save_scores_path, 'wb') as score_file:
             pickle.dump(prediction_scores, score_file)
 

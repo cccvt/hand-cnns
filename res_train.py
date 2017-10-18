@@ -17,8 +17,7 @@ def run_training(opt):
     # Normalize as imageNet
     img_means = [0.485, 0.456, 0.406]
     img_stds = [0.229, 0.224, 0.225]
-    normalize = transforms.Normalize(mean=img_means,
-                                     std=img_stds)
+    normalize = transforms.Normalize(mean=img_means, std=img_stds)
 
     # Compute reverse of normalize transfor
     unnormalize = Unnormalize(mean=img_means, std=img_stds)
@@ -32,8 +31,10 @@ def run_training(opt):
     final_size = 224
     if opt.normalize:
         transformations.append(normalize)
-    first_transforms = [transforms.Scale(230),
-                        transforms.RandomCrop(final_size)]
+    first_transforms = [
+        transforms.Scale(230),
+        transforms.RandomCrop(final_size)
+    ]
     transformations = first_transforms + transformations
 
     transform = transforms.Compose(transformations)
@@ -49,41 +50,46 @@ def run_training(opt):
     if opt.dataset == 'gteagazeplus':
         # Create dataset
         valid = True
-        all_subjects = ['Ahmad', 'Alireza', 'Carlos',
-                        'Rahul', 'Yin', 'Shaghayegh']
-        train_seqs, valid_seqs = evaluation.leave_one_out(all_subjects,
-                                                          leave_out_idx)
-        dataset = GTEAGazePlusImage(transform=transform,
-                                    untransform=unnormalize,
-                                    seqs=train_seqs)
-        valid_dataset = GTEAGazePlusImage(transform=transform,
-                                          base_transform=base_transform,
-                                          untransform=unnormalize,
-                                          seqs=valid_seqs)
+        all_subjects = [
+            'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
+        ]
+        train_seqs, valid_seqs = evaluation.leave_one_out(
+            all_subjects, leave_out_idx)
+        dataset = GTEAGazePlusImage(
+            transform=transform, untransform=unnormalize, seqs=train_seqs)
+        valid_dataset = GTEAGazePlusImage(
+            transform=transform,
+            base_transform=base_transform,
+            untransform=unnormalize,
+            seqs=valid_seqs)
         valid = True
 
     elif opt.dataset == 'gun':
         test_subject_id = 2
         # Leave one out training
-        seqs = ['Subject1', 'Subject2',
-                'Subject3', 'Subject4',
-                'Subject5', 'Subject6',
-                'Subject7', 'Subject8']
-        train_seqs, valid_seqs = evaluation.leave_one_out(seqs,
-                                                          test_subject_id)
+        seqs = [
+            'Subject1', 'Subject2', 'Subject3', 'Subject4', 'Subject5',
+            'Subject6', 'Subject7', 'Subject8'
+        ]
+        train_seqs, valid_seqs = evaluation.leave_one_out(
+            seqs, test_subject_id)
 
-        dataset = gun.GUN(transform=transform, untransform=unnormalize,
-                          seqs=train_seqs)
+        dataset = gun.GUN(
+            transform=transform, untransform=unnormalize, seqs=train_seqs)
 
-        valid_dataset = gun.GUN(transform=transform, untransform=unnormalize,
-                                seqs=valid_seqs)
+        valid_dataset = gun.GUN(
+            transform=transform, untransform=unnormalize, seqs=valid_seqs)
         valid = True
 
     elif opt.dataset == 'smthgsmthg':
-        dataset = SmthgImage(split='train', transform=transform,
-                             untransform=unnormalize, base_transform=base_transform)
+        dataset = SmthgImage(
+            split='train',
+            transform=transform,
+            untransform=unnormalize,
+            base_transform=base_transform)
         valid_dataset = SmthgImage(
-            split='valid', transform=transform,
+            split='valid',
+            transform=transform,
             untransform=unnormalize,
             base_transform=base_transform)
         valid = True
@@ -93,24 +99,27 @@ def run_training(opt):
     # Initialize sampler
     if opt.weighted_training:
         weights = [1 / k for k in dataset.class_counts]
-        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights,
-                                                                 len(dataset))
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(
+            weights, len(dataset))
     else:
         sampler = torch.utils.data.sampler.RandomSampler(dataset)
 
     # Initialize dataloader
     dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=opt.batch_size,
-        num_workers=opt.threads, sampler=sampler)
+        dataset,
+        batch_size=opt.batch_size,
+        num_workers=opt.threads,
+        sampler=sampler)
 
     if valid:
         valid_dataloader = torch.utils.data.DataLoader(
-            valid_dataset, shuffle=False,
+            valid_dataset,
+            shuffle=False,
             batch_size=opt.batch_size,
             num_workers=opt.threads)
 
     # Load model
-    resnet = models.resnet50(pretrained=opt.pretrained)
+    resnet = models.resnet34(pretrained=opt.pretrained)
     model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb)
 
     if opt.lr != opt.new_lr:
@@ -118,8 +127,7 @@ def run_training(opt):
     else:
         model_params = model.net.parameters()
 
-    optimizer = torch.optim.SGD(model_params, lr=opt.lr,
-                                momentum=opt.momentum)
+    optimizer = torch.optim.SGD(model_params, lr=opt.lr, momentum=opt.momentum)
 
     if opt.criterion == 'MSE':
         criterion = torch.nn.MSELoss()
@@ -140,10 +148,13 @@ def run_training(opt):
         else:
             model.load(epoch=opt.continue_epoch)
 
-    train.train_net(dataloader, model, opt,
-                    valid_dataloader=valid_dataloader,
-                    visualize=opt.visualize,
-                    test_aggreg=opt.test_aggreg)
+    train.train_net(
+        dataloader,
+        model,
+        opt,
+        valid_dataloader=valid_dataloader,
+        visualize=opt.visualize,
+        test_aggreg=opt.test_aggreg)
 
 
 if __name__ == "__main__":

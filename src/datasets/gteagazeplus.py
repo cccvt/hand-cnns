@@ -4,7 +4,6 @@ import re
 from torch.utils import data
 
 from src.datasets.utils import gteaannots
-
 """
 Action labels are composed of a vert and a set of actions such as
 ('pour', ['honey, bread']), they are then processed to string labels
@@ -27,48 +26,41 @@ Not all frames are annotated !
 
 
 class GTEAGazePlus(data.Dataset):
-    def __init__(self, root_folder="data/GTEAGazePlus",
-                 original_labels=True,
-                 seqs=['Ahmad', 'Alireza', 'Carlos',
-                       'Rahul', 'Shaghayegh', 'Yin'],
-                 use_flow=False, flow_type=None,
-                 rescale_flows=True):
+    def __init__(
+            self,
+            root_folder="data/GTEAGazePlus",
+            original_labels=True,
+            seqs=['Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Shaghayegh', 'Yin'],
+            use_flow=False,
+            flow_type=None,
+            rescale_flows=True):
         """
         Args:
             use_flow (bool): Whether to use flow or RGB as input
             flow_type (str): in [farn | tvl1]
         """
 
-        self.cvpr_labels = ['open_fridge', 'close_fridge',
-                            'put_cupPlateBowl',
-                            'put_spoonForkKnife_cupPlateBowl',
-                            'take_spoonForkKnife_cupPlateBowl',
-                            'take_cupPlateBowl', 'take_spoonForkKnife',
-                            'put_lettuce_cupPlateBowl',
-                            'read_recipe', 'take_plastic_spatula',
-                            'open_freezer', 'close_freezer',
-                            'put_plastic_spatula',
-                            'cut_tomato_spoonForkKnife',
-                            'put_spoonForkKnife',
-                            'take_tomato_cupPlateBowl',
-                            'turnon_tap', 'turnoff_tap',
-                            'take_cupPlateBowl_plate_container',
-                            'turnoff_burner', 'turnon_burner',
-                            'cut_pepper_spoonForkKnife',
-                            'put_tomato_cupPlateBowl',
-                            'put_milk_container', 'put_oil_container',
-                            'take_oil_container', 'close_oil_container',
-                            'open_oil_container', 'take_lettuce_container',
-                            'take_milk_container', 'open_fridge_drawer',
-                            'put_lettuce_container', 'close_fridge_drawer',
-                            'compress_sandwich',
-                            'pour_oil_oil_container_skillet',
-                            'take_bread_bread_container',
-                            'cut_mushroom_spoonForkKnife',
-                            'put_bread_cupPlateBowl', 'put_honey_container',
-                            'take_honey_container', 'open_microwave',
-                            'crack_egg_cupPlateBowl',
-                            'open_bread_container', 'open_honey_container']
+        self.cvpr_labels = [
+            'open_fridge', 'close_fridge', 'put_cupPlateBowl',
+            'put_spoonForkKnife_cupPlateBowl',
+            'take_spoonForkKnife_cupPlateBowl', 'take_cupPlateBowl',
+            'take_spoonForkKnife', 'put_lettuce_cupPlateBowl', 'read_recipe',
+            'take_plastic_spatula', 'open_freezer', 'close_freezer',
+            'put_plastic_spatula', 'cut_tomato_spoonForkKnife',
+            'put_spoonForkKnife', 'take_tomato_cupPlateBowl', 'turnon_tap',
+            'turnoff_tap', 'take_cupPlateBowl_plate_container',
+            'turnoff_burner', 'turnon_burner', 'cut_pepper_spoonForkKnife',
+            'put_tomato_cupPlateBowl', 'put_milk_container',
+            'put_oil_container', 'take_oil_container', 'close_oil_container',
+            'open_oil_container', 'take_lettuce_container',
+            'take_milk_container', 'open_fridge_drawer',
+            'put_lettuce_container', 'close_fridge_drawer',
+            'compress_sandwich', 'pour_oil_oil_container_skillet',
+            'take_bread_bread_container', 'cut_mushroom_spoonForkKnife',
+            'put_bread_cupPlateBowl', 'put_honey_container',
+            'take_honey_container', 'open_microwave', 'crack_egg_cupPlateBowl',
+            'open_bread_container', 'open_honey_container'
+        ]
         # Label tags
         self.original_labels = original_labels
         self.untransform = None  # Needed for visualizer
@@ -77,8 +69,9 @@ class GTEAGazePlus(data.Dataset):
         self.rgb_path = os.path.join(self.path, 'png')
         self.video_path = os.path.join(self.path, 'avi_files')
         self.label_path = os.path.join(self.path, 'labels_cleaned')
-        self.all_seqs = ['Ahmad', 'Alireza', 'Carlos',
-                         'Rahul', 'Yin', 'Shaghayegh']
+        self.all_seqs = [
+            'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
+        ]
 
         self.seqs = seqs
 
@@ -100,7 +93,7 @@ class GTEAGazePlus(data.Dataset):
 
         self.flow_x_template = "{frame:010d}x.jpg"
         self.flow_y_template = "{frame:010d}y.jpg"
-        
+
         # Compute classes
         if self.original_labels:
             self.classes = self.get_cvpr_classes()
@@ -122,8 +115,10 @@ class GTEAGazePlus(data.Dataset):
         grouped by subject
         [[(action, obj, b, e), ... ] for subject 1, [],...]
         """
-        annot_paths = [os.path.join(self.label_path, annot_file)
-                       for annot_file in os.listdir(self.label_path)]
+        annot_paths = [
+            os.path.join(self.label_path, annot_file)
+            for annot_file in os.listdir(self.label_path)
+        ]
         subjects_classes = []
 
         # Get classes for each subject
@@ -133,16 +128,22 @@ class GTEAGazePlus(data.Dataset):
             subjects = seqs
 
         for subject in subjects:
-            subject_annot_files = [filepath for filepath in annot_paths
-                                   if subject in filepath]
+            subject_annot_files = [
+                filepath for filepath in annot_paths if subject in filepath
+            ]
 
             # Process files to extract action_lists
-            subject_lines = [gteaannots.process_lines(subject_file)
-                             for subject_file in subject_annot_files]
+            subject_lines = [
+                gteaannots.process_lines(subject_file)
+                for subject_file in subject_annot_files
+            ]
 
             # Flatten actions for each subject
-            subject_labels = [label for sequence_labels in subject_lines
-                              for label in sequence_labels]
+            subject_labels = [
+                label
+                for sequence_labels in subject_lines
+                for label in sequence_labels
+            ]
 
             subjects_classes.append(subject_labels)
         return subjects_classes
@@ -175,13 +176,17 @@ class GTEAGazePlus(data.Dataset):
         returns list of (action, objects) tuples for the (action, objects)
         that appear at least repetitions time
         """
-        action_labels = [self.get_class_str(act, self.original_label_transform(obj))
-                         for (act, obj, b, e) in annot_lines]
+        action_labels = [
+            self.get_class_str(act, self.original_label_transform(obj))
+            for (act, obj, b, e) in annot_lines
+        ]
         counted_labels = defaultdict(int)
         for label in action_labels:
             counted_labels[label] += 1
-        repeated_labels = [label for label, count in counted_labels.items()
-                           if count >= repetitions]
+        repeated_labels = [
+            label for label, count in counted_labels.items()
+            if count >= repetitions
+        ]
         return repeated_labels
 
     def get_cvpr_classes(self, seqs=None):
@@ -217,20 +222,22 @@ class GTEAGazePlus(data.Dataset):
         """
         if self.original_labels:
             objects = self.original_label_transform(objects)
-        action_str = '_'.join((action.replace(' ', ''),
-                               '_'.join(objects)))
+        action_str = '_'.join((action.replace(' ', ''), '_'.join(objects)))
         return action_str
 
     def get_all_actions(self, action_object_classes):
         """Extracts all possible actions in the format (action,
         objects, subject, recipe, first_frame, last_frame) """
-        annot_paths = [os.path.join(self.label_path, annot_file)
-                       for annot_file in os.listdir(self.label_path)]
+        annot_paths = [
+            os.path.join(self.label_path, annot_file)
+            for annot_file in os.listdir(self.label_path)
+        ]
         actions = []
         # Get classes for each subject
         for subject in self.seqs:
-            subject_annot_files = [filepath for filepath in annot_paths
-                                   if subject in filepath]
+            subject_annot_files = [
+                filepath for filepath in annot_paths if subject in filepath
+            ]
             for annot_file in subject_annot_files:
                 recipe = re.search('.*_(.*).txt', annot_file).group(1)
                 action_lines = gteaannots.process_lines(annot_file)
@@ -240,7 +247,7 @@ class GTEAGazePlus(data.Dataset):
                     if (action, objects) in action_object_classes:
                         actions.append((action, objects, subject, recipe,
                                         begin, end))
-        return actions
+        return sorted(actions)
 
     def get_action_counts(self, actions):
         c = Counter(actions)
