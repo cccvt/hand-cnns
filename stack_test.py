@@ -45,12 +45,12 @@ def run_testing(opt):
             flow_type=opt.flow_type,
             original_labels=True,
             rescale_flows=opt.rescale_flows,
-            seqs=train_seqs,
+            seqs=valid_seqs,
             use_flow=opt.use_flow,
             use_video=False,
             video_transform=base_transform)
 
-    # Initialize neural network
+        # Initialize neural network
     resnet = models.resnet50()
     model = resnet_adapt.ResNetAdapt(
         opt, resnet, dataset.class_nb, in_channels=channel_nb * opt.stack_nb)
