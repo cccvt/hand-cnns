@@ -8,12 +8,18 @@ from src.datasets.gteagazeplus import GTEAGazePlus
 
 
 class GTEAGazePlusVideo(GTEAGazePlus):
-    def __init__(self, root_folder="data/GTEAGazePlus",
-                 original_labels=True, seqs=['Ahmad', 'Alireza', 'Carlos',
-                                             'Rahul', 'Shaghayegh', 'Yin'],
-                 video_transform=None, base_transform=None,
-                 clip_size=16, use_video=False, use_flow=False,
-                 flow_type=None, rescale_flows=True):
+    def __init__(
+            self,
+            root_folder="data/GTEAGazePlus",
+            original_labels=True,
+            seqs=['Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Shaghayegh', 'Yin'],
+            video_transform=None,
+            base_transform=None,
+            clip_size=16,
+            use_video=False,
+            use_flow=False,
+            flow_type=None,
+            rescale_flows=True):
         """
         Args:
             video_transform: transformation to apply to the clips during
@@ -22,11 +28,13 @@ class GTEAGazePlusVideo(GTEAGazePlus):
                 testing
             use_video (bool): whether to use video inputs or png inputs
         """
-        super().__init__(root_folder=root_folder,
-                         original_labels=original_labels,
-                         seqs=seqs, use_flow=use_flow,
-                         flow_type=flow_type,
-                         rescale_flows=rescale_flows)
+        super().__init__(
+            root_folder=root_folder,
+            original_labels=original_labels,
+            seqs=seqs,
+            use_flow=use_flow,
+            flow_type=flow_type,
+            rescale_flows=rescale_flows)
 
         # Set video params
         self.video_transform = video_transform
@@ -38,11 +46,12 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         action_clips = self.get_all_actions(self.classes)
         # Remove actions that are too short
         self.action_clips = [(action, obj, subj, rec, beg, end)
-                             for (action, obj, subj, rec, beg, end)
-                             in action_clips
+                             for (action, obj, subj, rec, beg,
+                                  end) in action_clips
                              if end - beg >= self.clip_size]
-        action_labels = [(action, obj) for (action, obj, subj, rec,
-                                            beg, end) in self.action_clips]
+        action_labels = [(action, obj)
+                         for (action, obj, subj, rec, beg,
+                              end) in self.action_clips]
         assert len(action_labels) > 100
         self.class_counts = self.get_action_counts(action_labels)
         assert sum(self.class_counts) == len(action_labels)
@@ -96,10 +105,13 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         if self.use_flow:
             # Retrieve stacked flow frames
             flow_path = os.path.join(self.flow_path, sequence_name)
-            clip = loader.get_stacked_flow_arrays(flow_path, frame_begin, frame_nb,
-                                                  flow_x_template=self.flow_x_template,
-                                                  flow_y_template=self.flow_y_template,
-                                                  minmax_filename=self.minmax_filename)
+            clip = loader.get_stacked_flow_arrays(
+                flow_path,
+                frame_begin,
+                frame_nb,
+                flow_x_template=self.flow_x_template,
+                flow_y_template=self.flow_y_template,
+                minmax_filename=self.minmax_filename)
         else:
             # Retrieve stacked rgb frames
             if self.use_video:
@@ -108,10 +120,9 @@ class GTEAGazePlusVideo(GTEAGazePlus):
                 video_capture = loader.get_video_capture(video_path)
                 clip = loader.get_clip(video_capture, frame_begin, frame_nb)
             else:
-                png_path = os.path.join(self.rgb_path,
-                                        sequence_name)
-                clip = loader.get_stacked_frames(png_path, frame_begin, frame_nb,
-                                                 use_open_cv=False)
+                png_path = os.path.join(self.rgb_path, sequence_name)
+                clip = loader.get_stacked_frames(
+                    png_path, frame_begin, frame_nb, use_open_cv=False)
 
         return clip
 
@@ -133,13 +144,15 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         actions = self.get_all_actions(action_object_classes)
         for action, objects, subject, recipe, begin, end in actions:
             for frame_idx in range(begin, end - frame_nb + 1):
-                dense_actions.append((action, objects, subject,
-                                      recipe, frame_idx))
+                dense_actions.append((action, objects, subject, recipe,
+                                      frame_idx))
         return dense_actions
 
     def plot_hist(self):
         """Plots histogram of action classes as sampled in self.action_clips
         """
-        labels = [self.get_class_str(action, obj)
-                  for (action, obj, subj, rec, beg, end) in self.action_clips]
+        labels = [
+            self.get_class_str(action, obj)
+            for (action, obj, subj, rec, beg, end) in self.action_clips
+        ]
         visualize.plot_hist(labels, proportion=True)

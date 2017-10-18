@@ -8,10 +8,14 @@ from src.datasets.gteagazeplus import GTEAGazePlus
 
 
 class GTEAGazePlusImage(GTEAGazePlus):
-    def __init__(self, root_folder="data/GTEAGazePlus",
-                 original_labels=True, seqs=['Ahmad', 'Alireza', 'Carlos',
-                                             'Rahul', 'Shaghayegh', 'Yin'],
-                 transform=None, untransform=None, base_transform=None):
+    def __init__(
+            self,
+            root_folder="data/GTEAGazePlus",
+            original_labels=True,
+            seqs=['Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Shaghayegh', 'Yin'],
+            transform=None,
+            untransform=None,
+            base_transform=None):
         """
         Args:
             transform: transformations to apply during training
@@ -20,9 +24,10 @@ class GTEAGazePlusImage(GTEAGazePlus):
                 to visualize original image
             use_video (bool): whether to use video inputs or png inputs
         """
-        super().__init__(root_folder=root_folder,
-                         original_labels=original_labels,
-                         seqs=seqs)
+        super().__init__(
+            root_folder=root_folder,
+            original_labels=original_labels,
+            seqs=seqs)
 
         # Set video params
         self.base_transform = base_transform
@@ -33,8 +38,9 @@ class GTEAGazePlusImage(GTEAGazePlus):
 
         self.action_clips = self.get_all_actions(self.classes)
         # Remove actions that are too short
-        action_labels = [(action, obj) for (action, obj, subj, rec,
-                                            beg, end) in self.action_clips]
+        action_labels = [(action, obj)
+                         for (action, obj, subj, rec, beg,
+                              end) in self.action_clips]
         assert len(action_labels) > 100
         self.class_counts = self.get_action_counts(action_labels)
         assert sum(self.class_counts) == len(action_labels)
@@ -52,10 +58,12 @@ class GTEAGazePlusImage(GTEAGazePlus):
         frame_idx = random.randint(beg, end)
         if self.use_flow:
             flow_base_path = os.path.join(self.flow_path, sequence_name)
-            img = loader.load_flow(base_folder, frame_idx,
-                                   flow_x_template=self.flow_x_template,
-                                   flow_y_template=self.flow_y_template,
-                                   minmax_filename=self.minmax_filename)
+            img = loader.load_flow(
+                flow_base_path,
+                frame_idx,
+                flow_x_template=self.flow_x_template,
+                flow_y_template=self.flow_y_template,
+                minmax_filename=self.minmax_filename)
         else:
             frame_name = "{frame:010d}.png".format(frame=frame_idx)
             img_path = os.path.join(self.rgb_path, sequence_name, frame_name)
@@ -72,8 +80,10 @@ class GTEAGazePlusImage(GTEAGazePlus):
     def plot_hist(self):
         """Plots histogram of action classes as sampled in self.action_clips
         """
-        labels = [self.get_class_str(action, obj)
-                  for (action, obj, subj, rec, beg, end) in self.action_clips]
+        labels = [
+            self.get_class_str(action, obj)
+            for (action, obj, subj, rec, beg, end) in self.action_clips
+        ]
         visualize.plot_hist(labels, proportion=True)
 
     def get_class_items(self, index, frame_nb=None):
@@ -100,8 +110,7 @@ class GTEAGazePlusImage(GTEAGazePlus):
 
         for frame_idx in frame_idxs:
             frame_name = "{frame:010d}.png".format(frame=frame_idx)
-            img_path = os.path.join(self.rgb_path,
-                                    sequence_name, frame_name)
+            img_path = os.path.join(self.rgb_path, sequence_name, frame_name)
             img = loader.load_rgb_image(img_path)
             if self.base_transform is not None:
                 img = self.base_transform(img)

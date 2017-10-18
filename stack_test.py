@@ -51,7 +51,7 @@ def run_testing(opt):
             video_transform=base_transform)
 
         # Initialize neural network
-    resnet = models.resnet50()
+    resnet = models.resnet34()
     model = resnet_adapt.ResNetAdapt(
         opt, resnet, dataset.class_nb, in_channels=channel_nb * opt.stack_nb)
 
