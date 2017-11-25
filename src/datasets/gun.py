@@ -4,7 +4,6 @@ import os
 import torch.utils.data as data
 
 from src.datasets.utils import loader, visualize, filesys
-
 """
 Grasp UNderstanding Dataset
 Note that rgb and depth images are not aligned in this dataset
@@ -15,15 +14,18 @@ The taxonomy can be found here : http://www.cs.cmu.edu/~jialiu1/database.html
 
 
 class GUN(data.Dataset):
-    def __init__(self, transform=None, untransform=None,
-                 root_folder="data/gun", rgb=True,
-                 seqs=['Subject1', 'Subject2',
-                       'Subject3', 'Subject4',
-                       'Subject5', 'Subject6',
-                       'Subject7', 'Subject8']):
+    def __init__(self,
+                 transform=None,
+                 untransform=None,
+                 root_folder="data/gun",
+                 rgb=True,
+                 seqs=[
+                     'Subject1', 'Subject2', 'Subject3', 'Subject4',
+                     'Subject5', 'Subject6', 'Subject7', 'Subject8'
+                 ]):
         """
-        :param rgb: whether rgb channels should be used
-        :type rgb: Boolean
+        Args:
+            rgb (bool) : whether rgb channels should be used
         """
         self.transform = transform
         self.untransform = untransform
@@ -40,15 +42,17 @@ class GUN(data.Dataset):
             filenames = filesys.recursive_files_dataset(self.path, '.png', 3)
 
         # Filter sequences out
-        filenames = [filename for filename in filenames if
-                     any(seq in filename for seq in seqs)]
+        filenames = [
+            filename for filename in filenames
+            if any(seq in filename for seq in seqs)
+        ]
         self.image_paths = filenames
         self.item_nb = len(self.image_paths)
 
     def __getitem__(self, index):
         image_path = self.image_paths[index]
         # Load image
-        if(self.rgb):
+        if (self.rgb):
             rgb_img = loader.load_rgb_image(image_path)
             img = rgb_img
         else:

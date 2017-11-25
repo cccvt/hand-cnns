@@ -4,12 +4,12 @@ import os
 import torch.utils.data as data
 
 from src.datasets.utils import visualize, loader
-
 """
 UCI ego contains almost 400 annotated frames
 in the .txt files a -1 suffix indicates the
 right hand while -2 indicates the left hand
 """
+
 
 def _load_annotation(path):
     """
@@ -21,28 +21,26 @@ def _load_annotation(path):
     annots = np.loadtxt(path, usecols=[2, 3, 4])
     return annots
 
+
 class UCIEGO(data.Dataset):
-    def __init__(self, transform=None, root_folder="data/UCI-EGO",
-                 sequences=[1, 2, 3, 4], rgb=True, depth=False):
+    def __init__(self,
+                 transform=None,
+                 root_folder="data/UCI-EGO",
+                 sequences=[1, 2, 3, 4],
+                 rgb=True):
         """
         :param sequences: indexes of the sequences to load in dataset
         :param rgb: whether rgb channels should be used
         :type rgb: Boolean
-        :param depth: whether depth should be used
-        :type depth: Boolean
         :type sequences: list of integers among 1 to 4
         """
         self.transform = transform
         self.path = root_folder
         self.rgb = rgb
-        self.depth = depth
-        self.links = [(5, 6), (6, 7), (7, 8),
-                      (9, 10), (10, 11), (11, 12),
-                      (13, 14), (14, 15), (15, 16),
-                      (17, 18), (18, 19), (19, 20),
-                      (21, 22), (22, 23), (23, 24),
-                      (25, 21), (25, 17), (25, 13), (25, 9), (25, 5),
-                      (4, 25)]
+        self.links = [(5, 6), (6, 7), (7, 8), (9, 10), (10, 11), (11, 12),
+                      (13, 14), (14, 15), (15, 16), (17, 18), (18, 19),
+                      (19, 20), (21, 22), (22, 23), (23, 24), (25, 21),
+                      (25, 17), (25, 13), (25, 9), (25, 5), (4, 25)]
         self.joint_nb = 26
 
         # self.all_images contains tuples (sequence_idx, image_name)
@@ -57,9 +55,11 @@ class UCIEGO(data.Dataset):
 
             # separate txt and image files
             jpgs = [
-                filename for filename in files if filename.endswith(".jpg")]
+                filename for filename in files if filename.endswith(".jpg")
+            ]
             annotations = [
-                filename for filename in files if filename.endswith(".txt")]
+                filename for filename in files if filename.endswith(".txt")
+            ]
 
             # Get radical of the image
             file_names = [jpg_file.split(".")[0] for jpg_file in jpgs]
@@ -70,13 +70,15 @@ class UCIEGO(data.Dataset):
             # we also ignore the left hand
             # this could be improved in the future
             annotated = [
-                filename for filename in file_names if filename + "-1.txt" in annotations]
+                filename for filename in file_names
+                if filename + "-1.txt" in annotations
+            ]
             seq_images = [(seq, file_name) for file_name in annotated]
             self.all_images = self.all_images + seq_images
         self.item_nb = len(self.all_images)
 
     def __getitem__(self, index):
-        if(self.rgb):
+        if (self.rgb):
             seq, image_name = self.all_images[index]
             seq_path = self.path + "/Seq" + str(seq) + "/"
             image_path = seq_path + image_name + '.jpg'
