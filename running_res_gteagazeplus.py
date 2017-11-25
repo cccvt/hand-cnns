@@ -1,7 +1,7 @@
 from res_train import run_training
 from src.options import base_options, train_options, image_options
 
-leave_outs = list(range(6))
+leave_outs = list(range(0, 6))
 
 for leave_out in leave_outs:
     # Initialize base options
@@ -14,7 +14,7 @@ for leave_out in leave_outs:
     opt = options.parse([
         '--batch_size', '8', '--leave_out',
         str(leave_out), '--lr', '0.0001', '--new_lr', '0.0001', '--threads',
-        '8', '--epochs', '50', '--exp_id',
+        '8', '--epochs', '30', '--exp_id',
         'train/res/rgb/gteagazeplus/resnet34/gtea_lo_' + str(leave_out),
         '--visualize', '0', '--test_aggreg', '0'
     ])

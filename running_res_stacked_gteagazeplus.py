@@ -1,7 +1,7 @@
 from res_stacked_train import run_training
 from src.options import base_options, train_options, video_options, stack_options
 
-leave_outs = list(range(2, 6))
+leave_outs = list(range(0, 6))
 
 for leave_out in leave_outs:
     # Initialize base options
@@ -19,7 +19,7 @@ for leave_out in leave_outs:
         '--rescale_flow', '0', '--exp_id',
         'train/stack/flow-farn/ordered_resnet34/gtea_lo_' + str(leave_out),
         '--visualize', '0', '--display_freq', '4', '--stack_nb', '10',
-        '--continue_training', '--continue_epoch', '100', '--test_aggreg', '1'
+        '--test_aggreg', '0'
     ])
 
     run_training(opt)

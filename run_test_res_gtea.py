@@ -1,7 +1,7 @@
 from res_test import run_testing
 from src.options import base_options, test_options, image_options
 
-for i in range(2, 6):
+for i in range(0, 6):
     # Initialize base options
     options = base_options.BaseOptions()
 
