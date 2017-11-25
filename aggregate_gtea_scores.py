@@ -1,8 +1,10 @@
 import argparse
+from collections import OrderedDict
 import os
 import pickle
 
 import numpy as np
+from matplotlib import pyplot as plt
 import torch
 
 from src.datasets.gteagazeplusimage import GTEAGazePlusImage
@@ -51,9 +53,10 @@ all_subjects = ['Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh']
 if args.leave_out is not None:
     leave_out_idxs = [args.leave_out]
 else:
-    leave_out_idxs = list(range(len(all_subjects)))
+    leave_out_idxs = list(range(0, 4))
 
 final_scores = []
+conf_mats = []
 for leave_out_idx in leave_out_idxs:
     seqs = [
         all_subjects[leave_out_idx],
@@ -128,5 +131,59 @@ for leave_out_idx in leave_out_idxs:
     acc = conf_mat.trace() / conf_mat.sum()
     print("accuracy {}".format(acc))
     final_scores.append(acc)
+    conf_mats.append(conf_mat)
+
+class_accs = {}
+class_freqs = {}
+
+sum_conf_mat = conf_mats[0]
+for mat in conf_mats[1:]:
+    sum_conf_mat = sum_conf_mat + mat
+for class_idx, class_preds in enumerate(sum_conf_mat):
+    class_acc = class_preds[class_idx] / np.sum(class_preds)
+    class_accs[dataset.classes[class_idx]] = class_acc
+    class_freqs[dataset.classes[class_idx]] = np.sum(class_preds) / np.sum(
+        sum_conf_mat)
+
+class_accs = OrderedDict(sorted(class_accs.items(), key=lambda t: t[1]))
+class_freqs = OrderedDict(sorted(class_freqs.items(), key=lambda t: t[1]))
+
+
+def plot_dict(ordered_dic):
+    fig, ax = plt.subplots()
+    ax.bar(np.arange(len(ordered_dic)), ordered_dic.values())
+    plt.xticks(np.arange(len(ordered_dic)))
+    labels = [
+        dataset.get_class_str(act, obj) for act, obj in ordered_dic.keys()
+    ]
+    ax.set_xticklabels(labels, rotation=90)
+    fig.tight_layout()
+    plt.show()
+
+
+# plot_dict(class_accs)
+plot_dict(class_freqs)
+
+fig, ax = plt.subplots()
+bar_locations = np.arange(len(class_accs))
+bar_width = 0.4
+spatio = ax.bar(np.arange(len(class_accs)), class_accs.values(), bar_width)
+rearranged_class_freqs = OrderedDict()
+for class_key, class_value in class_accs.items():
+    rearranged_class_freqs[class_key] = class_freqs[class_key]
+rand = ax.bar(
+    np.arange(len(class_freqs)) - bar_width,
+    rearranged_class_freqs.values(),
+    bar_width,
+    color='r')
+ax.legend((spatio[0], rand[0]), ('our model', 'frequency'))
+plt.xticks(bar_locations)
+labels = [dataset.get_class_str(act, obj) for act, obj in class_accs.keys()]
+ax.set_xticklabels(labels, rotation=90)
+fig.tight_layout()
+plt.show()
 print('Retrieved scores {}'.format(final_scores))
 print('mean : {}'.format(sum(final_scores) / len(final_scores)))
+
+import pdb
+pdb.set_trace()

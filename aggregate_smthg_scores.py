@@ -1,7 +1,9 @@
 import argparse
+from collections import OrderedDict
 import os
 import pickle
 
+from matplotlib import pyplot as plt
 import numpy as np
 import torch
 
@@ -78,6 +80,46 @@ for clip_id, label, max_frame in dataset.sample_list:
 if evaluate:
     acc = conf_mat.trace() / conf_mat.sum()
     print("accuracy {}".format(acc))
+
+class_accs = {}
+class_freqs = {}
+# Plot labels scores
+for class_idx, class_preds in enumerate(conf_mat):
+    class_acc = class_preds[class_idx] / np.sum(class_preds)
+    class_accs[dataset.classes[class_idx]] = class_acc
+    class_freqs[dataset.classes[class_idx]] = np.sum(class_preds) / np.sum(
+        conf_mat)
+
+class_accs = OrderedDict(sorted(class_accs.items(), key=lambda t: t[1]))
+class_freqs = OrderedDict(sorted(class_freqs.items(), key=lambda t: t[1]))
+
+
+def plot_dict(ordered_dic):
+    fig, ax = plt.subplots()
+    ax.bar(np.arange(len(ordered_dic)), ordered_dic.values(), color='r')
+    ax.set_ylim([0, 0.02])
+    plt.xticks(np.arange(len(ordered_dic)))
+    labels = ordered_dic.keys()
+
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    fig.tight_layout()
+    plt.show()
+
+
+choose_nb = 10
+best = {
+    k: class_freqs[k]
+    for i, (k, v) in enumerate(class_accs.items())
+    if i > len(class_accs) - choose_nb
+}
+worst = {
+    k: class_freqs[k]
+    for i, (k, v) in enumerate(class_accs.items()) if i < choose_nb
+}
+
+plot_dict(best)
+plot_dict(worst)
+plot_dict(class_freqs)
 
 prediction_file = os.path.join(
     save_folder, 'predictions_{split}.csv'.format(split=args.split))
