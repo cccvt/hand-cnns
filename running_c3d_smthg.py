@@ -12,12 +12,11 @@ for lr in lrs:
 
     opt = options.parse([
         '--batch_size', '6', '--dataset', 'smthgsmthg', '--lr',
-        str(lr), '--new_lr',
+        str(lr), '--network', 'i3d', '--new_lr',
         str(lr), '--threads', '8', '--epochs', '101', '--exp_id',
-        'train/c3d/flow-tvl1/smthg/run_1_lr_' + str(lr), '--visualize', '0',
-        '--display_freq', '100', '--use_flow', '1', '--flow_type', 'tvl1',
-        '--test_aggreg', '1', '--continue_training', '--continue_epoch', '60',
-        '--clip_spacing', '1'
-    ])
+        'train/i3d/rgb/smthg/run_1_lr_' + str(lr), '--visualize', '0',
+        '--display_freq', '100', '--use_flow', '0', '--flow_type', 'tvl1',
+        '--test_aggreg', '1', '--clip_spacing', '1'
+        ])
 
     run_training(opt)
