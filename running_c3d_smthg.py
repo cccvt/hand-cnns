@@ -11,12 +11,13 @@ for lr in lrs:
     video_options.add_video_options(options)
 
     opt = options.parse([
-        '--batch_size', '6', '--dataset', 'smthgsmthg', '--lr',
-        str(lr), '--network', 'i3d', '--new_lr',
+        '--batch_size', '40', '--dataset', 'smthgsmthg', '--network', 'i3d',
+        '--gpu_parallel', '--gpu_nb', '4', '--lr',
+        str(lr), '--new_lr',
         str(lr), '--threads', '8', '--epochs', '101', '--exp_id',
         'train/i3d/rgb/smthg/run_1_lr_' + str(lr), '--visualize', '0',
         '--display_freq', '100', '--use_flow', '0', '--flow_type', 'tvl1',
-        '--test_aggreg', '1', '--clip_spacing', '1'
-        ])
+        '--test_aggreg', '0', '--clip_spacing', '1'
+    ])
 
     run_training(opt)

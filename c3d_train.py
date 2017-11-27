@@ -137,9 +137,11 @@ def run_training(opt):
 
     # Use multiple GPUS
     if opt.gpu_parallel:
+        available_gpus = torch.cuda.device_count()
         device_ids = list(range(opt.gpu_nb))
-        model = torch.nn.DataParallel(model, device_ids=device_ids)
-
+        print('Using {} out of {} available GPUs'.format(
+            len(device_ids), available_gpus))
+        model.net = torch.nn.DataParallel(model.net, device_ids=device_ids)
 
     train.train_net(
         dataloader,
@@ -150,8 +152,8 @@ def run_training(opt):
         test_aggreg=opt.test_aggreg)
 
 
-    if __name__ == '__main__':
-        # Initialize base options
+if __name__ == '__main__':
+    # Initialize base options
     options = base_options.BaseOptions()
 
     # Add train options and parse
