@@ -15,11 +15,22 @@ class BaseOptions():
 
     def initialize(self):
 
+        # GPU params
         self.parser.add_argument(
             '--use_gpu',
             type=int,
             default=1,
             help='Whether to use gpu (1) or cpu (0)')
+        self.parser.add_argument(
+            '--gpu_parallel',
+            action='store_true',
+            help='Whether to use several gpus to parallelize in the batch dim')
+        self.parser.add_argument(
+            '--gpu_nb',
+            type=int,
+            default=2,
+            help='Number of GPUs to use if parallelizing')
+
         # Input params
         self.parser.add_argument(
             '--dataset',
