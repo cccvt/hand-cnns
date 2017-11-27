@@ -5,6 +5,7 @@ from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
 from src.datasets.smthgvideo import SmthgVideo
 from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
+from src.nets import i3d, i3d_adapt
 from src.netscripts import train
 from src.options import base_options, train_options, video_options
 from src.utils import evaluation
@@ -14,8 +15,8 @@ def run_training(opt):
     # Index of sequence item to leave out for validation
     leave_out_idx = opt.leave_out
 
-    scale_size = (128, 171)
-    crop_size = (112, 112)
+    scale_size = (256, 342)
+    crop_size = (224, 224)
     if opt.use_flow:
         channel_nb = 2
     else:
@@ -64,7 +65,7 @@ def run_training(opt):
             video_transform=video_transform)
     elif opt.dataset == 'smthgsmthg':
         dataset = SmthgVideo(
-            base_transfrom=base_transform,
+            base_transform=base_transform,
             clip_size=16,
             flow_type=opt.flow_type,
             frame_spacing=opt.clip_spacing,
@@ -83,7 +84,7 @@ def run_training(opt):
             video_transform=video_transform)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled\
-                         by this script'.format(opt._dataset))
+                by this script'.format(opt._dataset))
 
     # Initialize sampler
     if opt.weighted_training:
@@ -107,13 +108,20 @@ def run_training(opt):
         num_workers=opt.threads)
 
     # Initialize C3D neural network
-    c3dnet = c3d.C3D()
-    if opt.pretrained:
-        c3dnet.load_state_dict(torch.load('data/c3d.pickle'))
-    model = c3d_adapt.C3DAdapt(
-        opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
+    if opt.network == 'c3d':
+        c3dnet = c3d.C3D()
+        if opt.pretrained:
+            c3dnet.load_state_dict(torch.load('data/c3d.pickle'))
+        model = c3d_adapt.C3DAdapt(
+            opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
+    elif opt.network == 'i3d':
+        i3dnet = i3d.I3D(class_nb=400)
+        if opt.pretrained:
+            i3dnet.load_state_dict(torch.load('data/i3d_rgb.pth'))
+        model = i3d_adapt.I3DAdapt(
+            opt, i3dnet, dataset.class_nb, in_channels=channel_nb)
 
-    criterion = torch.nn.CrossEntropyLoss()
+        criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.net.parameters(), lr=0.003)
 
     model.set_criterion(criterion)
@@ -127,6 +135,12 @@ def run_training(opt):
         else:
             model.load(epoch=opt.continue_epoch)
 
+    # Use multiple GPUS
+    if opt.gpu_parallel:
+        device_ids = list(range(opt.gpu_nb))
+        model = torch.nn.DataParallel(model, device_ids=device_ids)
+
+
     train.train_net(
         dataloader,
         model,
@@ -136,8 +150,8 @@ def run_training(opt):
         test_aggreg=opt.test_aggreg)
 
 
-if __name__ == '__main__':
-    # Initialize base options
+    if __name__ == '__main__':
+        # Initialize base options
     options = base_options.BaseOptions()
 
     # Add train options and parse
