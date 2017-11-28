@@ -116,12 +116,12 @@ def run_training(opt):
             opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
     elif opt.network == 'i3d':
         if opt.use_flow:
-            i3dnet = i3d.I3D(class_nb=400, modality='flow')
+            i3dnet = i3d.I3D(class_nb=400, modality='flow', dropout_rate=0.5)
             if opt.pretrained:
                 i3dnet.load_state_dict(torch.load('data/i3d_flow.pth'))
             model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
         else:
-            i3dnet = i3d.I3D(class_nb=400, modality='rgb')
+            i3dnet = i3d.I3D(class_nb=400, modality='rgb', dropout_rate=0.5)
             if opt.pretrained:
                 i3dnet.load_state_dict(torch.load('data/i3d_rgb.pth'))
             model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
