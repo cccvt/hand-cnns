@@ -46,8 +46,7 @@ class BaseOptions():
                                  loading')
         self.parser.add_argument(
             '--use_flow',
-            type=int,
-            default=0,
+            action='store_true',
             help='Whether to use flow or RGB')
         self.parser.add_argument(
             '--flow_type', type=str, default='tvl1', help='in [farn|tvl1]')

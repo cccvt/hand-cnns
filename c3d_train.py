@@ -115,14 +115,19 @@ def run_training(opt):
         model = c3d_adapt.C3DAdapt(
             opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
     elif opt.network == 'i3d':
-        i3dnet = i3d.I3D(class_nb=400)
-        if opt.pretrained:
-            i3dnet.load_state_dict(torch.load('data/i3d_rgb.pth'))
-        model = i3d_adapt.I3DAdapt(
-            opt, i3dnet, dataset.class_nb, in_channels=channel_nb)
+        if opt.use_flow:
+            i3dnet = i3d.I3D(class_nb=400, modality='flow')
+            if opt.pretrained:
+                i3dnet.load_state_dict(torch.load('data/i3d_flow.pth'))
+            model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
+        else:
+            i3dnet = i3d.I3D(class_nb=400, modality='rgb')
+            if opt.pretrained:
+                i3dnet.load_state_dict(torch.load('data/i3d_rgb.pth'))
+            model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
 
-        criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.net.parameters(), lr=0.003)
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.net.parameters(), lr=opt.lr)
 
     model.set_criterion(criterion)
     model.set_optimizer(optimizer)

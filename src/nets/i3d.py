@@ -159,14 +159,23 @@ class Mixed(torch.nn.Module):
 
 
 class I3D(torch.nn.Module):
-    def __init__(self, class_nb, name='inception'):
+    def __init__(self, class_nb, modality='rgb', name='inception'):
         super(I3D, self).__init__()
+
+        self.modality = modality
+        if modality == 'rgb':
+            in_channels = 3
+        elif modality == 'flow':
+            in_channels = 2
+        else:
+            raise ValueError(
+                '{} not among known modalities [rgb|flow]'.format(modality))
 
         self.name = name
         self.class_nb = class_nb
         conv3d_1a_7x7 = Unit3Dpy(
             out_channels=64,
-            in_channels=3,
+            in_channels=in_channels,
             kernel_size=(7, 7, 7),
             stride=(2, 2, 2),
             padding='SAME')
