@@ -25,6 +25,9 @@ def process_args(args, save_folder=None):
                 opt_file.write(
                     '{option}: {value}\n'.format(option=str(k), value=str(v)))
             git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+            git_branch = subprocess.check_output(
+                ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
             opt_file.write('git hash: {}\n'.format(git_hash.strip()))
+            opt_file.write('git branch: {}\n'.format(git_branch.strip()))
             opt_file.write('launched {} at {}\n'.format(
                 str(sys.argv[0]), str(datetime.datetime.now())))

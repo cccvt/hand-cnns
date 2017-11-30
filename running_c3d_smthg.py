@@ -19,7 +19,7 @@ for lr in lrs:
         'i3d',
         '--gpu_parallel',
         '--gpu_nb',
-        '2',
+        '4',
         # '--use_flow', '--flow_type', 'tvl1',
         '--lr',
         str(lr),
@@ -39,6 +39,6 @@ for lr in lrs:
         '0',
         '--clip_spacing',
         '1'
-    ])
+        ])
 
     run_training(opt)
