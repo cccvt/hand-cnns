@@ -236,7 +236,6 @@ class I3D(torch.nn.Module):
             activation=None,
             use_bias=True,
             use_bn=False)
-        self.softmax = torch.nn.Softmax()
 
     def forward(self, inp):
         # Preprocessing
@@ -263,7 +262,6 @@ class I3D(torch.nn.Module):
         out = out.squeeze(3)
         out = out.squeeze(3)
         out = out.mean(2)
-        out = self.softmax(out)
         return out
 
     def load_tf_weights(self, sess):
