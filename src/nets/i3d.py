@@ -90,7 +90,8 @@ class Unit3Dpy(torch.nn.Module):
                 'padding should be in [VALID|SAME] but got {}'.format(padding))
 
         if self.use_bn:
-            self.batch3d = torch.nn.BatchNorm3d(out_channels)
+            self.batch3d = torch.nn.BatchNorm3d(
+                out_channels, eps=1e-3, momentum=0.001)
 
         if activation == 'relu':
             self.activation = torch.nn.functional.relu
