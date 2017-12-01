@@ -55,7 +55,7 @@ def run_training(opt):
             video_transform=video_transform)
         val_dataset = GTEAGazePlusVideo(
             base_transform=base_transform,
-            clip_size=16,
+            clip_size=opt.clip_size,
             flow_type=opt.flow_type,
             original_labels=True,
             rescale_flows=opt.rescale_flows,
@@ -66,7 +66,7 @@ def run_training(opt):
     elif opt.dataset == 'smthgsmthg':
         dataset = SmthgVideo(
             base_transform=base_transform,
-            clip_size=16,
+            clip_size=opt.clip_size,
             flow_type=opt.flow_type,
             frame_spacing=opt.clip_spacing,
             rescale_flows=opt.rescale_flows,
@@ -76,7 +76,7 @@ def run_training(opt):
 
         val_dataset = SmthgVideo(
             base_transform=base_transform,
-            clip_size=16,
+            clip_size=opt.clip_size,
             flow_type=opt.flow_type,
             rescale_flows=opt.rescale_flows,
             split='valid',
