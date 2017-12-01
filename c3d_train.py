@@ -45,7 +45,7 @@ def run_training(opt):
             all_subjects, leave_out_idx)
         dataset = GTEAGazePlusVideo(
             base_transform=base_transform,
-            clip_size=16,
+            clip_size=opt.clip_size,
             flow_type=opt.flow_type,
             original_labels=True,
             rescale_flows=opt.rescale_flows,

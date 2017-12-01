@@ -8,6 +8,11 @@ def add_video_options(options):
         help='When using clip, how many frames to skip\
                         between consecutive frames')
     parser.add_argument(
+        '--clip_size',
+        type=int,
+        default=16,
+        help='When using clip, how many frames to use')
+    parser.add_argument(
         '--network',
         type=str,
         default='c3d',

@@ -1,7 +1,7 @@
 from c3d_train import run_training
 from src.options import base_options, train_options, video_options
 
-lrs = [0.001]
+lrs = [0.01]
 for lr in lrs:
     # Initialize base options
     options = base_options.BaseOptions()
@@ -30,7 +30,9 @@ for lr in lrs:
         '--epochs',
         '101',
         '--exp_id',
-        'train/i3d/rgb/smthg/run_10_lr_' + str(lr),
+        'train/i3d/rgb/smthg/run_12_20_lr_' + str(lr),
+        '--clip_size',
+        '20',
         '--visualize',
         '0',
         '--display_freq',
