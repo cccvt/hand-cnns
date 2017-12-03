@@ -12,7 +12,7 @@ for lr in lrs:
 
     opt = options.parse([
         '--batch_size',
-        '40',
+        '20',
         '--dataset',
         'smthgsmthg',
         '--network',
@@ -20,7 +20,7 @@ for lr in lrs:
         '--gpu_parallel',
         '--gpu_nb',
         '2',
-        # '--use_flow', '--flow_type', 'tvl1',
+        '--use_flow', '--flow_type', 'tvl1',
         '--lr',
         str(lr),
         '--new_lr',
@@ -30,9 +30,7 @@ for lr in lrs:
         '--epochs',
         '101',
         '--exp_id',
-        'train/i3d/rgb/smthg/run_12_20_lr_' + str(lr),
-        '--clip_size',
-        '20',
+        'train/i3d/flow/smthg/run_10_lr' + str(lr),
         '--visualize',
         '0',
         '--display_freq',

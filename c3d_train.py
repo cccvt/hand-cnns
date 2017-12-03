@@ -1,11 +1,15 @@
+import copy
+
 import cv2
 import torch
+import torchvision
 
 from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
 from src.datasets.smthgvideo import SmthgVideo
 from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
+from src.nets import i3dense, i3dense_adapt
 from src.netscripts import train
 from src.options import base_options, train_options, video_options
 from src.utils import evaluation
@@ -125,6 +129,23 @@ def run_training(opt):
             if opt.pretrained:
                 i3dnet.load_state_dict(torch.load('data/i3d_rgb.pth'))
             model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
+    elif opt.network == 'i3dense':
+        if opt.use_flow:
+            densenet = torchvision.models.densenet121(pretrained=True)
+            i3densenet = i3dense.I3DenseNet(
+                copy.deepcopy(densenet),
+                opt.clip_size,
+                inflate_block_convs=True)
+            model = i3dense_adapt.I3DenseAdapt(
+                opt, i3densenet, dataset.class_nb, channel_nb=channel_nb)
+        else:
+            densenet = torchvision.models.densenet121(pretrained=True)
+            i3densenet = i3dense.I3DenseNet(
+                copy.deepcopy(densenet),
+                opt.clip_size,
+                inflate_block_convs=True)
+            model = i3dense_adapt.I3DenseAdapt(opt, i3densenet,
+                                               dataset.class_nb)
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.net.parameters(), lr=opt.lr)
