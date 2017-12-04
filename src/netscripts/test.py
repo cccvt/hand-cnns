@@ -11,7 +11,7 @@ from tqdm import tqdm
 def save_preds(predictions, prediction_file):
     """
     Args:
-        predictions(dict): in format {12234: "Hold something", ...}
+    predictions(dict): in format {12234: "Hold something", ...}
     """
     with open(prediction_file, 'w', newline='') as save_file:
         writer = csv.writer(save_file, delimiter=';')
@@ -34,23 +34,35 @@ def test(dataset,
         # Save predicted scores (for future averaging)
         prediction_scores = {}
     for idx in tqdm(range(len(dataset)), desc='sample'):
-        imgs, class_idx = dataset.get_class_items(idx, frame_nb=frame_nb)
-        batches = [
-            imgs[beg:beg + opt.batch_size]
-            for beg in range(0, len(imgs), opt.batch_size)
-        ]
-        outputs = []
-        for batch in batches:
-            batch = default_collate(imgs)
+        if opt.frame_nb > 0:
+            # Get uniformly spaced clips
+            imgs, class_idx = dataset.get_class_items(idx, frame_nb=frame_nb)
+            # Separate them to batches
+            batches = [
+                imgs[beg:beg + opt.batch_size]
+                for beg in range(0, len(imgs), opt.batch_size)
+            ]
             outputs = []
+            for batch in batches:
+                batch = default_collate(imgs)
+                outputs = []
+                # Prepare vars
+                batch_var = model.prepare_var(batch)
+
+                # Forward pass
+                output = model.net(batch_var)
+                outputs.append(output.data)
+            outputs = torch.cat(outputs)
+        else:
+            # Take full size clip (with varying size)
+            imgs, class_idx = dataset.get_full_sample(idx)
+            imgs = imgs.unsqueeze(0)
             # Prepare vars
-
-            batch_var = model.prepare_var(batch)
-
+            imgs_var = model.prepare_var(imgs)
             # Forward pass
-            output = model.net(batch_var)
-            outputs.append(output.data)
-        outputs = torch.cat(outputs)
+            outputs = model.net(imgs_var)
+            outputs = outputs.data
+
         mean_scores = outputs.mean(0)
         _, best_idx = mean_scores.max(0)
         if best_idx[0] == class_idx:

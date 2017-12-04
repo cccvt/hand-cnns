@@ -10,10 +10,14 @@ from src.datasets.utils import visualize
 
 
 class Smthg(data.Dataset):
-    def __init__(self, root_folder="data/smthg-smthg",
-                 video_transform=None, split='train',
-                 clip_size=16, use_flow=False,
-                 flow_type='farn', rescale_flows=True):
+    def __init__(self,
+                 root_folder="data/smthg-smthg",
+                 video_transform=None,
+                 split='train',
+                 clip_size=16,
+                 use_flow=False,
+                 flow_type='farn',
+                 rescale_flows=True):
         """
         Args:
             split(str): train/valid/test
@@ -102,15 +106,16 @@ class Smthg(data.Dataset):
 
             for film_id in tqdm(sorted(self.split_ids)):
                 film_path = self.jpg_path_from_id(film_id)
-                frame_nbs = [int(jpeg.split('.')[0])
-                             for jpeg in os.listdir(film_path)]
+                frame_nbs = [
+                    int(jpeg.split('.')[0]) for jpeg in os.listdir(film_path)
+                ]
                 max_frames = max(frame_nbs)
                 label = self.label_dict[film_id]
                 all_samples.append((film_id, label, max_frames))
         with open(all_samples_path, 'wb') as cache_file:
             pickle.dump(all_samples, cache_file)
-        print('Retreived {} samples for {} split in smthg dataset'.format(len(all_samples),
-                                                                          self.split))
+        print('Retreived {} samples for {} split in smthg dataset'.format(
+            len(all_samples), self.split))
         return all_samples
 
     def path_from_id(self, video_id):
@@ -121,16 +126,16 @@ class Smthg(data.Dataset):
         str_video_id = str(video_id)
         # Reconstruct path in format video_folder/8/890 for instance
         if self.use_flow:
-            video_path = os.path.join(self.split_flow_path,
-                                      str_video_id[0], str_video_id)
+            video_path = os.path.join(self.split_flow_path, str_video_id[0],
+                                      str_video_id)
         else:
             video_path = self.jpg_path_from_id(video_id)
         return video_path
 
     def jpg_path_from_id(self, video_id):
         str_video_id = str(video_id)
-        video_path = os.path.join(
-                self.split_video_path, str_video_id[0], str_video_id)
+        video_path = os.path.join(self.split_video_path, str_video_id[0],
+                                  str_video_id)
         return video_path
 
     def plot_hist(self):

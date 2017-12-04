@@ -5,14 +5,16 @@ from src.datasets.smthgvideo import SmthgVideo
 from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
 from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
+from src.nets import i3d, i3d_adapt
+from src.nets import i3dense, i3dense_adapt
 from src.netscripts import test
 from src.options import base_options, video_options, test_options
 from src.utils import evaluation
 
 
 def run_testing(opt):
-    scale_size = (128, 171)
-    crop_size = (112, 112)
+    scale_size = (256, 342)
+    crop_size = (224, 224)
     if opt.use_flow:
         in_channels = 2
     else:
@@ -32,7 +34,7 @@ def run_testing(opt):
     if opt.dataset == 'smthgsmthg':
         dataset = SmthgVideo(
             base_transform=base_transform,
-            clip_size=16,
+            clip_size=opt.clip_size,
             flow_type=opt.flow_type,
             rescale_flows=opt.rescale_flows,
             split=opt.split,
@@ -46,7 +48,7 @@ def run_testing(opt):
             all_subjects, opt.leave_out)
         dataset = GTEAGazePlusVideo(
             base_transform=base_transform,
-            clip_size=16,
+            clip_size=opt.clip_size,
             flow_type=opt.flow_type,
             rescale_flows=opt.rescale_flows,
             seqs=valid_seqs,
@@ -54,14 +56,30 @@ def run_testing(opt):
             video_transform=video_transform)
 
     # Initialize C3D neural network
-    c3dnet = c3d.C3D()
+    if opt.network == 'c3d':
+        c3dnet = c3d.C3D()
+        model = c3d_adapt.C3DAdapt(
+            opt, c3dnet, dataset.class_nb, in_channels=in_channels)
 
-    model = c3d_adapt.C3DAdapt(
-        opt, c3dnet, dataset.class_nb, in_channels=in_channels)
+    elif opt.network == 'i3d':
+        if opt.use_flow:
+            i3dnet = i3d.I3D(class_nb=400, modality='flow', dropout_rate=0.5)
+            model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
+        else:
+            i3dnet = i3d.I3D(class_nb=400, modality='rgb', dropout_rate=0.5)
+            model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
 
     optimizer = torch.optim.SGD(model.net.parameters(), lr=1)
 
     model.set_optimizer(optimizer)
+
+    # Use multiple GPUS
+    if opt.gpu_parallel:
+        available_gpus = torch.cuda.device_count()
+        device_ids = list(range(opt.gpu_nb))
+        print('Using {} out of {} available GPUs'.format(
+            len(device_ids), available_gpus))
+        model.net = torch.nn.DataParallel(model.net, device_ids=device_ids)
 
     # Load existing weights
     model.net.eval()
