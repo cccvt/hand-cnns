@@ -98,7 +98,7 @@ class BaseNet():
             loss = self.criterion(output, target_idxs.view(-1))
         else:
             raise error.ArgumentError('{0} is not among known error\
-                functions'.format(self.opt.criterion))
+                    functions'.format(self.opt.criterion))
         return loss
 
     def step_backward(self, loss):

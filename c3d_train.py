@@ -153,14 +153,6 @@ def run_training(opt):
     model.set_criterion(criterion)
     model.set_optimizer(optimizer)
 
-    # Load existing weights, opt.continue_training is epoch to load
-    if opt.continue_training:
-        if opt.continue_epoch == 0:
-            model.net.eval()
-            model.load(latest=True)
-        else:
-            model.load(epoch=opt.continue_epoch)
-
     # Use multiple GPUS
     if opt.gpu_parallel:
         available_gpus = torch.cuda.device_count()
@@ -168,6 +160,14 @@ def run_training(opt):
         print('Using {} out of {} available GPUs'.format(
             len(device_ids), available_gpus))
         model.net = torch.nn.DataParallel(model.net, device_ids=device_ids)
+
+    # Load existing weights, opt.continue_training is epoch to load
+    if opt.continue_training:
+        if opt.continue_epoch == 0:
+            model.net.eval()
+            model.load(latest=True)
+        else:
+            model.load(epoch=opt.continue_epoch)
 
     train.train_net(
         dataloader,
