@@ -92,5 +92,10 @@ def test(dataset,
                                         'prediction_scores.pickle')
         with open(save_scores_path, 'wb') as score_file:
             pickle.dump(prediction_scores, score_file)
+        result_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
+                                   'result.txt')
+        message = 'mean accuracy :{}'.format(mean_scores)
+        with open(result_path, "a") as file:
+            file.write(message + '\n')
 
     return mean_scores

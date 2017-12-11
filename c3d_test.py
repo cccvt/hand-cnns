@@ -23,46 +23,46 @@ def run_testing(opt):
     else:
         in_channels = 3
     base_transform_list = [
-            video_transforms.Scale(crop_size),
-            volume_transforms.ToTensor(channel_nb=in_channels)
-            ]
+        video_transforms.Scale(crop_size),
+        volume_transforms.ToTensor(channel_nb=in_channels)
+    ]
     base_transform = video_transforms.Compose(base_transform_list)
     video_transform_list = [
-            video_transforms.Scale(scale_size),
-            video_transforms.RandomCrop(crop_size),
-            volume_transforms.ToTensor()
-            ]
+        video_transforms.Scale(scale_size),
+        video_transforms.RandomCrop(crop_size),
+        volume_transforms.ToTensor()
+    ]
     video_transform = video_transforms.Compose(video_transform_list)
 
     if opt.dataset == 'smthgsmthg':
         dataset = SmthgVideo(
-                base_transform=base_transform,
-                clip_size=opt.clip_size,
-                flow_type=opt.flow_type,
-                rescale_flows=opt.rescale_flows,
-                split=opt.split,
-                use_flow=opt.use_flow,
-                video_transform=video_transform)
+            base_transform=base_transform,
+            clip_size=opt.clip_size,
+            flow_type=opt.flow_type,
+            rescale_flows=opt.rescale_flows,
+            split=opt.split,
+            use_flow=opt.use_flow,
+            video_transform=video_transform)
     elif opt.dataset == 'gteagazeplus':
         all_subjects = [
-                'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
-                ]
+            'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
+        ]
         train_seqs, valid_seqs = evaluation.leave_one_out(
-                all_subjects, opt.leave_out)
+            all_subjects, opt.leave_out)
         dataset = GTEAGazePlusVideo(
-                base_transform=base_transform,
-                clip_size=opt.clip_size,
-                flow_type=opt.flow_type,
-                rescale_flows=opt.rescale_flows,
-                seqs=valid_seqs,
-                use_flow=opt.use_flow,
-                video_transform=video_transform)
+            base_transform=base_transform,
+            clip_size=opt.clip_size,
+            flow_type=opt.flow_type,
+            rescale_flows=opt.rescale_flows,
+            seqs=valid_seqs,
+            use_flow=opt.use_flow,
+            video_transform=video_transform)
 
         # Initialize C3D neural network
     if opt.network == 'c3d':
         c3dnet = c3d.C3D()
         model = c3d_adapt.C3DAdapt(
-                opt, c3dnet, dataset.class_nb, in_channels=in_channels)
+            opt, c3dnet, dataset.class_nb, in_channels=in_channels)
 
     elif opt.network == 'i3d':
         if opt.use_flow:
@@ -75,21 +75,21 @@ def run_testing(opt):
         if opt.use_flow:
             densenet = torchvision.models.densenet121(pretrained=True)
             i3densenet = i3dense.I3DenseNet(
-                    copy.deepcopy(densenet),
-                    opt.clip_size,
-                    inflate_block_convs=True)
+                copy.deepcopy(densenet),
+                opt.clip_size,
+                inflate_block_convs=True)
             model = i3dense_adapt.I3DenseAdapt(
-                    opt, i3densenet, dataset.class_nb, channel_nb=in_channels)
+                opt, i3densenet, dataset.class_nb, channel_nb=in_channels)
         else:
             densenet = torchvision.models.densenet121(pretrained=True)
             i3densenet = i3dense.I3DenseNet(
-                    copy.deepcopy(densenet),
-                    opt.clip_size,
-                    inflate_block_convs=True)
+                copy.deepcopy(densenet),
+                opt.clip_size,
+                inflate_block_convs=True)
             model = i3dense_adapt.I3DenseAdapt(opt, i3densenet,
-                    dataset.class_nb)
+                                               dataset.class_nb)
 
-            optimizer = torch.optim.SGD(model.net.parameters(), lr=1)
+    optimizer = torch.optim.SGD(model.net.parameters(), lr=1)
 
     model.set_optimizer(optimizer)
 
@@ -108,7 +108,7 @@ def run_testing(opt):
     model.load(load_path=opt.checkpoint_path)
 
     accuracy = test.test(
-            dataset, model, opt=opt, frame_nb=opt.frame_nb, save_predictions=True)
+        dataset, model, opt=opt, frame_nb=opt.frame_nb, save_predictions=True)
     print('Computed accuracy: {}'.format(accuracy))
 
 

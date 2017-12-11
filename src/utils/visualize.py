@@ -9,14 +9,12 @@ class Visualize():
         self.vis = visdom.Visdom()
         self.opt = opt
         self.win = None
-        self.train_log_path = os.path.join(opt.checkpoint_dir,
-                                           opt.exp_id, 'train_log.txt')
-        self.valid_log_path = os.path.join(opt.checkpoint_dir,
-                                           opt.exp_id,
+        self.train_log_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
+                                           'train_log.txt')
+        self.valid_log_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
                                            'valid_log.txt')
-        self.valid_aggreg_log_path = os.path.join(opt.checkpoint_dir,
-                                                  opt.exp_id,
-                                                  'valid_aggreg.txt')
+        self.valid_aggreg_log_path = os.path.join(
+            opt.checkpoint_dir, opt.exp_id, 'valid_aggreg.txt')
 
         # Initialize log files
         with open(self.train_log_path, "a") as log_file:
@@ -43,11 +41,9 @@ class Visualize():
                 into account')
 
         now = time.strftime("%c")
-        message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch,
-                                                       t=now)
+        message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch, t=now)
         for k, v in errors.items():
-            message = message + ',{name}:{err}'.format(name=k,
-                                                       err=v)
+            message = message + ',{name}:{err}'.format(name=k, err=v)
 
         # Write log message to correct file
         if log_path is None:
@@ -64,27 +60,28 @@ class Visualize():
             win = self.vis.line(
                 X=epochs,
                 Y=errors,
-                opts={
-                    'title': title,
-                    'xlabel': 'epoch',
-                    'ylabel': 'score'
-                }
-            )
+                opts={'title': title,
+                      'xlabel': 'epoch',
+                      'ylabel': 'score'})
         else:
             self.vis.line(
                 X=epochs,
                 Y=errors,
-                opts={
-                    'title': title,
-                    'xlabel': 'epoch',
-                    'ylabel': 'score'
-                },
-                win=win
-            )
+                opts={'title': title,
+                      'xlabel': 'epoch',
+                      'ylabel': 'score'},
+                win=win)
         return win
 
-    def plot_sample(self, input_imgs, gts, predictions, classes, win,
-                    display_idx=0, k=1, unnormalize=None):
+    def plot_sample(self,
+                    input_imgs,
+                    gts,
+                    predictions,
+                    classes,
+                    win,
+                    display_idx=0,
+                    k=1,
+                    unnormalize=None):
         """ Plots in visdom one image with predicted and ground truth labels
         from the given batch
         """
@@ -115,20 +112,21 @@ class Visualize():
         if input_img.shape[0] != 3:
             input_img = input_img[0, :, :]
         if win is None:
-            win = self.vis.image(input_img,
-                                 opts={'title': 'sample',
-                                       'caption': caption,
-                                       'win_size': 256})
+            win = self.vis.image(
+                input_img,
+                opts={'title': 'sample',
+                      'caption': caption,
+                      'win_size': 256})
         else:
-            win = self.vis.image(input_img,
-                                 opts={'title': 'sample',
-                                       'caption': caption,
-                                       'win_size': 256},
-                                 win=win)
+            win = self.vis.image(
+                input_img,
+                opts={'title': 'sample',
+                      'caption': caption,
+                      'win_size': 256},
+                win=win)
         return win
 
-    def plot_mat(self, mat, win=None, title='',
-                 normalize_row=True):
+    def plot_mat(self, mat, win=None, title='', normalize_row=True):
         mat = np.copy(mat)
         if normalize_row:
             for i in range(mat.shape[0]):
@@ -136,9 +134,7 @@ class Visualize():
                 mat[i] = mat[i] / norm_row
 
         if win is None:
-            win = self.vis.heatmap(mat, win=win,
-                                   opts={'title': title})
+            win = self.vis.heatmap(mat, win=win, opts={'title': title})
         else:
-            win = self.vis.heatmap(mat, win=win,
-                                   opts={'title': title})
+            win = self.vis.heatmap(mat, win=win, opts={'title': title})
         return win
