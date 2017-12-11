@@ -61,8 +61,14 @@ class SmthgVideo(Smthg):
         return clip, annot
 
     def get_full_sample(self, index):
+        """
+        Get full clip in time dimension for final fully-convolutional testing
+        """
         # Load clip
         clip_id, label, max_frame = self.sample_list[index]
+        if self.use_flow:
+            # Last frame not valid for flow
+            max_frame = max_frame - 1
         clip = self.get_clip(clip_id, 1, max_frame)
 
         # Apply video transform
@@ -74,7 +80,6 @@ class SmthgVideo(Smthg):
             class_idx = 0
         else:
             class_idx = self.classes.index(label)
-        class_idx = self.classes.index(label)
         return clip, class_idx
 
     def __len__(self):
@@ -86,6 +91,7 @@ class SmthgVideo(Smthg):
         frame_idx = random.randint(1, max_frame - self.clip_size)
 
         # Get class index
+        print(self.split)
         if self.split == 'test':
             class_idx = 0
         else:

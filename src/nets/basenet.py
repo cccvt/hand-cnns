@@ -66,8 +66,9 @@ class BaseNet():
         # Load checkpoint state
         checkpoint = torch.load(checkpoint_path)
         if load_path is None:
-            assert checkpoint['epoch'] == epoch, '{} should be {}'.format(
-                checkpoint['epoch'], epoch)
+            if epoch > 0:
+                assert checkpoint['epoch'] == epoch, '{} should be {}'.format(
+                    checkpoint['epoch'], epoch)
         else:
             epoch = checkpoint['epoch']
         self.net.load_state_dict(checkpoint['net'])

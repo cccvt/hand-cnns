@@ -80,6 +80,10 @@ def test(dataset,
                 raise ValueError(
                     'dataset {} not recognized'.format(opt.dataset))
 
+    assert len(sample_scores) == len(dataset)
+    mean_scores = np.mean(sample_scores)
+    print('mean score : {}'.format(mean_scores))
+
     if save_predictions:
         save_dir = os.path.join(opt.checkpoint_dir, opt.exp_id,
                                 'predictions.csv')
@@ -88,8 +92,5 @@ def test(dataset,
                                         'prediction_scores.pickle')
         with open(save_scores_path, 'wb') as score_file:
             pickle.dump(prediction_scores, score_file)
-
-    assert len(sample_scores) == len(dataset)
-    mean_scores = np.mean(sample_scores)
 
     return mean_scores

@@ -18,10 +18,9 @@ class I3DenseAdapt(BaseNet):
                 stride=(1, 2, 2),
                 padding=(0, 3, 3),
                 bias=False)
-        linear3d = copy.deepcopy(self.net.classifier)
-        self.net.classifier = nn.Linear(linear3d.in_features, class_nb)
-        import pdb
-        pdb.set_trace()
-
-    def forward(self, x):
-        return self.net(x)
+        self.net.classifier = nn.Conv3d(
+            in_channels=1024,
+            out_channels=class_nb,
+            kernel_size=(1, 1, 1),
+            bias=True)
+        self.net.conv_class = True

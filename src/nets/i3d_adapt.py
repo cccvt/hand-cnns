@@ -16,6 +16,3 @@ class I3DAdapt(BaseNet):
             activation=None,
             use_bias=True,
             use_bn=False)
-
-    def forward(self, x):
-        return self.net(x)

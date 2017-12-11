@@ -9,9 +9,14 @@ from src.nets.i3utils import inflate
 
 
 class I3DenseNet(torch.nn.Module):
-    def __init__(self, densenet2d, frame_nb, inflate_block_convs=False):
+    def __init__(self,
+                 densenet2d,
+                 frame_nb,
+                 inflate_block_convs=False,
+                 conv_class=True):
         super(I3DenseNet, self).__init__()
         self.frame_nb = frame_nb
+        self.conv_class = conv_class
         # Ugly hack to separate first layer from rest
         self.first_conv = torch.nn.Conv3d(
             3,
@@ -33,9 +38,17 @@ class I3DenseNet(torch.nn.Module):
         features = self.features(inp)
         out = torch.nn.functional.relu(features)
         out = torch.nn.functional.avg_pool3d(out, kernel_size=(1, 7, 7))
-        out = out.permute(0, 2, 1, 3, 4).contiguous().view(
-            -1, self.final_time_dim * 1024)
-        out = self.classifier(out)
+        if self.conv_class:
+            out = self.classifier(out)
+            # Post-process convolutional classifier
+            out = out.squeeze(3)
+            out = out.squeeze(3)
+            out = out.mean(2)
+        else:
+            # Prepare for linear classifier
+            out = out.permute(0, 2, 1, 3, 4).contiguous().view(
+                -1, self.final_time_dim * 1024)
+            out = self.classifier(out)
         return out
 
 
