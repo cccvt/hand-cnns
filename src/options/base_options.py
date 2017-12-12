@@ -28,7 +28,7 @@ class BaseOptions():
         self.parser.add_argument(
             '--gpu_nb',
             type=int,
-            default=2,
+            default=1,
             help='Number of GPUs to use if parallelizing')
 
         # Input params

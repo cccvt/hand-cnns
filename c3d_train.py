@@ -135,7 +135,8 @@ def run_training(opt):
             i3densenet = i3dense.I3DenseNet(
                 copy.deepcopy(densenet),
                 opt.clip_size,
-                inflate_block_convs=True)
+                inflate_block_convs=True,
+                copy_weights=opt.pretrained)
             model = i3dense_adapt.I3DenseAdapt(
                 opt, i3densenet, dataset.class_nb, channel_nb=channel_nb)
         else:
@@ -143,7 +144,8 @@ def run_training(opt):
             i3densenet = i3dense.I3DenseNet(
                 copy.deepcopy(densenet),
                 opt.clip_size,
-                inflate_block_convs=True)
+                inflate_block_convs=True,
+                copy_weights=opt.pretrained)
             model = i3dense_adapt.I3DenseAdapt(opt, i3densenet,
                                                dataset.class_nb)
 
