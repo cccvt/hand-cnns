@@ -16,7 +16,7 @@ parser.add_argument(
     'score_paths',
     type=str,
     nargs='+',
-    help='Name of the split (int [test|valid])')
+    help='Path to score files (as many as you want)')
 parser.add_argument(
     '--split',
     type=str,
@@ -81,6 +81,12 @@ if evaluate:
     acc = conf_mat.trace() / conf_mat.sum()
     print("accuracy {}".format(acc))
 
+prediction_file = os.path.join(
+    save_folder, 'predictions_{split}.csv'.format(split=args.split))
+
+save_preds(mean_preds, prediction_file)
+
+# Print accuracy plots
 class_accs = {}
 class_freqs = {}
 # Plot labels scores
@@ -120,8 +126,3 @@ worst = {
 plot_dict(best)
 plot_dict(worst)
 plot_dict(class_freqs)
-
-prediction_file = os.path.join(
-    save_folder, 'predictions_{split}.csv'.format(split=args.split))
-
-save_preds(mean_preds, prediction_file)

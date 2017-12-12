@@ -88,10 +88,9 @@ class _DenseLayer3d(torch.nn.Sequential):
                                         kernel_size,
                                         copy_weights=copy_weights))
                 else:
-                    self.add_module(
-                        name,
-                        inflate.inflate_conv(child, 1),
-                        copy_weights=copy_weights)
+                    self.add_module(name,
+                                    inflate.inflate_conv(
+                                        child, 1, copy_weights=copy_weights))
             else:
                 raise ValueError(
                     '{} is not among handled layer types'.format(type(child)))
