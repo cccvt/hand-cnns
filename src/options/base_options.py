@@ -84,6 +84,11 @@ class BaseOptions():
             type=int,
             default=1,
             help='0 to disable visdom plots')
+        self.parser.add_argument(
+            '--display_port',
+            type=int,
+            default=8097,
+            help='Visdom display port')
 
         # GTEAGaze+ specific option
         self.parser.add_argument(

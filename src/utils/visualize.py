@@ -6,7 +6,7 @@ import visdom
 
 class Visualize():
     def __init__(self, opt):
-        self.vis = visdom.Visdom()
+        self.vis = visdom.Visdom(port=opt.display_port)
         self.opt = opt
         self.win = None
         self.train_log_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
