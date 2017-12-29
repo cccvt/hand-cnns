@@ -150,7 +150,8 @@ def run_training(opt):
                                                dataset.class_nb)
 
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.net.parameters(), lr=opt.lr)
+    optimizer = torch.optim.SGD(
+        model.net.parameters(), lr=opt.lr, momentum=opt.momentum)
 
     model.set_criterion(criterion)
     model.set_optimizer(optimizer)
