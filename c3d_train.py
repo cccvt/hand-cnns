@@ -10,6 +10,7 @@ from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
 from src.nets import i3dense, i3dense_adapt
+from src.nets import i3res, i3res_adapt
 from src.netscripts import train
 from src.options import base_options, train_options, video_options
 from src.utils import evaluation
@@ -130,24 +131,23 @@ def run_training(opt):
                 i3dnet.load_state_dict(torch.load('data/i3d_rgb.pth'))
             model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
     elif opt.network == 'i3dense':
-        if opt.use_flow:
-            densenet = torchvision.models.densenet121(pretrained=True)
-            i3densenet = i3dense.I3DenseNet(
-                copy.deepcopy(densenet),
-                opt.clip_size,
-                inflate_block_convs=True,
-                copy_weights=opt.pretrained)
-            model = i3dense_adapt.I3DenseAdapt(
-                opt, i3densenet, dataset.class_nb, channel_nb=channel_nb)
-        else:
-            densenet = torchvision.models.densenet121(pretrained=True)
-            i3densenet = i3dense.I3DenseNet(
-                copy.deepcopy(densenet),
-                opt.clip_size,
-                inflate_block_convs=True,
-                copy_weights=opt.pretrained)
-            model = i3dense_adapt.I3DenseAdapt(opt, i3densenet,
-                                               dataset.class_nb)
+        densenet = torchvision.models.densenet121(pretrained=True)
+        i3densenet = i3dense.I3DenseNet(
+            copy.deepcopy(densenet),
+            opt.clip_size,
+            inflate_block_convs=True,
+            copy_weights=opt.pretrained)
+        model = i3dense_adapt.I3DenseAdapt(
+            opt, i3densenet, dataset.class_nb, channel_nb=channel_nb)
+    elif opt.network == 'i3res':
+        resnet = torchvision.models.resnet50(pretrained=True)
+        i3resnet = i3res.I3ResNet(resnet, frame_nb=opt.clip_size)
+        model = i3res_adapt.I3ResAdapt(
+            opt, i3resnet, class_nb=dataset.class_nb, channel_nb=channel_nb)
+    else:
+        raise ValueError(
+            'network should be in [i3res|i3dense|i3d|c3d but got {}]').format(
+                opt.network)
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(

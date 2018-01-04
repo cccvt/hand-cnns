@@ -7,7 +7,7 @@ def inflate_conv(conv2d,
                  time_padding=0,
                  time_stride=1,
                  time_dilation=1,
-                 copy_weights=True):
+                 center=False):
     # To preserve activations, padding should be by continuity and not zero
     # or no padding in time dimension
     kernel_dim = (time_dim, conv2d.kernel_size[0], conv2d.kernel_size[1])
@@ -21,35 +21,39 @@ def inflate_conv(conv2d,
         padding=padding,
         dilation=dilation,
         stride=stride)
-    if copy_weights:
-        # Repeat filter time_dim times along time dimension
-        weight_3d = conv2d.weight.unsqueeze(2).repeat(1, 1, time_dim, 1,
-                                                      1).data
+    # Repeat filter time_dim times along time dimension
+    if center:
+        weight_2d = conv2d.weight.data
+        weight_3d = torch.zeros(*weight_2d.shape)
+        weight_3d = weight_3d.unsqueeze(2).repeat(1, 1, time_dim, 1, 1)
+        middle_idx = time_dim // 2
+        weight_3d[:, :, middle_idx, :, :] = weight_2d
+    else:
+        weight_3d = weight_2d.unsqueeze(2).repeat(1, 1, time_dim, 1, 1)
         weight_3d = weight_3d / time_dim
 
-        # Assign new params
-        conv3d.weight = Parameter(weight_3d)
-        conv3d.bias = conv2d.bias
+    # Assign new params
+    conv3d.weight = Parameter(weight_3d)
+    conv3d.bias = conv2d.bias
     return conv3d
 
 
-def inflate_linear(linear2d, time_dim, copy_weights=True):
+def inflate_linear(linear2d, time_dim):
     """
     Args:
         time_dim: final time dimension of the features
     """
     linear3d = torch.nn.Linear(linear2d.in_features * time_dim,
                                linear2d.out_features)
-    if copy_weights:
-        weight3d = linear2d.weight.data.repeat(1, time_dim)
-        weight3d = weight3d / time_dim
+    weight3d = linear2d.weight.data.repeat(1, time_dim)
+    weight3d = weight3d / time_dim
 
-        linear3d.weight = Parameter(weight3d)
-        linear3d.bias = linear2d.bias
+    linear3d.weight = Parameter(weight3d)
+    linear3d.bias = linear2d.bias
     return linear3d
 
 
-def inflate_batch_norm(batch2d, copy_weights=True):
+def inflate_batch_norm(batch2d):
     # In pytorch 0.2.0 the 2d and 3d versions of batch norm
     # work identically except for the check that verifies the
     # input dimensions
@@ -57,8 +61,6 @@ def inflate_batch_norm(batch2d, copy_weights=True):
     batch3d = torch.nn.BatchNorm3d(batch2d.num_features)
     # retrieve 3d _check_input_dim function
     batch2d._check_input_dim = batch3d._check_input_dim
-    if not copy_weights:
-        batch2d.reset_parameters()
     return batch2d
 
 

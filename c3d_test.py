@@ -10,6 +10,7 @@ from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
 from src.nets import i3dense, i3dense_adapt
+from src.nets import i3res, i3res_adapt
 from src.netscripts import test
 from src.options import base_options, video_options, test_options
 from src.utils import evaluation
@@ -19,12 +20,12 @@ def run_testing(opt):
     scale_size = (256, 342)
     crop_size = (224, 224)
     if opt.use_flow:
-        in_channels = 2
+        channel_nb = 2
     else:
-        in_channels = 3
+        channel_nb = 3
     base_transform_list = [
         video_transforms.Scale(crop_size),
-        volume_transforms.ToTensor(channel_nb=in_channels)
+        volume_transforms.ToTensor(channel_nb=channel_nb)
     ]
     base_transform = video_transforms.Compose(base_transform_list)
     video_transform_list = [
@@ -62,7 +63,7 @@ def run_testing(opt):
     if opt.network == 'c3d':
         c3dnet = c3d.C3D()
         model = c3d_adapt.C3DAdapt(
-            opt, c3dnet, dataset.class_nb, in_channels=in_channels)
+            opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
 
     elif opt.network == 'i3d':
         if opt.use_flow:
@@ -72,22 +73,20 @@ def run_testing(opt):
             i3dnet = i3d.I3D(class_nb=400, modality='rgb', dropout_rate=0.5)
             model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
     elif opt.network == 'i3dense':
-        if opt.use_flow:
-            densenet = torchvision.models.densenet121(pretrained=True)
-            i3densenet = i3dense.I3DenseNet(
-                copy.deepcopy(densenet),
-                opt.clip_size,
-                inflate_block_convs=True)
-            model = i3dense_adapt.I3DenseAdapt(
-                opt, i3densenet, dataset.class_nb, channel_nb=in_channels)
-        else:
-            densenet = torchvision.models.densenet121(pretrained=True)
-            i3densenet = i3dense.I3DenseNet(
-                copy.deepcopy(densenet),
-                opt.clip_size,
-                inflate_block_convs=True)
-            model = i3dense_adapt.I3DenseAdapt(opt, i3densenet,
-                                               dataset.class_nb)
+        densenet = torchvision.models.densenet121(pretrained=True)
+        i3densenet = i3dense.I3DenseNet(
+            copy.deepcopy(densenet), opt.clip_size, inflate_block_convs=True)
+        model = i3dense_adapt.I3DenseAdapt(
+            opt, i3densenet, dataset.class_nb, channel_nb=channel_nb)
+    elif opt.network == 'i3res':
+        resnet = torchvision.models.resnet50(pretrained=True)
+        i3resnet = i3res.I3ResNet(resnet, frame_nb=opt.clip_size)
+        model = i3res_adapt.I3ResAdapt(
+            opt, i3resnet, class_nb=dataset.class_nb, channel_nb=channel_nb)
+    else:
+        raise ValueError(
+            'network should be in [i3res|i3dense|i3d|c3d but got {}]').format(
+                opt.network)
 
     optimizer = torch.optim.SGD(model.net.parameters(), lr=1)
 
