@@ -73,6 +73,31 @@ class GTEAGazePlusVideo(GTEAGazePlus):
         annot[class_idx] = 1
         return clip, annot
 
+    def get_full_sample(self, index, max_size=100):
+        """
+        Get full clip in time dimension for final fully-convolutional testing
+        """
+        action, objects, subject, recipe, beg, end = self.action_clips[index]
+
+        sequence_name = subject + '_' + recipe
+        if self.use_flow:
+            # Last frame not valid for flow
+            end = end - 1
+        clip_size = end - beg
+        if clip_size > max_size:
+            center = (beg + end) // 2
+            beg = center - max_size // 2
+            clip_size = max_size
+        clip = self.get_clip(sequence_name, beg, clip_size)
+
+        # Apply video transform
+        if self.base_transform is not None:
+            clip = self.base_transform(clip)
+
+        # Get class index
+        class_idx = self.classes.index((action, objects))
+        return clip, class_idx
+
     def __len__(self):
         return len(self.action_clips)
 

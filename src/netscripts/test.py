@@ -70,7 +70,7 @@ def test(dataset,
         else:
             sample_scores.append(0)
         if save_predictions:
-            if opt.dataset == "smthgsmthg":
+            if opt.dataset == "smthg":
                 sample_idx, _, _ = dataset.sample_list[idx]
                 predictions[sample_idx] = dataset.classes[best_idx[0]]
                 prediction_scores[sample_idx] = mean_scores
