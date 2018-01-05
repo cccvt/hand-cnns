@@ -81,7 +81,7 @@ def run_training(opt):
             transform=transform, untransform=unnormalize, seqs=valid_seqs)
         valid = True
 
-    elif opt.dataset == 'smthgsmthg':
+    elif opt.dataset == 'smthg':
         dataset = SmthgImage(
             split='train',
             transform=transform,

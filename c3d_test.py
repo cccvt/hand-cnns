@@ -1,3 +1,4 @@
+import os
 import copy
 
 import cv2
@@ -14,6 +15,8 @@ from src.nets import i3res, i3res_adapt
 from src.netscripts import test
 from src.options import base_options, video_options, test_options
 from src.utils import evaluation
+
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 def run_testing(opt):
@@ -35,7 +38,7 @@ def run_testing(opt):
     ]
     video_transform = video_transforms.Compose(video_transform_list)
 
-    if opt.dataset == 'smthgsmthg':
+    if opt.dataset == 'smthg':
         dataset = SmthgVideo(
             base_transform=base_transform,
             clip_size=opt.clip_size,

@@ -43,7 +43,7 @@ def run_testing(opt):
         normalize,
     ])
 
-    if opt.dataset == 'smthgsmthg':
+    if opt.dataset == 'smthg':
         dataset = SmthgImage(
             split='test',
             transform=transform,

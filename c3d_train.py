@@ -68,7 +68,7 @@ def run_training(opt):
             use_flow=opt.use_flow,
             use_video=False,
             video_transform=video_transform)
-    elif opt.dataset == 'smthgsmthg':
+    elif opt.dataset == 'smthg':
         dataset = SmthgVideo(
             base_transform=base_transform,
             clip_size=opt.clip_size,

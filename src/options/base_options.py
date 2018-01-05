@@ -37,7 +37,7 @@ class BaseOptions():
             type=str,
             default='gteagazeplus',
             help='dataset to use among\
-                                 (uciego|gtea|gteagazeplus|smthgsmthg)')
+                                 (uciego|gtea|gteagazeplus|smthg)')
         self.parser.add_argument(
             '--threads',
             type=int,
