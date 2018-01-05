@@ -22,6 +22,7 @@ class Compose(object):
             clip = t(clip)
         return clip
 
+
 class RandomHorizontalFlip(object):
     """Horizontally flip the list of given images randomly
     with a probability 0.5
@@ -40,8 +41,9 @@ class RandomHorizontalFlip(object):
             if isinstance(clip[0], np.ndarray):
                 return [np.fliplr(img) for img in clip]
             elif isinstance(clip[0], PIL.Image.Image):
-                return [img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
-                        for img in clip]
+                return [
+                    img.transpose(PIL.Image.FLIP_LEFT_RIGHT) for img in clip
+                ]
             else:
                 raise TypeError('Expected numpy.ndarray or PIL.Image\
                 but got list of {0}'.format(type(clip[0])))
@@ -72,8 +74,10 @@ class Scale(object):
                 np_inter = cv2.INTER_LINEAR
             else:
                 np_inter = cv2.INTER_NEAREST
-            scaled = [cv2.resize(img, self.size, interpolation=np_inter)
-                      for img in clip]
+            scaled = [
+                cv2.resize(img, self.size, interpolation=np_inter)
+                for img in clip
+            ]
         elif isinstance(clip[0], PIL.Image.Image):
             if self.interpolation == 'bilinear':
                 pil_inter = PIL.Image.NEAREST
@@ -115,16 +119,16 @@ class RandomCrop(object):
             raise TypeError('Expected numpy.ndarray or PIL.Image\
             but got list of {0}'.format(type(clip[0])))
         if w > im_w or h > im_h:
-            raise(ValueError('Initial image size should be larger then cropped size\
+            raise (ValueError(
+                'Initial image size should be larger then cropped size\
                 but got cropped sizes : ({w}, {h})\
-                while initial image is ({im_w}, {im_h})'.format(im_w=im_w,
-                                                                im_h=im_h,
-                                                                w=w, h=h)))
+                while initial image is ({im_w}, {im_h})'
+                .format(im_w=im_w, im_h=im_h, w=w, h=h)))
 
         x1 = random.randint(0, im_w - w)
         y1 = random.randint(0, im_h - h)
         if isinstance(clip[0], np.ndarray):
-            cropped = [img[y1:y1 + h, x1: x1 + w, :] for img in clip]
+            cropped = [img[y1:y1 + h, x1:x1 + w, :] for img in clip]
         elif isinstance(clip[0], PIL.Image.Image):
             cropped = [img.crop((x1, y1, x1 + w, y1 + h)) for img in clip]
         else:

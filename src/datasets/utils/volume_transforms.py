@@ -18,9 +18,9 @@ class ToTensor(object):
         """
         # Retrieve shape
         if isinstance(clip[0], np.ndarray):
-            h, w, c = clip[0].shape
-            assert c == self.channel_nb, 'should receive 3 channels, got {0}'.format(
-                c)
+            h, w, ch = clip[0].shape
+            assert ch == self.channel_nb, 'Got {0} instead of 3 channels'.format(
+                ch)
         elif isinstance(clip[0], Image.Image):
             w, h = clip[0].size
         else:

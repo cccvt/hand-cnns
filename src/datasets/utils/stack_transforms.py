@@ -18,9 +18,9 @@ class ToStackedTensor(object):
         """
         # Retrieve shape
         if isinstance(clip[0], np.ndarray):
-            h, w, c = clip[0].shape
-            assert c == self.channel_nb, 'should receive 3 channels, got {0}'.format(
-                c)
+            h, w, ch = clip[0].shape
+            assert ch == self.channel_nb, 'got {} channels instead of 3'.format(
+                ch)
         elif isinstance(clip[0], PIL.Image.Image):
             w, h = clip[0].size
         else:
@@ -39,8 +39,8 @@ class ToStackedTensor(object):
                 raise TypeError('Expected numpy.ndarray or PIL.Image\
                 but got list of {0}'.format(type(clip[0])))
             img = self.convert_img(img)
-            np_clip[img_idx * self.channel_nb: (img_idx + 1) * self.channel_nb,
-                    :, :] = img
+            np_clip[img_idx * self.channel_nb:(img_idx + 1
+                                               ) * self.channel_nb, :, :] = img
         tensor_clip = torch.from_numpy(np_clip)
         return tensor_clip.float().div(255)
 
