@@ -7,7 +7,7 @@ from src.nets.basenet import BaseNet
 class I3ResAdapt(BaseNet):
     def __init__(self, opt, i3resnet, class_nb, channel_nb=3):
         super().__init__(opt)
-        self.name = 'i3resnet_adapt'
+        self.name = 'i3res_adapt'
         self.class_nb = class_nb
         self.net = i3resnet
         if channel_nb != 3:

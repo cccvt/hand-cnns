@@ -22,8 +22,8 @@ def inflate_conv(conv2d,
         dilation=dilation,
         stride=stride)
     # Repeat filter time_dim times along time dimension
+    weight_2d = conv2d.weight.data
     if center:
-        weight_2d = conv2d.weight.data
         weight_3d = torch.zeros(*weight_2d.shape)
         weight_3d = weight_3d.unsqueeze(2).repeat(1, 1, time_dim, 1, 1)
         middle_idx = time_dim // 2
