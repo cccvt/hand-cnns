@@ -13,6 +13,7 @@ def load_rgb_image(path):
     :return: RGB Image
     """
     image = Image.open(path)
+    image.load()
     return image.convert("RGB")
 
 
@@ -39,8 +40,7 @@ def get_video_capture(file_name):
 
     # Check video exists as file
     if not file_found:
-        raise OpenCvError('Video file {0} doesn\'t exist'.format(
-            file_name))
+        raise OpenCvError('Video file {0} doesn\'t exist'.format(file_name))
     video_capture = cv2.VideoCapture(file_name)
 
     # Check video could be read
@@ -76,16 +76,19 @@ def get_clip(video_capture, frame_begin, frame_nb):
     for frame_idx in range(frame_nb):
         flag, frame = video_capture.read()
         if not flag:
-            raise OpenCvError('Could not read frame {0}'.format(
-                frame_idx + frame_begin))
+            raise OpenCvError(
+                'Could not read frame {0}'.format(frame_idx + frame_begin))
 
         frame = frame[:, :, ::-1]
         clip.append(frame)
     return clip
 
 
-def get_stacked_frames(image_folder, frame_begin, frame_nb,
-                       frame_spacing=1, use_open_cv=True,
+def get_stacked_frames(image_folder,
+                       frame_begin,
+                       frame_nb,
+                       frame_spacing=1,
+                       use_open_cv=True,
                        frame_template="{frame:010d}.png",
                        to_numpy=False):
     """ Returns numpy array/PIL image of stacked images with dimensions
@@ -103,8 +106,8 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
     clip = []
     for idx in range(frame_nb):
         frame_idx = frame_begin + idx * frame_spacing
-        image_path = os.path.join(image_folder,
-                                  frame_template.format(frame=frame_idx))
+        image_path = os.path.join(
+            image_folder, frame_template.format(frame=frame_idx))
         if use_open_cv:
             img = cv2.imread(image_path)
             if img is None:
@@ -113,6 +116,7 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
             img = img[:, :, ::-1]
         else:
             img = Image.open(image_path)
+            img.load()
             if to_numpy:
                 img = np.asarray(img)
         clip.append(img)
@@ -120,21 +124,21 @@ def get_stacked_frames(image_folder, frame_begin, frame_nb,
     return clip
 
 
-def load_flow(image_folder, frame_idx,
-              flow_x_template, flow_y_template, minmax_filename):
+def load_flow(image_folder, frame_idx, flow_x_template, flow_y_template,
+              minmax_filename):
     pass
     # TODO
 
 
-def load_normalized_flow_images(image_folder, frame_idx,
-                                flow_x_template, flow_y_template):
+def load_normalized_flow_images(image_folder, frame_idx, flow_x_template,
+                                flow_y_template):
     """Loads horizontal and vertical flows stored separately
     as [0, 255] images
     """
-    flow_x_path = os.path.join(image_folder,
-                               flow_x_template.format(frame=frame_idx))
-    flow_y_path = os.path.join(image_folder,
-                               flow_y_template.format(frame=frame_idx))
+    flow_x_path = os.path.join(
+        image_folder, flow_x_template.format(frame=frame_idx))
+    flow_y_path = os.path.join(
+        image_folder, flow_y_template.format(frame=frame_idx))
     img_flow_x = Image.open(flow_x_path)
     img_flow_y = Image.open(flow_y_path)
     flow_x = np.asarray(img_flow_x).astype(np.float32)
@@ -142,7 +146,9 @@ def load_normalized_flow_images(image_folder, frame_idx,
     return flow_x, flow_y
 
 
-def get_stacked_flow_arrays(image_folder, frame_begin, frame_nb,
+def get_stacked_flow_arrays(image_folder,
+                            frame_begin,
+                            frame_nb,
                             flow_x_template="{frame:05d}_x.jpg",
                             flow_y_template="{frame:05d}_y.jpg",
                             minmax_filename=None):
@@ -155,39 +161,44 @@ def get_stacked_flow_arrays(image_folder, frame_begin, frame_nb,
     # Retrieve minmax dict in format {frame_idx: [min_x, max_x, min_y, max_y]}
     # from pickle file
     if minmax_filename is not None and minmax_filename.endswith('.pickle'):
-        with open(os.path.join(image_folder,
-                               minmax_filename), 'rb') as minmax_file:
+        with open(os.path.join(image_folder, minmax_filename),
+                  'rb') as minmax_file:
             minmax = pickle.load(minmax_file)
     # Loads tvl1 minmax
     if minmax_filename is not None and minmax_filename.endswith('.txt'):
         minmax = {}
-        minmax_array = np.loadtxt(os.path.join(image_folder,
-                                               minmax_filename))
+        minmax_array = np.loadtxt(os.path.join(image_folder, minmax_filename))
         for i, row in enumerate(minmax_array):
             minmax[i + 1] = list(row)
 
     for idx in range(frame_nb):
         frame_idx = frame_begin + idx
-        flow_x, flow_y = load_normalized_flow_images(image_folder, frame_idx,
-                                                     flow_x_template, flow_y_template)
+        flow_x, flow_y = load_normalized_flow_images(
+            image_folder, frame_idx, flow_x_template, flow_y_template)
         if minmax_filename is not None:
             frame_minmax = minmax[frame_idx]
 
-            flow_x = cv2.normalize(flow_x, flow_x,
-                                   alpha=frame_minmax[0],
-                                   beta=frame_minmax[1],
-                                   norm_type=cv2.NORM_MINMAX)
-            flow_y = cv2.normalize(flow_y, flow_y,
-                                   alpha=frame_minmax[2],
-                                   beta=frame_minmax[3],
-                                   norm_type=cv2.NORM_MINMAX)
+            flow_x = cv2.normalize(
+                flow_x,
+                flow_x,
+                alpha=frame_minmax[0],
+                beta=frame_minmax[1],
+                norm_type=cv2.NORM_MINMAX)
+            flow_y = cv2.normalize(
+                flow_y,
+                flow_y,
+                alpha=frame_minmax[2],
+                beta=frame_minmax[3],
+                norm_type=cv2.NORM_MINMAX)
 
         flow = np.stack((flow_x, flow_y), axis=2)
         clip.append(flow)
     return clip
 
 
-def get_stacked_numpy_arrays(image_folder, frame_begin, frame_nb,
+def get_stacked_numpy_arrays(image_folder,
+                             frame_begin,
+                             frame_nb,
                              frame_template="{frame:05d}.pickle"):
     """ Returns list of stacked numpy arrays with dimensions
     by reading files created by np.save from folder image_folder
@@ -203,8 +214,8 @@ def get_stacked_numpy_arrays(image_folder, frame_begin, frame_nb,
     clip = []
     for idx in range(frame_nb):
         frame_idx = frame_begin + idx
-        image_path = os.path.join(image_folder,
-                                  frame_template.format(frame=frame_idx))
+        image_path = os.path.join(
+            image_folder, frame_template.format(frame=frame_idx))
         img = np.load(image_path)
         clip.append(img)
 
