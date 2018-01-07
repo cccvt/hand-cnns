@@ -16,8 +16,9 @@ for leave_out in leave_outs:
         '--gpu_nb', '2', '--leave_out',
         str(leave_out), '--lr', '0.01', '--new_lr', '0.01', '--threads', '10',
         '--epochs', '50', '--exp_id',
-        'train/i3dense/rgb/gteagazeplus/run_1_leaveouts/gtea_lo_' +
-        str(leave_out), '--visualize', '1', '--test_aggreg', '0'
+        'train/i3dense/flow/gteagazeplus/run_1_leaveouts/gtea_lo_' +
+        str(leave_out), '--use_flow', '--flow_type', 'tvl1', '--visualize',
+        '1', '--test_aggreg', '0', '--display_port', '8096'
     ])
 
     run_training(opt)

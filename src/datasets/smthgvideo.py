@@ -88,7 +88,6 @@ class SmthgVideo(Smthg):
     def get_class_items(self, index, frame_nb=None):
         # Load clip info
         clip_id, label, max_frame = self.sample_list[index]
-        frame_idx = random.randint(1, max_frame - self.clip_size)
 
         # Get class index
         print(self.split)

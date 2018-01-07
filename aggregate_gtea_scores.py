@@ -53,7 +53,7 @@ all_subjects = ['Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh']
 if args.leave_out is not None:
     leave_out_idxs = [args.leave_out]
 else:
-    leave_out_idxs = list(range(0, 4))
+    leave_out_idxs = list(range(0, 6))
 
 final_scores = []
 conf_mats = []
