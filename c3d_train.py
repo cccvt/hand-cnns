@@ -4,8 +4,6 @@ import cv2
 import torch
 import torchvision
 
-from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
-from src.datasets.smthgvideo import SmthgVideo
 from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
@@ -14,6 +12,10 @@ from src.nets import i3res, i3res_adapt
 from src.netscripts import train
 from src.options import base_options, train_options, video_options
 from src.utils import evaluation
+
+from actiondatasets import smthg
+from actiondatasets.gteagazeplus import GTEAGazePlus
+from actiondatasets.actiondataset import ActionDataset
 
 
 def run_training(opt):
@@ -48,66 +50,61 @@ def run_training(opt):
         ]
         train_seqs, valid_seqs = evaluation.leave_one_out(
             all_subjects, leave_out_idx)
-        dataset = GTEAGazePlusVideo(
-            base_transform=base_transform,
-            clip_size=opt.clip_size,
+        dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
             original_labels=True,
             rescale_flows=opt.rescale_flows,
             seqs=train_seqs,
-            use_flow=opt.use_flow,
-            use_video=False,
-            video_transform=video_transform)
-        val_dataset = GTEAGazePlusVideo(
-            base_transform=base_transform,
-            clip_size=opt.clip_size,
+            use_flow=opt.use_flow)
+        val_dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
             original_labels=True,
             rescale_flows=opt.rescale_flows,
             seqs=valid_seqs,
-            use_flow=opt.use_flow,
-            use_video=False,
-            video_transform=video_transform)
+            use_flow=opt.use_flow)
     elif opt.dataset == 'smthg':
-        dataset = SmthgVideo(
-            base_transform=base_transform,
-            clip_size=opt.clip_size,
+        dataset = smthg.Smthg(
             flow_type=opt.flow_type,
-            frame_spacing=opt.clip_spacing,
             rescale_flows=opt.rescale_flows,
-            split='train',
             use_flow=opt.use_flow,
-            video_transform=video_transform)
+            split='train')
 
-        val_dataset = SmthgVideo(
-            base_transform=base_transform,
-            clip_size=opt.clip_size,
+        val_dataset = smthg.Smthg(
             flow_type=opt.flow_type,
             rescale_flows=opt.rescale_flows,
             split='valid',
-            use_flow=opt.use_flow,
-            video_transform=video_transform)
+            use_flow=opt.use_flow)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled\
-                by this script'.format(opt._dataset))
+                by this script'.format(opt.dataset))
+    action_dataset = ActionDataset(
+        dataset,
+        base_transform=base_transform,
+        clip_size=opt.clip_size,
+        transform=video_transform)
+    val_action_dataset = ActionDataset(
+        val_dataset,
+        base_transform=base_transform,
+        clip_size=opt.clip_size,
+        transform=video_transform)
 
     # Initialize sampler
     if opt.weighted_training:
         weights = [1 / k for k in dataset.class_counts]
         sampler = torch.utils.data.sampler.WeightedRandomSampler(
-            weights, len(dataset))
+            weights, len(action_dataset))
     else:
-        sampler = torch.utils.data.sampler.RandomSampler(dataset)
+        sampler = torch.utils.data.sampler.RandomSampler(action_dataset)
 
     # Initialize dataloaders
     dataloader = torch.utils.data.DataLoader(
-        dataset,
+        action_dataset,
         sampler=sampler,
         batch_size=opt.batch_size,
         num_workers=opt.threads)
 
     val_dataloader = torch.utils.data.DataLoader(
-        val_dataset,
+        val_action_dataset,
         shuffle=False,
         batch_size=opt.batch_size,
         num_workers=opt.threads)
@@ -118,18 +115,18 @@ def run_training(opt):
         if opt.pretrained:
             c3dnet.load_state_dict(torch.load('data/c3d.pickle'))
         model = c3d_adapt.C3DAdapt(
-            opt, c3dnet, dataset.class_nb, in_channels=channel_nb)
+            opt, c3dnet, action_dataset.class_nb, in_channels=channel_nb)
     elif opt.network == 'i3d':
         if opt.use_flow:
             i3dnet = i3d.I3D(class_nb=400, modality='flow', dropout_rate=0.5)
             if opt.pretrained:
                 i3dnet.load_state_dict(torch.load('data/i3d_flow.pth'))
-            model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
+            model = i3d_adapt.I3DAdapt(opt, i3dnet, action_dataset.class_nb)
         else:
             i3dnet = i3d.I3D(class_nb=400, modality='rgb', dropout_rate=0.5)
             if opt.pretrained:
                 i3dnet.load_state_dict(torch.load('data/i3d_rgb.pth'))
-            model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
+            model = i3d_adapt.I3DAdapt(opt, i3dnet, action_dataset.class_nb)
     elif opt.network == 'i3dense':
         densenet = torchvision.models.densenet121(pretrained=True)
         i3densenet = i3dense.I3DenseNet(
@@ -138,12 +135,15 @@ def run_training(opt):
             inflate_block_convs=True,
             copy_weights=opt.pretrained)
         model = i3dense_adapt.I3DenseAdapt(
-            opt, i3densenet, dataset.class_nb, channel_nb=channel_nb)
+            opt, i3densenet, action_dataset.class_nb, channel_nb=channel_nb)
     elif opt.network == 'i3res':
         resnet = torchvision.models.resnet50(pretrained=True)
         i3resnet = i3res.I3ResNet(resnet, frame_nb=opt.clip_size)
         model = i3res_adapt.I3ResAdapt(
-            opt, i3resnet, class_nb=dataset.class_nb, channel_nb=channel_nb)
+            opt,
+            i3resnet,
+            class_nb=action_dataset.class_nb,
+            channel_nb=channel_nb)
     else:
         raise ValueError(
             'network should be in [i3res|i3dense|i3d|c3d but got {}]').format(
