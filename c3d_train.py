@@ -130,10 +130,7 @@ def run_training(opt):
     elif opt.network == 'i3dense':
         densenet = torchvision.models.densenet121(pretrained=True)
         i3densenet = i3dense.I3DenseNet(
-            copy.deepcopy(densenet),
-            opt.clip_size,
-            inflate_block_convs=True,
-            copy_weights=opt.pretrained)
+            copy.deepcopy(densenet), opt.clip_size, inflate_block_convs=True)
         model = i3dense_adapt.I3DenseAdapt(
             opt, i3densenet, action_dataset.class_nb, channel_nb=channel_nb)
     elif opt.network == 'i3res':
