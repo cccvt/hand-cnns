@@ -1,12 +1,15 @@
 import os
-import numpy as np
+import subprocess
 import time
+
+import numpy as np
 import visdom
 
 
 class Visualize():
     def __init__(self, opt):
         self.vis = visdom.Visdom(port=opt.display_port)
+
         self.opt = opt
         self.win = None
         self.train_log_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
@@ -29,6 +32,22 @@ class Visualize():
             now = time.strftime("%c")
             log_file.write('==== Valid aggreg log at {0} ====\n'.format(now))
 
+        # Launch visdom server
+        exp_dir = os.path.join(self.opt.checkpoint_dir, self.opt.exp_id)
+        visdom_command = [
+            'python', '-m', 'visdom.server', '-port',
+            str(opt.display_port), '-env_path', exp_dir
+        ]
+        sp = subprocess.Popen(
+            visdom_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if sp:
+            print('Launched visdom server on port {}'.format(opt.display_port))
+            self.visdom_subprocess = sp
+        else:
+            print('Failed to launch visdom on port {} !!'.format(
+                opt.display_port))
+            self.save()
+
     def log_errors(self, epoch, errors, valid=False, log_path=None):
         """log_path overrides the destination path of the log
         Args:
@@ -38,7 +57,7 @@ class Visualize():
         """
         if valid and log_path is not None:
             raise ValueError('when log_path is specified, valid is not taken\
-                into account')
+                    into account')
 
         now = time.strftime("%c")
         message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch, t=now)
@@ -138,3 +157,6 @@ class Visualize():
         else:
             win = self.vis.heatmap(mat, win=win, opts={'title': title})
         return win
+
+    def save(self):
+        self.vis.save(['main'])

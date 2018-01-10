@@ -250,4 +250,6 @@ def epoch_pass(dataloader,
     if verbose:
         print(message)
 
+    viz.save()
+
     return metrics, sample_win, conf_mat, conf_win
