@@ -243,9 +243,9 @@ def epoch_pass(dataloader,
     if last_scores['top1'] != epoch_conf_mat.trace() / epoch_conf_mat.sum():
         import pdb
         pdb.set_trace()
-    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum(
-    ), '{} is not {}'.format(last_scores['top1'],
-                             epoch_conf_mat.trace() / epoch_conf_mat.sum())
+    # assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum(
+    # ), '{} is not {}'.format(last_scores['top1'],
+    #                          epoch_conf_mat.trace() / epoch_conf_mat.sum())
 
     if verbose:
         print(message)

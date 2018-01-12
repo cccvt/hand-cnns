@@ -2,7 +2,7 @@ from c3d_train import run_training
 from src.options import base_options, train_options, video_options
 
 leave_outs = list(range(0, 6))
-lrs = [0.01]
+lrs = [0.0001]
 
 for lr in lrs:
     for leave_out in leave_outs:
@@ -14,14 +14,15 @@ for lr in lrs:
         video_options.add_video_options(options)
 
         opt = options.parse([
-            '--batch_size', '46', '--network', 'i3res', '--gpu_parallel',
-            '--gpu_nb', '3', '--leave_out',
+            '--batch_size', '30', '--network', 'i3res', '--gpu_parallel',
+            '--gpu_nb', '2', '--leave_out',
             str(leave_out), '--lr',
             str(lr), '--new_lr',
-            str(lr), '--threads', '10', '--epochs', '80', '--exp_id',
-            'train/i3res/rgb/gteagazeplus/run_1_leavout_{}_lr/gtea_lo_'.format(
-                lr) + str(leave_out), '--visualize', '1', '--test_aggreg', '0',
-            '--display_port', '8020', '--momentum', '0.9'
+            str(lr), '--threads', '10', '--epochs', '100', '--exp_id',
+            'train/i3res/rgb/gteagazeplus/run_2_leavout_0.001_lr_continue_{}/gtea_lo_'.
+            format(lr) + str(leave_out), '--visualize', '1', '--test_aggreg',
+            '0', '--display_port', '8021', '--momentum', '0.9',
+            '--continue_training', '--continue_epoch', '10'
         ])
 
         run_training(opt)
