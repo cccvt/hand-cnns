@@ -5,6 +5,8 @@ checkpoints
 predictions
 
 test/.cache
+test_scripts/
+train_scrips/
 
 __pycache__
 

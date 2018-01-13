@@ -1,5 +1,6 @@
 import datetime
 import os
+import shutil
 import subprocess
 import sys
 
@@ -24,10 +25,13 @@ def process_args(args, save_folder=None):
             for k, v in sorted(opts.items()):
                 opt_file.write(
                     '{option}: {value}\n'.format(option=str(k), value=str(v)))
-            git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+                git_hash = subprocess.check_output(
+                    ['git', 'rev-parse', 'HEAD'])
             git_branch = subprocess.check_output(
                 ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
             opt_file.write('git hash: {}\n'.format(git_hash.strip()))
             opt_file.write('git branch: {}\n'.format(git_branch.strip()))
             opt_file.write('launched {} at {}\n'.format(
                 str(sys.argv[0]), str(datetime.datetime.now())))
+            shutil.copyfile(sys.argv[0],
+                            os.path.join(save_folder, 'running_script.py'))
