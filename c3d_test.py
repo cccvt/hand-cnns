@@ -114,7 +114,11 @@ def run_testing(opt):
     model.load(load_path=opt.checkpoint_path)
 
     accuracy = test.test(
-        dataset, model, opt=opt, frame_nb=opt.frame_nb, save_predictions=True)
+        action_dataset,
+        model,
+        opt=opt,
+        frame_nb=opt.frame_nb,
+        save_predictions=True)
     print('Computed accuracy: {}'.format(accuracy))
 
 

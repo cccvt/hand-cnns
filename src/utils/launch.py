@@ -4,8 +4,8 @@ import os
 def get_smthg_paths(network, modality, dataset, experience, split):
     train_folder = os.path.join('train', network, modality, dataset,
                                 experience)
-    test_folder = os.path.join('test', network, modality, dataset, split,
-                               experience)
+    test_folder = os.path.join('test', network, modality, dataset, experience,
+                               split)
     return train_folder, test_folder
 
 

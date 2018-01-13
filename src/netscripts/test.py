@@ -55,7 +55,7 @@ def test(dataset,
             outputs = torch.cat(outputs)
         else:
             # Take full size clip (with varying size)
-            imgs, class_idx = dataset.get_full_sample(idx)
+            imgs, class_idx = dataset.get_full_clip(idx)
             imgs = imgs.unsqueeze(0)
             # Prepare vars
             imgs_var = model.prepare_var(imgs)
@@ -71,7 +71,7 @@ def test(dataset,
             sample_scores.append(0)
         if save_predictions:
             if opt.dataset == "smthg":
-                sample_idx, _, _ = dataset.sample_list[idx]
+                sample_idx, _, _, _ = dataset.dataset.all_samples[idx]
                 predictions[sample_idx] = dataset.classes[best_idx[0]]
                 prediction_scores[sample_idx] = mean_scores
             elif opt.dataset == "gteagazeplus":
