@@ -55,6 +55,26 @@ def process_logs(logs, plot_metric='top1', score_iter=20):
     return sorted(iter_scores, key=itemgetter(0))
 
 
+def display_logs(log_file,
+                 score_type,
+                 score_iter=10,
+                 plot_metric='top1',
+                 vis=True):
+    """Process logs, prints the results for the given score_iter
+    and plots the matching curves
+    """
+    logs = get_logs(log_file)
+    iter_scores = process_logs(
+        logs, score_iter=score_iter, plot_metric=plot_metric)
+    # Plot all losses
+    if vis:
+        plot_logs(logs, score_name=plot_metric)
+
+        print('==== {} scores ===='.format(score_type))
+        for loss, val in iter_scores:
+            print('{val}: {loss}'.format(val=val, loss=loss))
+
+
 def print_iter_scores(all_iter_scores, iter_nb):
     """
     Args:
@@ -166,7 +186,7 @@ if __name__ == "__main__":
                     print('==== Train scores ====')
                     print_iter_scores(all_iter_scores, opt.score_iter)
 
-        # If not GTEA gaze dataset
+    # If not GTEA gaze dataset
     else:
         for checkpoint in opt.checkpoints:
             print('==== Scores for checkpoint {} ===='.format(checkpoint))
@@ -174,44 +194,28 @@ if __name__ == "__main__":
             valid_file = os.path.join(checkpoint, 'valid_log.txt')
             train_file = os.path.join(checkpoint, 'train_log.txt')
             if opt.aggreg:
-                aggreg_logs = get_logs(aggreg_file)
-                iter_scores = process_logs(
-                    aggreg_logs,
+                display_logs(
+                    aggreg_file,
+                    score_type='Aggreg',
                     score_iter=opt.score_iter,
-                    vis=opt.vis,
-                    plot_metric=opt.plot_metric)
-                # Plot all losses
-                if opt.vis:
-                    plot_logs(aggreg_logs, score_name=opt.plot_metric)
-
-                    print('==== Aggreg scores ====')
-                    for loss, val in iter_scores:
-                        print('{val}: {loss}'.format(val=val, loss=loss))
+                    plot_metric=opt.plot_metric,
+                    vis=opt.vis)
 
             if opt.valid:
-                valid_logs = get_logs(valid_file)
-                iter_scores = process_logs(
-                    valid_logs, score_iter=opt.score_iter)
-                # Plot all losses
-                if opt.vis:
-                    plot_logs(valid_logs, score_name=opt.plot_metric)
-
-                    # Display iter scores
-                    print('==== Valid scores ====')
-                    for loss, val in iter_scores:
-                        print('{val}: {loss}'.format(val=val, loss=loss))
+                display_logs(
+                    valid_file,
+                    score_type='Valid',
+                    score_iter=opt.score_iter,
+                    plot_metric=opt.plot_metric,
+                    vis=opt.vis)
 
             if opt.train:
-                train_logs = get_logs(train_file)
-                iter_scores = process_logs(
-                    train_logs, score_iter=opt.score_iter)
-                # Plot all losses
-                if opt.vis:
-                    plot_logs(train_logs, score_name=opt.plot_metric)
-
-                print('==== Train scores ====')
-                for loss, val in iter_scores:
-                    print('{val}: {loss}'.format(val=val, loss=loss))
+                display_logs(
+                    train_file,
+                    score_type='Train',
+                    score_iter=opt.score_iter,
+                    plot_metric=opt.plot_metric,
+                    vis=opt.vis)
         if opt.vis:
             plt.legend()
             plt.show()
