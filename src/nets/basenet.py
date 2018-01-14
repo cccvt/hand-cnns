@@ -76,6 +76,26 @@ class BaseNet():
         print('loaded net from epoch {0}'.format(epoch))
         return epoch
 
+    def update_optimizer(self, lr, momentum, verbose=True):
+        """Set new lr and momentum to optimizer
+        """
+        for param_group in self.optimizer.param_groups:
+            if param_group['lr'] != lr:
+                lr_message = 'Changing lr from {} to {}'.format(
+                    param_group['lr'], lr)
+                param_group['lr'] = lr
+            else:
+                lr_message = 'Learning rate is unchanged :{}'.format(lr)
+            if param_group['momentum'] != momentum:
+                param_group['momentum'] = momentum
+                mom_message = 'Changing momentum from {} to {}'.format(
+                    param_group['momentum'], momentum)
+            else:
+                mom_message = 'Momentum is unchanged :{}'.format(momentum)
+            if verbose:
+                print(lr_message)
+                print(mom_message)
+
     def set_optimizer(self, optim):
         self.optimizer = optim
 
