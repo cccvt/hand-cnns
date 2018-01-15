@@ -10,6 +10,5 @@ train_scrips/
 
 __pycache__
 
-*.swp
-*.swo
+*.sw*
 *.lprof
