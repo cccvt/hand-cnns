@@ -24,15 +24,21 @@ def get_logs(path):
     return logs
 
 
-def plot_logs(logs, score_name='top1', y_max=1, prefix=None):
+def plot_logs(logs, score_name='top1', y_max=1, prefix=None, score_type=None):
+    """
+    Args:
+        score_type (str): label for current curve, [valid|train|aggreg]
+    """
 
     # Plot all losses
     scores = logs[score_name]
-    if prefix is None:
-        label = score_name
+    if score_type is None:
+        label = prefix + ''
     else:
-        label = prefix + score_name
+        label = prefix + '_' + score_type.lower()
+
     plt.plot(scores, label=label)
+    plt.title(score_name)
     if score_name == 'top1':
         # Set maximum for y axis
         plt.minorticks_on()
@@ -59,6 +65,7 @@ def display_logs(log_file,
                  score_type,
                  score_iter=10,
                  plot_metric='top1',
+                 prefix=None,
                  vis=True):
     """Process logs, prints the results for the given score_iter
     and plots the matching curves
@@ -68,7 +75,8 @@ def display_logs(log_file,
         logs, score_iter=score_iter, plot_metric=plot_metric)
     # Plot all losses
     if vis:
-        plot_logs(logs, score_name=plot_metric)
+        plot_logs(
+            logs, prefix=prefix, score_name=plot_metric, score_type=score_type)
 
         print('==== {} scores ===='.format(score_type))
         for loss, val in iter_scores:
@@ -106,11 +114,21 @@ if __name__ == "__main__":
         type=int,
         default=10,
         help='What itertation use to average results')
+    parser.add_argument(
+        '--prefixes',
+        nargs='+',
+        type=str,
+        help='Descriptions of run for labels, one per checkpoint')
     parser.add_argument('--valid', action='store_true')
     parser.add_argument('--aggreg', action='store_true')
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--gteagazeplus', action='store_true')
     opt = parser.parse_args()
+
+    if opt.prefixes is not None:
+        assert len(opt.prefixes) == len(opt.checkpoints), \
+            'Should have as many prefixes as checkpoints but '\
+            'got {} and {}'.format(opt.prefixes, opt.checkpoints)
 
     if opt.gteagazeplus:
         template_aggreg = os.path.join(opt.checkpoint,
@@ -188,7 +206,12 @@ if __name__ == "__main__":
 
     # If not GTEA gaze dataset
     else:
-        for checkpoint in opt.checkpoints:
+        for checkpoint_idx, checkpoint in enumerate(opt.checkpoints):
+            # Get prefix describing the experiment
+            if opt.prefixes is not None:
+                prefix = opt.prefixes[checkpoint_idx]
+            else:
+                prefix = ''
             print('==== Scores for checkpoint {} ===='.format(checkpoint))
             aggreg_file = os.path.join(checkpoint, 'valid_aggreg.txt')
             valid_file = os.path.join(checkpoint, 'valid_log.txt')
@@ -199,6 +222,7 @@ if __name__ == "__main__":
                     score_type='Aggreg',
                     score_iter=opt.score_iter,
                     plot_metric=opt.plot_metric,
+                    prefix=prefix,
                     vis=opt.vis)
 
             if opt.valid:
@@ -207,6 +231,7 @@ if __name__ == "__main__":
                     score_type='Valid',
                     score_iter=opt.score_iter,
                     plot_metric=opt.plot_metric,
+                    prefix=prefix,
                     vis=opt.vis)
 
             if opt.train:
@@ -215,6 +240,7 @@ if __name__ == "__main__":
                     score_type='Train',
                     score_iter=opt.score_iter,
                     plot_metric=opt.plot_metric,
+                    prefix=prefix,
                     vis=opt.vis)
         if opt.vis:
             plt.legend()
