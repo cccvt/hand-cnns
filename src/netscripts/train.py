@@ -87,6 +87,22 @@ def train_net(dataloader,
                                                         train=False,
                                                         verbose=False,
                                                         visualize=visualize)
+
+        # Update learning rate scheduler according to loss
+        if model.lr_scheduler is not None:
+            for metric in val_metrics:
+                if metric.name == 'loss':
+                    print('Running lr scheduler')
+                    # Retrieve latest loss for lr scheduler
+                    loss = metric.evolution[-1]
+                    lr = model.scheduler_step(loss)
+                    print('Current lr : {}'.format(lr))
+                    viz.log_errors(
+                        epoch=epoch,
+                        errors={'lr': lr,
+                                'loss': loss},
+                        log_path=viz.lr_history_path)
+
         # Display valid conf mat
         if visualize:
             val_conf_win = viz.plot_mat(

@@ -11,6 +11,8 @@ class BaseNet():
         self.name = None
         self.net = None
         self.opt = opt
+        self.lr_scheduler = None
+        self.optimzer = None
 
     def save(self, epoch, opt, latest=False):
         """
@@ -46,11 +48,11 @@ class BaseNet():
         Utility function to load network weights
 
         Args:
-            load_path: path of checkpoint to load, is set, epoch and
-                latest are ignored
-            epoch: epoch to load
-            latest: whether to use file with 'latest' suffix, if true
-                epoch is ignored
+        load_path: path of checkpoint to load, is set, epoch and
+        latest are ignored
+        epoch: epoch to load
+        latest: whether to use file with 'latest' suffix, if true
+        epoch is ignored
         """
         if load_path is None:
             # If load_path not specified load either latest or by epoch
@@ -69,8 +71,8 @@ class BaseNet():
             if epoch > 0:
                 assert checkpoint['epoch'] == epoch, '{} should be {}'.format(
                     checkpoint['epoch'], epoch)
-        else:
-            epoch = checkpoint['epoch']
+            else:
+                epoch = checkpoint['epoch']
         self.net.load_state_dict(checkpoint['net'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         print('loaded net from epoch {0}'.format(epoch))
@@ -99,8 +101,28 @@ class BaseNet():
     def set_optimizer(self, optim):
         self.optimizer = optim
 
+    def set_lr_scheduler(self, lr_scheduler):
+        self.lr_scheduler = lr_scheduler
+
     def set_criterion(self, crit):
         self.criterion = crit
+
+    def scheduler_step(self, loss):
+        """Function to call at the end of training epoch
+        Args:
+        loss: New value for loss to monitor
+        """
+        if self.lr_scheduler is not None:
+            self.lr_scheduler.step(loss)
+
+        # Get new learning rate and return it
+        lrs = []
+        for i, param_group in enumerate(self.optimizer.param_groups):
+            lrs.append(param_group['lr'])
+        if not lrs.count(lrs[0]) == len(lrs):
+            raise ValueError('All group learning rates should be the same for '
+                             'network groups but got {}'.format(lrs))
+        return lrs[0]
 
     def prepare_var(self, tensor):
         tensor = tensor.float()

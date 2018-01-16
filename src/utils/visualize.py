@@ -18,6 +18,8 @@ class Visualize():
                                            'valid_log.txt')
         self.valid_aggreg_log_path = os.path.join(
             opt.checkpoint_dir, opt.exp_id, 'valid_aggreg.txt')
+        self.lr_history_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
+                                            'lr_history.txt')
 
         # Initialize log files
         with open(self.train_log_path, "a") as log_file:
@@ -31,6 +33,10 @@ class Visualize():
         with open(self.valid_aggreg_log_path, "a") as log_file:
             now = time.strftime("%c")
             log_file.write('==== Valid aggreg log at {0} ====\n'.format(now))
+
+        with open(self.lr_history_path, "a") as log_file:
+            now = time.strftime("%c")
+            log_file.write('==== LR schedule log at {0} ====\n'.format(now))
 
         # Launch visdom server
         exp_dir = os.path.join(self.opt.checkpoint_dir, self.opt.exp_id)

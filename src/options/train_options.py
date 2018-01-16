@@ -45,6 +45,27 @@ def add_train_options(options):
         default='CE',
         help='(MSE for mean square |\
                              CE for cross-entropy)')
+    parser.add_argument(
+        '--plateau_scheduler',
+        action='store_true',
+        help='Use learning rate reduce on plateau learning '
+        'rate scheduler')
+    parser.add_argument(
+        '--plateau_thresh',
+        type=float,
+        default=1e-4,
+        help='Value for relative reductin of lr in plateau')
+    parser.add_argument(
+        '--plateau_factor',
+        type=float,
+        default=0.5,
+        help='Factor for lr reduction in plateau')
+    parser.add_argument(
+        '--plateau_patience',
+        type=int,
+        default=2,
+        help='Number of epochs with bad metric before drop '
+        'in lr')
 
     parser.add_argument(
         '--save-freq',
