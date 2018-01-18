@@ -85,6 +85,7 @@ class Visualize():
             win = self.vis.line(
                 X=epochs,
                 Y=errors,
+                env=self.opt.exp_id,
                 opts={'title': title,
                       'xlabel': 'epoch',
                       'ylabel': 'score'})
@@ -92,6 +93,7 @@ class Visualize():
             self.vis.line(
                 X=epochs,
                 Y=errors,
+                env=self.opt.exp_id,
                 opts={'title': title,
                       'xlabel': 'epoch',
                       'ylabel': 'score'},
@@ -139,12 +141,14 @@ class Visualize():
         if win is None:
             win = self.vis.image(
                 input_img,
+                env=self.opt.exp_id,
                 opts={'title': 'sample',
                       'caption': caption,
                       'win_size': 256})
         else:
             win = self.vis.image(
                 input_img,
+                env=self.opt.exp_id,
                 opts={'title': 'sample',
                       'caption': caption,
                       'win_size': 256},
@@ -159,10 +163,12 @@ class Visualize():
                 mat[i] = mat[i] / norm_row
 
         if win is None:
-            win = self.vis.heatmap(mat, win=win, opts={'title': title})
+            win = self.vis.heatmap(
+                mat, env=self.opt.exp_id, win=win, opts={'title': title})
         else:
-            win = self.vis.heatmap(mat, win=win, opts={'title': title})
+            win = self.vis.heatmap(
+                mat, env=self.opt.exp_id, win=win, opts={'title': title})
         return win
 
     def save(self):
-        self.vis.save(['main'])
+        self.vis.save([self.opt.exp_id])
