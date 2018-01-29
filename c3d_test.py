@@ -8,8 +8,8 @@ import torchvision
 from actiondatasets import smthg
 from actiondatasets.gteagazeplus import GTEAGazePlus
 from actiondatasets.actiondataset import ActionDataset
+from videotransforms import video_transforms, volume_transforms
 
-from src.datasets.utils import video_transforms, volume_transforms
 from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
 from src.nets import i3dense, i3dense_adapt

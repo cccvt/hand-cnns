@@ -4,7 +4,11 @@ import cv2
 import torch
 import torchvision
 
-from src.datasets.utils import video_transforms, volume_transforms
+from actiondatasets import smthg
+from actiondatasets.gteagazeplus import GTEAGazePlus
+from actiondatasets.actiondataset import ActionDataset
+from videotransforms import video_transforms, volume_transforms
+
 from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
 from src.nets import i3dense, i3dense_adapt
@@ -12,10 +16,6 @@ from src.nets import i3res, i3res_adapt
 from src.netscripts import train
 from src.options import base_options, train_options, video_options
 from src.utils import evaluation
-
-from actiondatasets import smthg
-from actiondatasets.gteagazeplus import GTEAGazePlus
-from actiondatasets.actiondataset import ActionDataset
 
 
 def run_training(opt):
