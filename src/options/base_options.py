@@ -55,8 +55,19 @@ class BaseOptions():
             type=int,
             default='0',
             help='0 to stay in [0,255], 1 for [min,max]')
+
+        self.parser.add_argument(
+            '--use_heatmaps',
+            action='store_true',
+            help='Whether to use heatmaps')
+        self.parser.add_argument(
+            '--heatmap_nb',
+            type=int,
+            default='21',
+            help='Number of heatmap channels')
         self.parser.add_argument(
             '--batch_size', type=int, default=2, help='input mini-batch size')
+
         # Save params
         self.parser.add_argument(
             '--checkpoint_dir',

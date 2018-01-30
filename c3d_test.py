@@ -8,7 +8,7 @@ import torchvision
 from actiondatasets import smthg
 from actiondatasets.gteagazeplus import GTEAGazePlus
 from actiondatasets.actiondataset import ActionDataset
-from videotransforms import video_transforms, volume_transforms
+from videotransforms import video_transforms, volume_transforms, tensor_transforms
 
 from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
@@ -24,21 +24,33 @@ os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 def run_testing(opt):
     scale_size = (256, 342)
     crop_size = (224, 224)
-    if opt.use_flow:
+    if opt.use_heatmaps:
+        channel_nb = opt.heatmap_nb
+    elif opt.use_flow:
         channel_nb = 2
     else:
         channel_nb = 3
-    base_transform_list = [
-        video_transforms.Scale(crop_size),
-        volume_transforms.ToTensor(channel_nb=channel_nb)
-    ]
-    base_transform = video_transforms.Compose(base_transform_list)
-    video_transform_list = [
-        video_transforms.Scale(scale_size),
-        video_transforms.RandomCrop(crop_size),
-        volume_transforms.ToTensor()
-    ]
-    video_transform = video_transforms.Compose(video_transform_list)
+
+    # Initialize transforms
+    if not opt.use_heatmaps:
+        base_transform_list = [
+            video_transforms.Scale(crop_size),
+            volume_transforms.ClipToTensor(channel_nb=channel_nb)
+        ]
+        video_transform_list = [
+            video_transforms.Scale(scale_size),
+            video_transforms.RandomCrop(crop_size),
+            volume_transforms.ClipToTensor(channel_nb=channel_nb)
+        ]
+        base_transform = video_transforms.Compose(base_transform_list)
+        video_transform = video_transforms.Compose(video_transform_list)
+    else:
+        base_transform = [volume_transforms.ToTensor()]
+        video_transform_list = [
+            tensor_transforms.SpatialRandomCrop(crop_size),
+            volume_transforms.ToTensor()
+        ]
+        video_transform = video_transforms.Compose(video_transform_list)
 
     if opt.dataset == 'smthg':
         dataset = smthg.Smthg(
@@ -54,6 +66,8 @@ def run_testing(opt):
             all_subjects, opt.leave_out)
         dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
+            heatmaps=opt.use_heatmaps,
+            heatmap_size=scale_size,
             rescale_flows=opt.rescale_flows,
             seqs=valid_seqs,
             use_flow=opt.use_flow)
