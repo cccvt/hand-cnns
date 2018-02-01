@@ -91,8 +91,8 @@ def run_training(opt):
             split='valid',
             use_flow=opt.use_flow)
     else:
-        raise ValueError('the opt.dataset name provided {0} is not handled\
-                by this script'.format(opt.dataset))
+        raise ValueError('the opt.dataset name provided {0} is not handled'
+                         'by this script'.format(opt.dataset))
     action_dataset = ActionDataset(
         dataset,
         base_transform=base_transform,
@@ -139,10 +139,12 @@ def run_training(opt):
                 i3dnet.load_state_dict(torch.load('data/i3d_flow.pth'))
             model = i3d_adapt.I3DAdapt(opt, i3dnet, action_dataset.class_nb)
         else:
+            # Loads RGB weights and then adapts network
             i3dnet = i3d.I3D(class_nb=400, modality='rgb', dropout_rate=0.5)
             if opt.pretrained:
                 i3dnet.load_state_dict(torch.load('data/i3d_rgb.pth'))
-            model = i3d_adapt.I3DAdapt(opt, i3dnet, action_dataset.class_nb)
+            model = i3d_adapt.I3DAdapt(
+                opt, i3dnet, action_dataset.class_nb, in_channels=channel_nb)
     elif opt.network == 'i3dense':
         densenet = torchvision.models.densenet121(pretrained=True)
         i3densenet = i3dense.I3DenseNet(
