@@ -122,6 +122,7 @@ if __name__ == "__main__":
     parser.add_argument('--valid', action='store_true')
     parser.add_argument('--aggreg', action='store_true')
     parser.add_argument('--train', action='store_true')
+    parser.add_argument('--lr', action='store_true')
     parser.add_argument('--gteagazeplus', action='store_true')
     opt = parser.parse_args()
 
@@ -214,6 +215,7 @@ if __name__ == "__main__":
                 prefix = ''
             print('==== Scores for checkpoint {} ===='.format(checkpoint))
             aggreg_file = os.path.join(checkpoint, 'valid_aggreg.txt')
+            lr_file = os.path.join(checkpoint, 'lr_history.txt')
             valid_file = os.path.join(checkpoint, 'valid_log.txt')
             train_file = os.path.join(checkpoint, 'train_log.txt')
             if opt.aggreg:
@@ -222,6 +224,15 @@ if __name__ == "__main__":
                     score_type='Aggreg',
                     score_iter=opt.score_iter,
                     plot_metric=opt.plot_metric,
+                    prefix=prefix,
+                    vis=opt.vis)
+
+            if opt.lr:
+                display_logs(
+                    lr_file,
+                    score_type='Learning rate',
+                    score_iter=opt.score_iter,
+                    plot_metric='lr',
                     prefix=prefix,
                     vis=opt.vis)
 
