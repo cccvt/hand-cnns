@@ -155,19 +155,27 @@ class Visualize():
                 win=win)
         return win
 
-    def plot_mat(self, mat, win=None, title='', normalize_row=True):
+    def plot_mat(self,
+                 mat,
+                 win=None,
+                 title='',
+                 normalize_row=True,
+                 labels=None):
         mat = np.copy(mat)
         if normalize_row:
             for i in range(mat.shape[0]):
                 norm_row = mat[i].sum() or 1
                 mat[i] = mat[i] / norm_row
-
+        opts = {'title': title}
+        if labels is not None:
+            opts['columnnames'] = labels
+            opts['rownames'] = labels
         if win is None:
             win = self.vis.heatmap(
-                mat, env=self.opt.exp_id, win=win, opts={'title': title})
+                mat, env=self.opt.exp_id, win=win, opts=opts)
         else:
             win = self.vis.heatmap(
-                mat, env=self.opt.exp_id, win=win, opts={'title': title})
+                mat, env=self.opt.exp_id, win=win, opts=opts)
         return win
 
     def save(self):
