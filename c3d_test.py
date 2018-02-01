@@ -89,7 +89,8 @@ def run_testing(opt):
             model = i3d_adapt.I3DAdapt(opt, i3dnet, action_dataset.class_nb)
         else:
             i3dnet = i3d.I3D(class_nb=400, modality='rgb', dropout_rate=0.5)
-            model = i3d_adapt.I3DAdapt(opt, i3dnet, action_dataset.class_nb)
+            model = i3d_adapt.I3DAdapt(
+                opt, i3dnet, action_dataset.class_nb, in_channels=channel_nb)
     elif opt.network == 'i3dense':
         densenet = torchvision.models.densenet121(pretrained=True)
         i3densenet = i3dense.I3DenseNet(
