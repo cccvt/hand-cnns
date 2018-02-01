@@ -34,10 +34,10 @@ class BaseNet():
             optimizer_state = None
 
         checkpoint = {
-            'net': self.net.cpu().state_dict(),
-            'epoch': epoch,
-            'optimizer': optimizer_state
-        }
+                'net': self.net.cpu().state_dict(),
+                'epoch': epoch,
+                'optimizer': optimizer_state
+                }
         torch.save(checkpoint, save_path)
 
         if self.opt.use_gpu:
@@ -70,7 +70,7 @@ class BaseNet():
         if load_path is None:
             if epoch > 0:
                 assert checkpoint['epoch'] == epoch, '{} should be {}'.format(
-                    checkpoint['epoch'], epoch)
+                        checkpoint['epoch'], epoch)
             else:
                 epoch = checkpoint['epoch']
         self.net.load_state_dict(checkpoint['net'])
@@ -84,14 +84,14 @@ class BaseNet():
         for param_group in self.optimizer.param_groups:
             if param_group['lr'] != lr:
                 lr_message = 'Changing lr from {} to {}'.format(
-                    param_group['lr'], lr)
+                        param_group['lr'], lr)
                 param_group['lr'] = lr
             else:
                 lr_message = 'Learning rate is unchanged :{}'.format(lr)
             if param_group['momentum'] != momentum:
                 param_group['momentum'] = momentum
                 mom_message = 'Changing momentum from {} to {}'.format(
-                    param_group['momentum'], momentum)
+                        param_group['momentum'], momentum)
             else:
                 mom_message = 'Momentum is unchanged :{}'.format(momentum)
             if verbose:
@@ -121,11 +121,12 @@ class BaseNet():
             lrs.append(param_group['lr'])
         if not lrs.count(lrs[0]) == len(lrs):
             raise ValueError('All group learning rates should be the same for '
-                             'network groups but got {}'.format(lrs))
-        return lrs[0]
+                    'network groups but got {}'.format(lrs))
+            return lrs[0]
 
+    @profile
     def prepare_var(self, tensor):
-        tensor = tensor.float()
+        # tensor should be of type float otherwise cuda error
         if self.opt.use_gpu:
             tensor = tensor.cuda()
         var = torch.autograd.Variable(tensor)
@@ -142,7 +143,7 @@ class BaseNet():
         else:
             raise error.ArgumentError('{0} is not among known error\
                     functions'.format(self.opt.criterion))
-        return loss
+            return loss
 
     def step_backward(self, loss):
         # Compute gradient and do gradient step
@@ -157,9 +158,9 @@ class BaseNet():
         """
         if epoch is int:
             net_filename = '{net}_epoch_{ep:04d}.pth'.format(
-                net=network_name, ep=int(epoch))
+                    net=network_name, ep=int(epoch))
         else:
             net_filename = '{net}_epoch_{ep}.pth'.format(
-                net=network_name, ep=epoch)
-        file_path = os.path.join(self.save_dir, net_filename)
+                    net=network_name, ep=epoch)
+            file_path = os.path.join(self.save_dir, net_filename)
         return file_path
