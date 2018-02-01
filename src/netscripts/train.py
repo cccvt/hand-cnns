@@ -123,8 +123,7 @@ def train_net(dataloader,
 
         # Test with aggregation
         if test_aggreg:
-            valid_mean_score = test(
-                valid_dataloader.dataset, model, frame_nb=10, opt=opt)
+            valid_mean_score = test(valid_dataloader.dataset, model, opt=opt)
             valid_mean_scores.append(valid_mean_score)
 
             # Display and save validations info
@@ -143,6 +142,7 @@ def train_net(dataloader,
         print('Done training')
 
 
+@profile
 def data_pass(model,
               image,
               target,

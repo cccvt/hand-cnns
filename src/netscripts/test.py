@@ -21,7 +21,6 @@ def save_preds(predictions, prediction_file):
 def test(dataset,
          model,
          viz=None,
-         frame_nb=4,
          opt=None,
          save_predictions=False,
          smthg=True):
@@ -35,8 +34,9 @@ def test(dataset,
         prediction_scores = {}
     for idx in tqdm(range(len(dataset)), desc='sample'):
         if opt.frame_nb > 0:
-            # Get uniformly spaced clips
-            imgs, class_idx = dataset.get_class_items(idx, frame_nb=frame_nb)
+            # Get uniformly spaced clips of clip_size as per dataset attribute
+            imgs, class_idx = dataset.get_class_items(
+                idx, frame_nb=opt.frame_nb)
             # Separate them to batches
             batches = [
                 imgs[beg:beg + opt.batch_size]
