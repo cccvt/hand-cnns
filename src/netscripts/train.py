@@ -119,7 +119,7 @@ def train_net(dataloader,
         with open(train_conf_path, 'wb') as train_conf_file:
             pickle.dump(conf_mat, train_conf_file)
         with open(val_conf_path, 'wb') as val_conf_file:
-            pickle.dump(conf_mat, val_conf_file)
+            pickle.dump(val_conf_mat, val_conf_file)
 
         # Test with aggregation
         if test_aggreg:
@@ -196,6 +196,7 @@ def data_pass(model,
     return metrics, sample_win, conf_mat
 
 
+@profile
 def epoch_pass(dataloader,
                model,
                opt,
@@ -257,9 +258,6 @@ def epoch_pass(dataloader,
     if last_scores['top1'] != epoch_conf_mat.trace() / epoch_conf_mat.sum():
         import pdb
         pdb.set_trace()
-    # assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum(
-    # ), '{} is not {}'.format(last_scores['top1'],
-    #                          epoch_conf_mat.trace() / epoch_conf_mat.sum())
 
     if verbose:
         print(message)
