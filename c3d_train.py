@@ -5,6 +5,7 @@ import torch
 import torchvision
 
 from actiondatasets import smthg
+from actiondatasets import smthgv2
 from actiondatasets.gteagazeplus import GTEAGazePlus
 from actiondatasets.actiondataset import ActionDataset
 from videotransforms import video_transforms, volume_transforms, tensor_transforms
@@ -90,6 +91,10 @@ def run_training(opt):
             rescale_flows=opt.rescale_flows,
             split='valid',
             use_flow=opt.use_flow)
+    elif opt.dataset == 'smthgv2':
+        dataset = smthgv2.SmthgV2(use_flow=opt.use_flow, split='train')
+
+        val_dataset = smthgv2.SmthgV2(split='valid', use_flow=opt.use_flow)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled'
                          'by this script'.format(opt.dataset))

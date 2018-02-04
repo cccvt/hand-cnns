@@ -142,7 +142,6 @@ def train_net(dataloader,
         print('Done training')
 
 
-@profile
 def data_pass(model,
               image,
               target,
@@ -196,7 +195,6 @@ def data_pass(model,
     return metrics, sample_win, conf_mat
 
 
-@profile
 def epoch_pass(dataloader,
                model,
                opt,
