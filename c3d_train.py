@@ -65,6 +65,7 @@ def run_training(opt):
             all_subjects, leave_out_idx)
         dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
+            full_res=True,
             heatmaps=opt.use_heatmaps,
             heatmap_size=scale_size,
             original_labels=True,
@@ -73,6 +74,7 @@ def run_training(opt):
             use_flow=opt.use_flow)
         val_dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
+            full_res=True,
             heatmaps=opt.use_heatmaps,
             heatmap_size=scale_size,
             original_labels=True,
