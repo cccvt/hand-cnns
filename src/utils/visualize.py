@@ -2,8 +2,12 @@ import os
 import subprocess
 import time
 
+from matplotlib.colors import hsv_to_rgb
 import numpy as np
+from scipy.misc import imresize
 import visdom
+
+from actiondatasets.utils import display as displayutils
 
 
 class Visualize():
@@ -65,7 +69,7 @@ class Visualize():
             raise ValueError('when log_path is specified, valid is not taken\
                     into account')
 
-        now = time.strftime("%c")
+            now = time.strftime("%c")
         message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch, t=now)
         for k, v in errors.items():
             message = message + ',{name}:{err}'.format(name=k, err=v)
@@ -108,19 +112,26 @@ class Visualize():
                     win,
                     display_idx=0,
                     k=1,
-                    unnormalize=None):
+                    unnormalize=None,
+                    time_max=8,
+                    time_step=1):
         """ Plots in visdom one image with predicted and ground truth labels
         from the given batch
+
+        Args:
+            time_max (int): max number of frames to display
+            time_step (int): number of time steps between two displayed frames
+
         """
-        input_img = input_imgs[display_idx]
+        time_input_imgs = input_imgs[display_idx]  # take first batch sample
         pred_val, topk_classes = predictions[display_idx].topk(k)
 
         if self.opt.use_gpu:
             pred_val = pred_val.cpu()
             gts = gts.cpu()
-            input_img = input_img.cpu()
+            time_input_imgs = time_input_imgs.cpu()
         if unnormalize is not None:
-            input_img = unnormalize(input_img)
+            time_input_imgs = unnormalize(time_input_imgs)
         pred_classes = classes[int(topk_classes[0])]
         pred_string = 'predicted : ' + str(pred_classes)
 
@@ -131,13 +142,17 @@ class Visualize():
 
         caption = pred_string + ';\n' + real_string
 
-        # Extract one image from stacked images
-        if input_img.dim() == 4:
-            input_img = input_img[:, 0, :, :] * 255
+        # Extract one image from temporally stacked images
+        if time_input_imgs.dim() == 4:
+            stack_imgs = []
+            for time_idx in range(0,
+                                  min(time_max, time_input_imgs.shape[1]),
+                                  time_step):
+                input_img = time_input_imgs[:, time_idx, :, :]
+                input_img = prepare_img(input_img)
+                stack_imgs.append(input_img)
+            input_img = np.concatenate(stack_imgs, axis=2)
 
-        # if non canonical number of channels (not 3), extract first channel
-        if input_img.shape[0] != 3:
-            input_img = input_img[0, :, :]
         if win is None:
             win = self.vis.image(
                 input_img,
@@ -180,3 +195,30 @@ class Visualize():
 
     def save(self):
         self.vis.save([self.opt.exp_id])
+
+
+def prepare_img(input_img):
+    """Identify if image is rgb or flow by determining number of
+    channels and process image accordingly
+    """
+    channel_size = input_img.shape[0]
+    # if non canonical number of channels (not 3), extract first channel
+    if channel_size != 3 and channel_size != 2:
+        input_img = input_img.sum(0)  # sum channels to one dim
+
+    # If two channels treat like flow
+    elif channel_size == 2:
+        angle, mag = displayutils.radial_flow(
+            np.stack((input_img[0], input_img[1]), 2))
+        angle, mag = displayutils.normalize_flow(angle, mag)
+
+        input_img = np.stack((angle, mag, np.ones_like(angle)), 2)
+        input_img = hsv_to_rgb(input_img)  # In range [0, 1]
+        input_img = input_img.transpose(2, 0, 1)
+    # Scale color images from [0, 1] to [0, 255]
+    if input_img.shape[0] == 3:
+        if input_img.max() > 1:
+            print('!! Warning, rescaling by *255 image with max {}'.format(
+                input_img.max()))
+        input_img = input_img * 255
+    return input_img
