@@ -124,7 +124,6 @@ class BaseNet():
                              'network groups but got {}'.format(lrs))
         return lrs[0]
 
-    @profile
     def prepare_var(self, tensor):
         # tensor should be of type float otherwise cuda error
         if self.opt.use_gpu:

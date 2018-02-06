@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 
+import argutils
+
 
 def get_logs(path):
     """Processes logs in format "(somehting),loss_1:0.1234,loss_2:0.3"
@@ -125,6 +127,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr', action='store_true')
     parser.add_argument('--gteagazeplus', action='store_true')
     opt = parser.parse_args()
+    argutils.print_args(opt)
 
     if opt.prefixes is not None:
         assert len(opt.prefixes) == len(opt.checkpoints), \

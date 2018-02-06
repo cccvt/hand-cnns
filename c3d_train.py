@@ -43,15 +43,14 @@ def run_training(opt):
             video_transforms.RandomCrop(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
-        base_transform = video_transforms.Compose(base_transform_list)
-        video_transform = video_transforms.Compose(video_transform_list)
     else:
-        base_transform = [volume_transforms.ToTensor()]
+        base_transform_list = [volume_transforms.ToTensor()]
         video_transform_list = [
             tensor_transforms.SpatialRandomCrop(crop_size),
             volume_transforms.ToTensor()
         ]
-        video_transform = video_transforms.Compose(video_transform_list)
+    base_transform = video_transforms.Compose(base_transform_list)
+    video_transform = video_transforms.Compose(video_transform_list)
 
     # Initialize datasets
     leave_out_idx = opt.leave_out

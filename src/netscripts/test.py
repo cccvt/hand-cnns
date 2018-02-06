@@ -44,7 +44,7 @@ def test(dataset,
             ]
             outputs = []
             for batch in batches:
-                batch = default_collate(imgs)
+                batch = default_collate(batch)
                 outputs = []
                 # Prepare vars
                 batch_var = model.prepare_var(batch)

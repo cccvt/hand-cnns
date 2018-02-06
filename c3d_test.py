@@ -42,15 +42,14 @@ def run_testing(opt):
             video_transforms.RandomCrop(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
-        base_transform = video_transforms.Compose(base_transform_list)
-        video_transform = video_transforms.Compose(video_transform_list)
     else:
-        base_transform = [volume_transforms.ToTensor()]
+        base_transform_list = [volume_transforms.ToTensor()]
         video_transform_list = [
             tensor_transforms.SpatialRandomCrop(crop_size),
             volume_transforms.ToTensor()
         ]
-        video_transform = video_transforms.Compose(video_transform_list)
+    base_transform = video_transforms.Compose(base_transform_list)
+    video_transform = video_transforms.Compose(video_transform_list)
 
     if opt.dataset == 'smthg':
         dataset = smthg.Smthg(
@@ -67,7 +66,7 @@ def run_testing(opt):
         dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
-            heatmap_size=scale_size,
+            heatmap_size=crop_size,
             rescale_flows=opt.rescale_flows,
             seqs=valid_seqs,
             use_flow=opt.use_flow)
@@ -128,12 +127,7 @@ def run_testing(opt):
         model.net.cuda()
     model.load(load_path=opt.checkpoint_path)
 
-    accuracy = test.test(
-        action_dataset,
-        model,
-        opt=opt,
-        frame_nb=opt.frame_nb,
-        save_predictions=True)
+    accuracy = test.test(action_dataset, model, opt=opt, save_predictions=True)
     print('Computed accuracy: {}'.format(accuracy))
 
 
