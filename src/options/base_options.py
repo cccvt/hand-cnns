@@ -52,9 +52,9 @@ class BaseOptions():
             '--flow_type', type=str, default='tvl1', help='in [farn|tvl1]')
         self.parser.add_argument(
             '--rescale_flows',
-            type=int,
-            default='0',
-            help='0 to stay in [0,255], 1 for [min,max]')
+            action='store_true',
+            help='activate to scale to [min, max], otherwise to stay in [0,255]'
+        )
 
         self.parser.add_argument(
             '--use_heatmaps',

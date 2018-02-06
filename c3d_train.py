@@ -64,6 +64,7 @@ def run_training(opt):
         train_seqs, valid_seqs = evaluation.leave_one_out(
             all_subjects, leave_out_idx)
         dataset = GTEAGazePlus(
+            root_folder='data/GTEAGazePlusdata2',  # TODO remove
             flow_type=opt.flow_type,
             full_res=True,
             heatmaps=opt.use_heatmaps,
@@ -73,6 +74,7 @@ def run_training(opt):
             seqs=train_seqs,
             use_flow=opt.use_flow)
         val_dataset = GTEAGazePlus(
+            root_folder='data/GTEAGazePlusdata2',  # TODO remove
             flow_type=opt.flow_type,
             full_res=True,
             heatmaps=opt.use_heatmaps,
@@ -94,9 +96,15 @@ def run_training(opt):
             split='valid',
             use_flow=opt.use_flow)
     elif opt.dataset == 'smthgv2':
-        dataset = smthgv2.SmthgV2(use_flow=opt.use_flow, split='train')
+        dataset = smthgv2.SmthgV2(
+            use_flow=opt.use_flow,
+            split='train',
+            rescale_flows=opt.rescale_flows)
 
-        val_dataset = smthgv2.SmthgV2(split='valid', use_flow=opt.use_flow)
+        val_dataset = smthgv2.SmthgV2(
+            split='valid',
+            use_flow=opt.use_flow,
+            rescale_flows=opt.rescale_flows)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled'
                          'by this script'.format(opt.dataset))
