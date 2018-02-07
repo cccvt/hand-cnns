@@ -17,6 +17,7 @@ class I3DenseNet(torch.nn.Module):
         super(I3DenseNet, self).__init__()
         self.frame_nb = frame_nb
         self.conv_class = conv_class
+
         # Ugly hack to separate first layer from rest
         self.first_conv = torch.nn.Conv3d(
             3,

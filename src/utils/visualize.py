@@ -1,22 +1,29 @@
 import os
-import numpy as np
+import subprocess
 import time
+
+from matplotlib.colors import hsv_to_rgb
+import numpy as np
+from scipy.misc import imresize
 import visdom
+
+from actiondatasets.utils import display as displayutils
 
 
 class Visualize():
     def __init__(self, opt):
-        self.vis = visdom.Visdom()
+        self.vis = visdom.Visdom(port=opt.display_port)
+
         self.opt = opt
         self.win = None
-        self.train_log_path = os.path.join(opt.checkpoint_dir,
-                                           opt.exp_id, 'train_log.txt')
-        self.valid_log_path = os.path.join(opt.checkpoint_dir,
-                                           opt.exp_id,
+        self.train_log_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
+                                           'train_log.txt')
+        self.valid_log_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
                                            'valid_log.txt')
-        self.valid_aggreg_log_path = os.path.join(opt.checkpoint_dir,
-                                                  opt.exp_id,
-                                                  'valid_aggreg.txt')
+        self.valid_aggreg_log_path = os.path.join(
+            opt.checkpoint_dir, opt.exp_id, 'valid_aggreg.txt')
+        self.lr_history_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
+                                            'lr_history.txt')
 
         # Initialize log files
         with open(self.train_log_path, "a") as log_file:
@@ -31,6 +38,26 @@ class Visualize():
             now = time.strftime("%c")
             log_file.write('==== Valid aggreg log at {0} ====\n'.format(now))
 
+        with open(self.lr_history_path, "a") as log_file:
+            now = time.strftime("%c")
+            log_file.write('==== LR schedule log at {0} ====\n'.format(now))
+
+        # Launch visdom server
+        exp_dir = os.path.join(self.opt.checkpoint_dir, self.opt.exp_id)
+        visdom_command = [
+            'python', '-m', 'visdom.server', '-port',
+            str(opt.display_port), '-env_path', exp_dir
+        ]
+        sp = subprocess.Popen(
+            visdom_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if sp:
+            print('Launched visdom server on port {}'.format(opt.display_port))
+            self.visdom_subprocess = sp
+        else:
+            print('Failed to launch visdom on port {} !!'.format(
+                opt.display_port))
+            self.save()
+
     def log_errors(self, epoch, errors, valid=False, log_path=None):
         """log_path overrides the destination path of the log
         Args:
@@ -40,14 +67,12 @@ class Visualize():
         """
         if valid and log_path is not None:
             raise ValueError('when log_path is specified, valid is not taken\
-                into account')
+                    into account')
 
         now = time.strftime("%c")
-        message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch,
-                                                       t=now)
+        message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch, t=now)
         for k, v in errors.items():
-            message = message + ',{name}:{err}'.format(name=k,
-                                                       err=v)
+            message = message + ',{name}:{err}'.format(name=k, err=v)
 
         # Write log message to correct file
         if log_path is None:
@@ -64,39 +89,49 @@ class Visualize():
             win = self.vis.line(
                 X=epochs,
                 Y=errors,
-                opts={
-                    'title': title,
-                    'xlabel': 'epoch',
-                    'ylabel': 'score'
-                }
-            )
+                env=self.opt.exp_id,
+                opts={'title': title,
+                      'xlabel': 'epoch',
+                      'ylabel': 'score'})
         else:
             self.vis.line(
                 X=epochs,
                 Y=errors,
-                opts={
-                    'title': title,
-                    'xlabel': 'epoch',
-                    'ylabel': 'score'
-                },
-                win=win
-            )
+                env=self.opt.exp_id,
+                opts={'title': title,
+                      'xlabel': 'epoch',
+                      'ylabel': 'score'},
+                win=win)
         return win
 
-    def plot_sample(self, input_imgs, gts, predictions, classes, win,
-                    display_idx=0, k=1, unnormalize=None):
+    def plot_sample(self,
+                    input_imgs,
+                    gts,
+                    predictions,
+                    classes,
+                    win,
+                    display_idx=0,
+                    k=1,
+                    unnormalize=None,
+                    time_max=8,
+                    time_step=1):
         """ Plots in visdom one image with predicted and ground truth labels
         from the given batch
+
+        Args:
+            time_max (int): max number of frames to display
+            time_step (int): number of time steps between two displayed frames
+
         """
-        input_img = input_imgs[display_idx]
+        time_input_imgs = input_imgs[display_idx]  # take first batch sample
         pred_val, topk_classes = predictions[display_idx].topk(k)
 
         if self.opt.use_gpu:
             pred_val = pred_val.cpu()
             gts = gts.cpu()
-            input_img = input_img.cpu()
+            time_input_imgs = time_input_imgs.cpu()
         if unnormalize is not None:
-            input_img = unnormalize(input_img)
+            time_input_imgs = unnormalize(time_input_imgs)
         pred_classes = classes[int(topk_classes[0])]
         pred_string = 'predicted : ' + str(pred_classes)
 
@@ -107,38 +142,83 @@ class Visualize():
 
         caption = pred_string + ';\n' + real_string
 
-        # Extract one image from stacked images
-        if input_img.dim() == 4:
-            input_img = input_img[:, 0, :, :] * 255
+        # Extract one image from temporally stacked images
+        if time_input_imgs.dim() == 4:
+            stack_imgs = []
+            for time_idx in range(0,
+                                  min(time_max, time_input_imgs.shape[1]),
+                                  time_step):
+                input_img = time_input_imgs[:, time_idx, :, :]
+                input_img = prepare_img(input_img)
+                stack_imgs.append(input_img)
+            input_img = np.concatenate(stack_imgs, axis=2)
 
-        # if non canonical number of channels (not 3), extract first channel
-        if input_img.shape[0] != 3:
-            input_img = input_img[0, :, :]
         if win is None:
-            win = self.vis.image(input_img,
-                                 opts={'title': 'sample',
-                                       'caption': caption,
-                                       'win_size': 256})
+            win = self.vis.image(
+                input_img,
+                env=self.opt.exp_id,
+                opts={'title': 'sample',
+                      'caption': caption,
+                      'win_size': 256})
         else:
-            win = self.vis.image(input_img,
-                                 opts={'title': 'sample',
-                                       'caption': caption,
-                                       'win_size': 256},
-                                 win=win)
+            win = self.vis.image(
+                input_img,
+                env=self.opt.exp_id,
+                opts={'title': 'sample',
+                      'caption': caption,
+                      'win_size': 256},
+                win=win)
         return win
 
-    def plot_mat(self, mat, win=None, title='',
-                 normalize_row=True):
+    def plot_mat(self,
+                 mat,
+                 win=None,
+                 title='',
+                 normalize_row=True,
+                 labels=None):
         mat = np.copy(mat)
         if normalize_row:
             for i in range(mat.shape[0]):
                 norm_row = mat[i].sum() or 1
                 mat[i] = mat[i] / norm_row
-
+        opts = {'title': title}
+        if labels is not None:
+            opts['columnnames'] = labels
+            opts['rownames'] = labels
         if win is None:
-            win = self.vis.heatmap(mat, win=win,
-                                   opts={'title': title})
+            win = self.vis.heatmap(
+                mat, env=self.opt.exp_id, win=win, opts=opts)
         else:
-            win = self.vis.heatmap(mat, win=win,
-                                   opts={'title': title})
+            win = self.vis.heatmap(
+                mat, env=self.opt.exp_id, win=win, opts=opts)
         return win
+
+    def save(self):
+        self.vis.save([self.opt.exp_id])
+
+
+def prepare_img(input_img):
+    """Identify if image is rgb or flow by determining number of
+    channels and process image accordingly
+    """
+    channel_size = input_img.shape[0]
+    # if non canonical number of channels (not 3), extract first channel
+    if channel_size != 3 and channel_size != 2:
+        input_img = input_img.sum(0)  # sum channels to one dim
+
+    # If two channels treat like flow
+    elif channel_size == 2:
+        angle, mag = displayutils.radial_flow(
+            np.stack((input_img[0], input_img[1]), 2))
+        angle, mag = displayutils.normalize_flow(angle, mag)
+
+        input_img = np.stack((angle, mag, np.ones_like(angle)), 2)
+        input_img = hsv_to_rgb(input_img)  # In range [0, 1]
+        input_img = input_img.transpose(2, 0, 1)
+    # Scale color images from [0, 1] to [0, 255]
+    if input_img.shape[0] == 3:
+        if input_img.max() > 1:
+            print('!! Warning, rescaling by *255 image with max {}'.format(
+                input_img.max()))
+        input_img = input_img * 255
+    return input_img

@@ -87,6 +87,20 @@ def train_net(dataloader,
                                                         train=False,
                                                         verbose=False,
                                                         visualize=visualize)
+
+        # Update learning rate scheduler according to loss
+        if model.lr_scheduler is not None:
+            for metric in val_metrics:
+                if metric.name == 'loss':
+                    # Retrieve latest loss for lr scheduler
+                    loss = metric.evolution[-1]
+                    lr = model.scheduler_step(loss)
+                    viz.log_errors(
+                        epoch=epoch,
+                        errors={'lr': lr,
+                                'loss': loss},
+                        log_path=viz.lr_history_path)
+
         # Display valid conf mat
         if visualize:
             val_conf_win = viz.plot_mat(
@@ -105,12 +119,11 @@ def train_net(dataloader,
         with open(train_conf_path, 'wb') as train_conf_file:
             pickle.dump(conf_mat, train_conf_file)
         with open(val_conf_path, 'wb') as val_conf_file:
-            pickle.dump(conf_mat, val_conf_file)
+            pickle.dump(val_conf_mat, val_conf_file)
 
         # Test with aggregation
         if test_aggreg:
-            valid_mean_score = test(
-                valid_dataloader.dataset, model, frame_nb=10, opt=opt)
+            valid_mean_score = test(valid_dataloader.dataset, model, opt=opt)
             valid_mean_scores.append(valid_mean_score)
 
             # Display and save validations info
@@ -243,11 +256,10 @@ def epoch_pass(dataloader,
     if last_scores['top1'] != epoch_conf_mat.trace() / epoch_conf_mat.sum():
         import pdb
         pdb.set_trace()
-    assert last_scores['top1'] == epoch_conf_mat.trace() / epoch_conf_mat.sum(
-    ), '{} is not {}'.format(last_scores['top1'],
-                             epoch_conf_mat.trace() / epoch_conf_mat.sum())
 
     if verbose:
         print(message)
+
+    viz.save()
 
     return metrics, sample_win, conf_mat, conf_win

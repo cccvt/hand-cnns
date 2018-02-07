@@ -33,14 +33,15 @@ class Metric(object):
     Accumulates epoch_scores during epoch as list of
     (batch_score, batch_size) tuples
     """
+
     def __init__(self, name, func=None, compute=True, win=None):
         self.name = name
         self.func = func
         self.compute = compute
 
         self.evolution = []  # Evolution of scores over epoch
-        # in format (sum_batch_scores, batch_size)
         self.epoch_scores = []  # Scores for the current epoch
+        # in format (sum_batch_scores, batch_size)
 
         self.win = None  # visdom window for display
 
@@ -49,13 +50,17 @@ class Metric(object):
         Update evolution scores by taking mean of
         current epoch_scores
         """
-        sample_score_sum = np.sum([batch_scores[0]
-                                   for batch_scores in self.epoch_scores])
-        sample_count = np.sum([batch_scores[1]
-                               for batch_scores in self.epoch_scores])
+        sample_score_sum = np.sum(
+            [batch_scores[0] for batch_scores in self.epoch_scores])
+        sample_count = np.sum(
+            [batch_scores[1] for batch_scores in self.epoch_scores])
         epoch_score = sample_score_sum / sample_count
-        self.evolution.append(epoch_score)
+        self.add_score(epoch_score)
         self.epoch_scores = []
+        return epoch_score
+
+    def add_score(self, score):
+        self.evolution.append(score)
 
 
 def leave_one_out(full_list, idx=0):
@@ -72,6 +77,7 @@ def leave_one_out(full_list, idx=0):
     """
     assert idx < len(full_list), "idx of validation item should\
     be smaller then len of original list"
+
     valid_list = [full_list.pop(idx)]
     train_list = full_list
     return train_list, valid_list

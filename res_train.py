@@ -81,7 +81,7 @@ def run_training(opt):
             transform=transform, untransform=unnormalize, seqs=valid_seqs)
         valid = True
 
-    elif opt.dataset == 'smthgsmthg':
+    elif opt.dataset == 'smthg':
         dataset = SmthgImage(
             split='train',
             transform=transform,
@@ -147,6 +147,8 @@ def run_training(opt):
             model.load(latest=True)
         else:
             model.load(epoch=opt.continue_epoch)
+        # New learning rate for SGD TODO add momentum update
+        model.update_optimizer_lr(lr=opt.lr)
 
     train.train_net(
         dataloader,

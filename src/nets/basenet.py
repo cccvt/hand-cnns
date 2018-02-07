@@ -11,6 +11,8 @@ class BaseNet():
         self.name = None
         self.net = None
         self.opt = opt
+        self.lr_scheduler = None
+        self.optimzer = None
 
     def save(self, epoch, opt, latest=False):
         """
@@ -46,11 +48,11 @@ class BaseNet():
         Utility function to load network weights
 
         Args:
-            load_path: path of checkpoint to load, is set, epoch and
-                latest are ignored
-            epoch: epoch to load
-            latest: whether to use file with 'latest' suffix, if true
-                epoch is ignored
+        load_path: path of checkpoint to load, is set, epoch and
+        latest are ignored
+        epoch: epoch to load
+        latest: whether to use file with 'latest' suffix, if true
+        epoch is ignored
         """
         if load_path is None:
             # If load_path not specified load either latest or by epoch
@@ -69,21 +71,61 @@ class BaseNet():
             if epoch > 0:
                 assert checkpoint['epoch'] == epoch, '{} should be {}'.format(
                     checkpoint['epoch'], epoch)
-        else:
-            epoch = checkpoint['epoch']
+            else:
+                epoch = checkpoint['epoch']
         self.net.load_state_dict(checkpoint['net'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         print('loaded net from epoch {0}'.format(epoch))
         return epoch
 
+    def update_optimizer(self, lr, momentum, verbose=True):
+        """Set new lr and momentum to optimizer
+        """
+        for param_group in self.optimizer.param_groups:
+            if param_group['lr'] != lr:
+                lr_message = 'Changing lr from {} to {}'.format(
+                    param_group['lr'], lr)
+                param_group['lr'] = lr
+            else:
+                lr_message = 'Learning rate is unchanged :{}'.format(lr)
+            if param_group['momentum'] != momentum:
+                param_group['momentum'] = momentum
+                mom_message = 'Changing momentum from {} to {}'.format(
+                    param_group['momentum'], momentum)
+            else:
+                mom_message = 'Momentum is unchanged :{}'.format(momentum)
+            if verbose:
+                print(lr_message)
+                print(mom_message)
+
     def set_optimizer(self, optim):
         self.optimizer = optim
+
+    def set_lr_scheduler(self, lr_scheduler):
+        self.lr_scheduler = lr_scheduler
 
     def set_criterion(self, crit):
         self.criterion = crit
 
+    def scheduler_step(self, loss):
+        """Function to call at the end of training epoch
+        Args:
+        loss: New value for loss to monitor
+        """
+        if self.lr_scheduler is not None:
+            self.lr_scheduler.step(loss)
+
+        # Get new learning rate and return it
+        lrs = []
+        for i, param_group in enumerate(self.optimizer.param_groups):
+            lrs.append(param_group['lr'])
+        if not lrs.count(lrs[0]) == len(lrs):
+            raise ValueError('All group learning rates should be the same for '
+                             'network groups but got {}'.format(lrs))
+        return lrs[0]
+
     def prepare_var(self, tensor):
-        tensor = tensor.float()
+        # tensor should be of type float otherwise cuda error
         if self.opt.use_gpu:
             tensor = tensor.cuda()
         var = torch.autograd.Variable(tensor)
@@ -119,5 +161,5 @@ class BaseNet():
         else:
             net_filename = '{net}_epoch_{ep}.pth'.format(
                 net=network_name, ep=epoch)
-        file_path = os.path.join(self.save_dir, net_filename)
+            file_path = os.path.join(self.save_dir, net_filename)
         return file_path

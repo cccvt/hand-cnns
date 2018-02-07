@@ -28,7 +28,7 @@ class BaseOptions():
         self.parser.add_argument(
             '--gpu_nb',
             type=int,
-            default=2,
+            default=1,
             help='Number of GPUs to use if parallelizing')
 
         # Input params
@@ -37,7 +37,7 @@ class BaseOptions():
             type=str,
             default='gteagazeplus',
             help='dataset to use among\
-                                 (uciego|gtea|gteagazeplus|smthgsmthg)')
+                                 (uciego|gtea|gteagazeplus|smthg)')
         self.parser.add_argument(
             '--threads',
             type=int,
@@ -52,11 +52,22 @@ class BaseOptions():
             '--flow_type', type=str, default='tvl1', help='in [farn|tvl1]')
         self.parser.add_argument(
             '--rescale_flows',
+            action='store_true',
+            help='activate to scale to [min, max], otherwise to stay in [0,255]'
+        )
+
+        self.parser.add_argument(
+            '--use_heatmaps',
+            action='store_true',
+            help='Whether to use heatmaps')
+        self.parser.add_argument(
+            '--heatmap_nb',
             type=int,
-            default='0',
-            help='0 to stay in [0,255], 1 for [min,max]')
+            default='21',
+            help='Number of heatmap channels')
         self.parser.add_argument(
             '--batch_size', type=int, default=2, help='input mini-batch size')
+
         # Save params
         self.parser.add_argument(
             '--checkpoint_dir',
@@ -84,6 +95,11 @@ class BaseOptions():
             type=int,
             default=1,
             help='0 to disable visdom plots')
+        self.parser.add_argument(
+            '--display_port',
+            type=int,
+            default=8097,
+            help='Visdom display port')
 
         # GTEAGaze+ specific option
         self.parser.add_argument(

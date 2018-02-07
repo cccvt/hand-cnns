@@ -5,9 +5,10 @@ checkpoints
 predictions
 
 test/.cache
+test_scripts/
+train_scrips/
 
 __pycache__
 
-*.swp
-*.swo
+*.sw*
 *.lprof

@@ -24,7 +24,7 @@ def run_testing(opt):
     ]
     base_transform = video_transforms.Compose(base_transform_list)
 
-    if opt.dataset == 'smthgsmthg':
+    if opt.dataset == 'smthg':
         dataset = SmthgVideo(
             base_transform=base_transform,
             clip_size=opt.stack_nb,

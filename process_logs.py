@@ -3,8 +3,12 @@ from collections import defaultdict
 from operator import itemgetter
 import os
 
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import numpy as np
+
+import argutils
 
 
 def get_logs(path):
@@ -22,72 +26,121 @@ def get_logs(path):
     return logs
 
 
-def plot_logs(logs, exclude=None):
-    for score_name, scores in logs.items():
-        plt.plot(scores, label=score_name)
+def plot_logs(logs, score_name='top1', y_max=1, prefix=None, score_type=None):
+    """
+    Args:
+        score_type (str): label for current curve, [valid|train|aggreg]
+    """
 
-    plt.legend()
-    plt.show()
+    # Plot all losses
+    scores = logs[score_name]
+    if score_type is None:
+        label = prefix + ''
+    else:
+        label = prefix + '_' + score_type.lower()
+
+    plt.plot(scores, label=label)
+    plt.title(score_name)
+    if score_name == 'top1':
+        # Set maximum for y axis
+        plt.minorticks_on()
+        x1, x2, y1, y2 = plt.axis()
+        axes = plt.gca()
+        axes.yaxis.set_minor_locator(MultipleLocator(0.02))
+        plt.axis((x1, x2, 0, y_max))
+        plt.grid(b=True, which='minor', color='k', alpha=0.2, linestyle='-')
+        plt.grid(b=True, which='major', color='k', linestyle='-')
 
 
-def process_logs(log_path, vis=True,
-                 score_iter=20,
-                 pop_loss=None):
-    logs = get_logs(log_path)
-
-    # Pop loss to display separately
-    if pop_loss is not None:
-        pop_value = logs.pop(pop_loss)
-        pop_logs = {pop_loss: pop_value}
-        if vis:
-            plot_logs(pop_logs)
-
-    # Plot all (remaining) losses
-    if vis:
-        plot_logs(logs)
+def process_logs(logs, plot_metric='top1', score_iter=20):
     iter_scores = []
     for score_name, score_values in logs.items():
-        assert len(score_values) > score_iter, 'index {} out of\
-                range for score_values of len {}'.format(score_iter,
-                                                         len(score_values))
+        assert_message = 'index {} out of range for score_values of len {}'.format(
+            score_iter, len(score_values))
+        assert len(score_values) > score_iter, assert_message
+
         iter_scores.append((score_name, score_values[score_iter]))
     return sorted(iter_scores, key=itemgetter(0))
+
+
+def display_logs(log_file,
+                 score_type,
+                 score_iter=10,
+                 plot_metric='top1',
+                 prefix=None,
+                 vis=True):
+    """Process logs, prints the results for the given score_iter
+    and plots the matching curves
+    """
+    logs = get_logs(log_file)
+    iter_scores = process_logs(
+        logs, score_iter=score_iter, plot_metric=plot_metric)
+    # Plot all losses
+    if vis:
+        plot_logs(
+            logs, prefix=prefix, score_name=plot_metric, score_type=score_type)
+
+        print('==== {} scores ===='.format(score_type))
+        for loss, val in iter_scores:
+            print('{val}: {loss}'.format(val=val, loss=loss))
 
 
 def print_iter_scores(all_iter_scores, iter_nb):
     """
     Args:
-        all_iter_scores (list): in format 
-            [{score_name, [fold1_score, fold2_score,...]}, /..]
+    all_iter_scores (list): in format
+    [{score_name, [fold1_score, fold2_score,...]}, /..]
     """
     # Display iter scores
+    print(all_iter_scores)
     for loss, value in all_iter_scores.items():
-        print('{loss} : {m} at iter {it} ({values})'
-              .format(m=np.mean(value), it=iter_nb,
-                      loss=loss, values=value))
+        print('{loss} : {m} at iter {it} ({values})'.format(
+            m=np.mean(value), it=iter_nb, loss=loss, values=value))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', type=str,
-                        help='path to checkpoint folder')
-    parser.add_argument('--vis', action='store_true',
-                        help='Whether to plot the log curves')
-    parser.add_argument('--score_iter', type=int, default=10,
-                        help='What itertation use to average results')
+    parser.add_argument(
+        '--checkpoints',
+        nargs='+',
+        type=str,
+        help='path to checkpoints folders')
+    parser.add_argument(
+        '--vis', action='store_true', help='Whether to plot the log curves')
+    parser.add_argument(
+        '--plot_metric',
+        default='top1',
+        help='Metric to display in plot in [top1|top5|loss]')
+    parser.add_argument(
+        '--score_iter',
+        type=int,
+        default=10,
+        help='What itertation use to average results')
+    parser.add_argument(
+        '--prefixes',
+        nargs='+',
+        type=str,
+        help='Descriptions of run for labels, one per checkpoint')
     parser.add_argument('--valid', action='store_true')
     parser.add_argument('--aggreg', action='store_true')
     parser.add_argument('--train', action='store_true')
+    parser.add_argument('--lr', action='store_true')
     parser.add_argument('--gteagazeplus', action='store_true')
     opt = parser.parse_args()
+    argutils.print_args(opt)
+
+    if opt.prefixes is not None:
+        assert len(opt.prefixes) == len(opt.checkpoints), \
+            'Should have as many prefixes as checkpoints but '\
+            'got {} and {}'.format(opt.prefixes, opt.checkpoints)
 
     if opt.gteagazeplus:
-        template_aggreg = os.path.join(
-            opt.checkpoint, 'gtea_lo_{}/valid_aggreg.txt')
-        template_valid = os.path.join(
-            opt.checkpoint, 'gtea_lo_{}/valid_log.txt')
-        template_train = os.path.join(
-            opt.checkpoint, 'gtea_lo_{}/train_log.txt')
+        template_aggreg = os.path.join(opt.checkpoint,
+                                       'gtea_lo_{}/valid_aggreg.txt')
+        template_valid = os.path.join(opt.checkpoint,
+                                      'gtea_lo_{}/valid_log.txt')
+        template_train = os.path.join(opt.checkpoint,
+                                      'gtea_lo_{}/train_log.txt')
 
         if opt.aggreg:
 
@@ -97,24 +150,36 @@ if __name__ == "__main__":
             for leave_out in range(6):
                 print(leave_out)
                 log_file = template_aggreg.format(str(leave_out))
-                leave_out_iter_scores = process_logs(log_file,
-                                                     score_iter=opt.score_iter,
-                                                     vis=opt.vis)
+                logs = get_logs(log_file)
+                leave_out_iter_scores = process_logs(
+                    logs,
+                    score_iter=opt.score_iter,
+                    vis=opt.vis,
+                    plot_metric=opt.plot_metric)
+                # Plot all losses
+                if opt.vis:
+                    plot_logs(logs, score_name=opt.plot_metric)
+
                 for loss, value in leave_out_iter_scores:
                     all_iter_scores[loss].append(value)
 
         # Display iter scores
-            print('==== Aggreg scores ====')
-            print_iter_scores(all_iter_scores, opt.score_iter)
+        print('==== Aggreg scores ====')
+        print_iter_scores(all_iter_scores, opt.score_iter)
 
         if opt.valid:
             all_iter_scores = defaultdict(list)
             for leave_out in range(6):
                 print(leave_out)
                 log_file = template_valid.format(str(leave_out))
-                leave_out_iter_scores = process_logs(log_file, pop_loss='loss',
-                                                     score_iter=opt.score_iter,
-                                                     vis=opt.vis)
+                leave_out_iter_scores = process_logs(
+                    log_file,
+                    score_iter=opt.score_iter,
+                    vis=opt.vis,
+                    plot_metric=opt.plot_metric)
+                # Plot all losses
+                if opt.vis:
+                    plot_logs(logs, score_name=opt.plot_metric)
                 for loss, value in leave_out_iter_scores:
                     all_iter_scores[loss].append(value)
 
@@ -126,46 +191,71 @@ if __name__ == "__main__":
             all_iter_scores = defaultdict(list)
             for leave_out in range(6):
                 print(leave_out)
-                log_file = template_train.format(str(leave_out))
-                leave_out_iter_scores = process_logs(log_file, pop_loss='loss',
-                                                     score_iter=opt.score_iter,
-                                                     vis=opt.vis)
+                log_file = template_train.format(leave_out)
+                leave_out_iter_scores = process_logs(
+                    log_file,
+                    score_iter=opt.score_iter,
+                    vis=opt.vis,
+                    plot_metric=opt.plot_metric)
+                # Plot all losses
+                if opt.vis:
+                    plot_logs(logs, score_name=opt.plot_metric)
+
                 for loss, value in leave_out_iter_scores:
                     all_iter_scores[loss].append(value)
 
-            # Display iter scores
-            print('==== Train scores ====')
-            print_iter_scores(all_iter_scores, opt.score_iter)
+                    # Display iter scores
+                    print('==== Train scores ====')
+                    print_iter_scores(all_iter_scores, opt.score_iter)
 
+    # If not GTEA gaze dataset
     else:
-        aggreg_file = os.path.join(opt.checkpoint, 'valid_aggreg.txt')
-        valid_file = os.path.join(opt.checkpoint, 'valid_log.txt')
-        train_file = os.path.join(opt.checkpoint, 'train_log.txt')
-        if opt.aggreg:
-            aggreg_logs = get_logs(aggreg_file)
-            iter_scores = process_logs(aggreg_file,
-                                       score_iter=opt.score_iter,
-                                       vis=opt.vis)
-            print('==== Aggreg scores ====')
-            for loss, val in iter_scores:
-                print('{val}: {loss}'.format(val=val, loss=loss))
+        for checkpoint_idx, checkpoint in enumerate(opt.checkpoints):
+            # Get prefix describing the experiment
+            if opt.prefixes is not None:
+                prefix = opt.prefixes[checkpoint_idx]
+            else:
+                prefix = ''
+            print('==== Scores for checkpoint {} ===='.format(checkpoint))
+            aggreg_file = os.path.join(checkpoint, 'valid_aggreg.txt')
+            lr_file = os.path.join(checkpoint, 'lr_history.txt')
+            valid_file = os.path.join(checkpoint, 'valid_log.txt')
+            train_file = os.path.join(checkpoint, 'train_log.txt')
+            if opt.aggreg:
+                display_logs(
+                    aggreg_file,
+                    score_type='Aggreg',
+                    score_iter=opt.score_iter,
+                    plot_metric=opt.plot_metric,
+                    prefix=prefix,
+                    vis=opt.vis)
 
-        if opt.valid:
-            valid_logs = get_logs(valid_file)
-            iter_scores = process_logs(valid_file, pop_loss='loss',
-                                       score_iter=opt.score_iter,
-                                       vis=opt.vis)
+            if opt.lr:
+                display_logs(
+                    lr_file,
+                    score_type='Learning rate',
+                    score_iter=opt.score_iter,
+                    plot_metric='lr',
+                    prefix=prefix,
+                    vis=opt.vis)
 
-            # Display iter scores
-            print('==== Valid scores ====')
-            for loss, val in iter_scores:
-                print('{val}: {loss}'.format(val=val, loss=loss))
+            if opt.valid:
+                display_logs(
+                    valid_file,
+                    score_type='Valid',
+                    score_iter=opt.score_iter,
+                    plot_metric=opt.plot_metric,
+                    prefix=prefix,
+                    vis=opt.vis)
 
-        if opt.train:
-            train_logs = get_logs(train_file)
-            iter_scores = process_logs(train_file, pop_loss='loss',
-                                       score_iter=opt.score_iter,
-                                       vis=opt.vis)
-            print('==== Train scores ====')
-            for loss, val in iter_scores:
-                print('{val}: {loss}'.format(val=val, loss=loss))
+            if opt.train:
+                display_logs(
+                    train_file,
+                    score_type='Train',
+                    score_iter=opt.score_iter,
+                    plot_metric=opt.plot_metric,
+                    prefix=prefix,
+                    vis=opt.vis)
+        if opt.vis:
+            plt.legend()
+            plt.show()

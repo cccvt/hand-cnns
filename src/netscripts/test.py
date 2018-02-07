@@ -18,10 +18,9 @@ def save_preds(predictions, prediction_file):
         writer.writerows(predictions.items())
 
 
-def test(dataset,
+def test(dataloader,
          model,
          viz=None,
-         frame_nb=4,
          opt=None,
          save_predictions=False,
          smthg=True):
@@ -33,35 +32,14 @@ def test(dataset,
         predictions = {}
         # Save predicted scores (for future averaging)
         prediction_scores = {}
-    for idx in tqdm(range(len(dataset)), desc='sample'):
-        if opt.frame_nb > 0:
-            # Get uniformly spaced clips
-            imgs, class_idx = dataset.get_class_items(idx, frame_nb=frame_nb)
-            # Separate them to batches
-            batches = [
-                imgs[beg:beg + opt.batch_size]
-                for beg in range(0, len(imgs), opt.batch_size)
-            ]
-            outputs = []
-            for batch in batches:
-                batch = default_collate(imgs)
-                outputs = []
-                # Prepare vars
-                batch_var = model.prepare_var(batch)
-
-                # Forward pass
-                output = model.net(batch_var)
-                outputs.append(output.data)
-            outputs = torch.cat(outputs)
-        else:
-            # Take full size clip (with varying size)
-            imgs, class_idx = dataset.get_full_sample(idx)
-            imgs = imgs.unsqueeze(0)
-            # Prepare vars
-            imgs_var = model.prepare_var(imgs)
-            # Forward pass
-            outputs = model.net(imgs_var)
-            outputs = outputs.data
+    for idx, (sample, class_idx) in enumerate(tqdm(dataloader, desc='sample')):
+        class_idx = class_idx[0]
+        # imgs, class_idx = dataset.get_full_clip(idx)
+        # Prepare vars
+        imgs_var = model.prepare_var(sample)
+        # Forward pass
+        outputs = model.net(imgs_var)
+        outputs = outputs.data
 
         mean_scores = outputs.mean(0)
         _, best_idx = mean_scores.max(0)
@@ -70,8 +48,8 @@ def test(dataset,
         else:
             sample_scores.append(0)
         if save_predictions:
-            if opt.dataset == "smthgsmthg":
-                sample_idx, _, _ = dataset.sample_list[idx]
+            if opt.dataset == "smthg":
+                sample_idx, _, _, _ = dataset.dataset.all_samples[idx]
                 predictions[sample_idx] = dataset.classes[best_idx[0]]
                 prediction_scores[sample_idx] = mean_scores
             elif opt.dataset == "gteagazeplus":
@@ -80,7 +58,6 @@ def test(dataset,
                 raise ValueError(
                     'dataset {} not recognized'.format(opt.dataset))
 
-    assert len(sample_scores) == len(dataset)
     mean_scores = np.mean(sample_scores)
     print('mean score : {}'.format(mean_scores))
 
@@ -92,5 +69,10 @@ def test(dataset,
                                         'prediction_scores.pickle')
         with open(save_scores_path, 'wb') as score_file:
             pickle.dump(prediction_scores, score_file)
+        result_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
+                                   'result.txt')
+        message = 'mean accuracy :{}'.format(mean_scores)
+        with open(result_path, "a") as file:
+            file.write(message + '\n')
 
     return mean_scores

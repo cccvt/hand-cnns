@@ -16,4 +16,4 @@ def add_video_options(options):
         '--network',
         type=str,
         default='c3d',
-        help='Network to use for training [i3d|c3d]')
+        help='Network to use for training [i3d|c3d|i3dense|i3res]')

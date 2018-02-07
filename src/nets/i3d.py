@@ -178,6 +178,7 @@ class I3D(torch.nn.Module):
 
         self.name = name
         self.class_nb = class_nb
+
         conv3d_1a_7x7 = Unit3Dpy(
             out_channels=64,
             in_channels=in_channels,
@@ -374,8 +375,8 @@ def load_conv3d(state_dict, name_pt, sess, name_tf, bias=False, bn=True):
         conv_weights, kernel_shape, in_channels, out_channels, strides, padding = conv_params
 
     conv_weights_rs = np.transpose(
-        conv_weights, (4, 3, 0, 1,
-                       2))  # to pt format (out_c, in_c, depth, height, width)
+        conv_weights,
+        (4, 3, 0, 1, 2))  # to pt format (out_c, in_c, depth, height, width)
     state_dict[name_pt + '.conv3d.weight'] = torch.from_numpy(conv_weights_rs)
     if bias:
         state_dict[name_pt + '.conv3d.bias'] = torch.from_numpy(conv_bias)

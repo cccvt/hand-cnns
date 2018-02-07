@@ -1,95 +1,123 @@
+import os
 import copy
 
 import cv2
 import torch
 import torchvision
 
-from src.datasets.smthgvideo import SmthgVideo
-from src.datasets.gteagazeplusvideo import GTEAGazePlusVideo
-from src.datasets.utils import video_transforms, volume_transforms
+from actiondatasets import smthg
+from actiondatasets.gteagazeplus import GTEAGazePlus
+from actiondatasets.actiondataset import ActionDataset
+from videotransforms import video_transforms, volume_transforms, tensor_transforms
+
 from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
 from src.nets import i3dense, i3dense_adapt
+from src.nets import i3res, i3res_adapt
 from src.netscripts import test
 from src.options import base_options, video_options, test_options
 from src.utils import evaluation
+
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 def run_testing(opt):
     scale_size = (256, 342)
     crop_size = (224, 224)
-    if opt.use_flow:
-        in_channels = 2
+    if opt.use_heatmaps:
+        channel_nb = opt.heatmap_nb
+    elif opt.use_flow:
+        channel_nb = 2
     else:
-        in_channels = 3
-    base_transform_list = [
+        channel_nb = 3
+
+    # Initialize transforms
+    if not opt.use_heatmaps:
+        base_transform_list = [
             video_transforms.Scale(crop_size),
-            volume_transforms.ToTensor(channel_nb=in_channels)
-            ]
-    base_transform = video_transforms.Compose(base_transform_list)
-    video_transform_list = [
+            volume_transforms.ClipToTensor(channel_nb=channel_nb)
+        ]
+        video_transform_list = [
             video_transforms.Scale(scale_size),
             video_transforms.RandomCrop(crop_size),
+            volume_transforms.ClipToTensor(channel_nb=channel_nb)
+        ]
+    else:
+        base_transform_list = [volume_transforms.ToTensor()]
+        video_transform_list = [
+            tensor_transforms.SpatialRandomCrop(crop_size),
             volume_transforms.ToTensor()
-            ]
+        ]
+    base_transform = video_transforms.Compose(base_transform_list)
     video_transform = video_transforms.Compose(video_transform_list)
 
-    if opt.dataset == 'smthgsmthg':
-        dataset = SmthgVideo(
-                base_transform=base_transform,
-                clip_size=opt.clip_size,
-                flow_type=opt.flow_type,
-                rescale_flows=opt.rescale_flows,
-                split=opt.split,
-                use_flow=opt.use_flow,
-                video_transform=video_transform)
+    if opt.dataset == 'smthg':
+        dataset = smthg.Smthg(
+            flow_type=opt.flow_type,
+            rescale_flows=opt.rescale_flows,
+            split=opt.split,
+            use_flow=opt.use_flow)
     elif opt.dataset == 'gteagazeplus':
         all_subjects = [
-                'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
-                ]
+            'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
+        ]
         train_seqs, valid_seqs = evaluation.leave_one_out(
-                all_subjects, opt.leave_out)
-        dataset = GTEAGazePlusVideo(
-                base_transform=base_transform,
-                clip_size=opt.clip_size,
-                flow_type=opt.flow_type,
-                rescale_flows=opt.rescale_flows,
-                seqs=valid_seqs,
-                use_flow=opt.use_flow,
-                video_transform=video_transform)
+            all_subjects, opt.leave_out)
+        dataset = GTEAGazePlus(
+            flow_type=opt.flow_type,
+            heatmaps=opt.use_heatmaps,
+            heatmap_size=crop_size,
+            rescale_flows=opt.rescale_flows,
+            seqs=valid_seqs,
+            use_flow=opt.use_flow)
+    action_dataset = ActionDataset(
+        dataset,
+        base_transform=base_transform,
+        clip_size=opt.clip_size,
+        transform=video_transform,
+        test=True)
+    assert opt.batch_size == 1, 'During testing batch size should be 1 bug got {}'.format(
+        opt.batch_size)
+    val_dataloader = torch.utils.data.DataLoader(
+        action_dataset,
+        shuffle=False,
+        batch_size=opt.batch_size,
+        num_workers=opt.threads)
 
-        # Initialize C3D neural network
+    # Initialize C3D neural network
     if opt.network == 'c3d':
         c3dnet = c3d.C3D()
         model = c3d_adapt.C3DAdapt(
-                opt, c3dnet, dataset.class_nb, in_channels=in_channels)
+            opt, c3dnet, action_dataset.class_nb, in_channels=channel_nb)
 
     elif opt.network == 'i3d':
         if opt.use_flow:
             i3dnet = i3d.I3D(class_nb=400, modality='flow', dropout_rate=0.5)
-            model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
+            model = i3d_adapt.I3DAdapt(opt, i3dnet, action_dataset.class_nb)
         else:
             i3dnet = i3d.I3D(class_nb=400, modality='rgb', dropout_rate=0.5)
-            model = i3d_adapt.I3DAdapt(opt, i3dnet, dataset.class_nb)
+            model = i3d_adapt.I3DAdapt(
+                opt, i3dnet, action_dataset.class_nb, in_channels=channel_nb)
     elif opt.network == 'i3dense':
-        if opt.use_flow:
-            densenet = torchvision.models.densenet121(pretrained=True)
-            i3densenet = i3dense.I3DenseNet(
-                    copy.deepcopy(densenet),
-                    opt.clip_size,
-                    inflate_block_convs=True)
-            model = i3dense_adapt.I3DenseAdapt(
-                    opt, i3densenet, dataset.class_nb, channel_nb=in_channels)
-        else:
-            densenet = torchvision.models.densenet121(pretrained=True)
-            i3densenet = i3dense.I3DenseNet(
-                    copy.deepcopy(densenet),
-                    opt.clip_size,
-                    inflate_block_convs=True)
-            model = i3dense_adapt.I3DenseAdapt(opt, i3densenet,
-                    dataset.class_nb)
+        densenet = torchvision.models.densenet121(pretrained=True)
+        i3densenet = i3dense.I3DenseNet(
+            copy.deepcopy(densenet), opt.clip_size, inflate_block_convs=True)
+        model = i3dense_adapt.I3DenseAdapt(
+            opt, i3densenet, action_dataset.class_nb, channel_nb=channel_nb)
+    elif opt.network == 'i3res':
+        resnet = torchvision.models.resnet50(pretrained=True)
+        i3resnet = i3res.I3ResNet(resnet, frame_nb=opt.clip_size)
+        model = i3res_adapt.I3ResAdapt(
+            opt,
+            i3resnet,
+            class_nb=action_dataset.class_nb,
+            channel_nb=channel_nb)
+    else:
+        raise ValueError(
+            'network should be in [i3res|i3dense|i3d|c3d but got {}]').format(
+                opt.network)
 
-            optimizer = torch.optim.SGD(model.net.parameters(), lr=1)
+    optimizer = torch.optim.SGD(model.net.parameters(), lr=1)
 
     model.set_optimizer(optimizer)
 
@@ -107,8 +135,7 @@ def run_testing(opt):
         model.net.cuda()
     model.load(load_path=opt.checkpoint_path)
 
-    accuracy = test.test(
-            dataset, model, opt=opt, frame_nb=opt.frame_nb, save_predictions=True)
+    accuracy = test.test(val_dataloader, model, opt=opt, save_predictions=True)
     print('Computed accuracy: {}'.format(accuracy))
 
 
