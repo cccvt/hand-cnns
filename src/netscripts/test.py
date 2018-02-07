@@ -18,7 +18,7 @@ def save_preds(predictions, prediction_file):
         writer.writerows(predictions.items())
 
 
-def test(dataset,
+def test(dataloader,
          model,
          viz=None,
          opt=None,
@@ -32,36 +32,14 @@ def test(dataset,
         predictions = {}
         # Save predicted scores (for future averaging)
         prediction_scores = {}
-    for idx in tqdm(range(len(dataset)), desc='sample'):
-        if opt.frame_nb > 0:
-            # Get uniformly spaced clips of clip_size as per dataset attribute
-            imgs, class_idx = dataset.get_class_items(
-                idx, frame_nb=opt.frame_nb)
-            # Separate them to batches
-            batches = [
-                imgs[beg:beg + opt.batch_size]
-                for beg in range(0, len(imgs), opt.batch_size)
-            ]
-            outputs = []
-            for batch in batches:
-                batch = default_collate(batch)
-                outputs = []
-                # Prepare vars
-                batch_var = model.prepare_var(batch)
-
-                # Forward pass
-                output = model.net(batch_var)
-                outputs.append(output.data)
-            outputs = torch.cat(outputs)
-        else:
-            # Take full size clip (with varying size)
-            imgs, class_idx = dataset.get_full_clip(idx)
-            imgs = imgs.unsqueeze(0)
-            # Prepare vars
-            imgs_var = model.prepare_var(imgs)
-            # Forward pass
-            outputs = model.net(imgs_var)
-            outputs = outputs.data
+    for idx, (sample, class_idx) in enumerate(tqdm(dataloader, desc='sample')):
+        class_idx = class_idx[0]
+        # imgs, class_idx = dataset.get_full_clip(idx)
+        # Prepare vars
+        imgs_var = model.prepare_var(sample)
+        # Forward pass
+        outputs = model.net(imgs_var)
+        outputs = outputs.data
 
         mean_scores = outputs.mean(0)
         _, best_idx = mean_scores.max(0)
@@ -80,7 +58,6 @@ def test(dataset,
                 raise ValueError(
                     'dataset {} not recognized'.format(opt.dataset))
 
-    assert len(sample_scores) == len(dataset)
     mean_scores = np.mean(sample_scores)
     print('mean score : {}'.format(mean_scores))
 

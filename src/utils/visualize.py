@@ -69,7 +69,7 @@ class Visualize():
             raise ValueError('when log_path is specified, valid is not taken\
                     into account')
 
-            now = time.strftime("%c")
+        now = time.strftime("%c")
         message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch, t=now)
         for k, v in errors.items():
             message = message + ',{name}:{err}'.format(name=k, err=v)

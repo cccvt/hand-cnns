@@ -74,7 +74,15 @@ def run_testing(opt):
         dataset,
         base_transform=base_transform,
         clip_size=opt.clip_size,
-        transform=video_transform)
+        transform=video_transform,
+        test=True)
+    assert opt.batch_size == 1, 'During testing batch size should be 1 bug got {}'.format(
+        opt.batch_size)
+    val_dataloader = torch.utils.data.DataLoader(
+        action_dataset,
+        shuffle=False,
+        batch_size=opt.batch_size,
+        num_workers=opt.threads)
 
     # Initialize C3D neural network
     if opt.network == 'c3d':
@@ -127,7 +135,7 @@ def run_testing(opt):
         model.net.cuda()
     model.load(load_path=opt.checkpoint_path)
 
-    accuracy = test.test(action_dataset, model, opt=opt, save_predictions=True)
+    accuracy = test.test(val_dataloader, model, opt=opt, save_predictions=True)
     print('Computed accuracy: {}'.format(accuracy))
 
 
