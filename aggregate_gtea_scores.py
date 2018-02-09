@@ -7,7 +7,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import torch
 
-from src.datasets.gteagazeplusimage import GTEAGazePlusImage
+from actiondatasets.gteagazeplus import GTEAGazePlus
+
 from src.netscripts.test import save_preds
 from src.utils import options
 
@@ -28,20 +29,15 @@ parser.add_argument(
     default='checkpoints/test/gtea_gaze_plus',
     help='')
 parser.add_argument(
-    '--clip_sizes',
-    type=int,
+    '--weights',
+    type=float,
     nargs='+',
     default=[],
-    help='Size of extracted clips for each prediction\
-    in smae order as score_paths')
+    help='Weights for each checkpoint (one per checkpoint in same order)')
 args = parser.parse_args()
 
 save_folder = os.path.join(args.destination_folder)
 options.process_args(args, save_folder)
-
-assert len(args.clip_sizes) == len(args.score_paths), 'Should have {}\
-    clip_sizes for {} score_paths'.format(
-    len(args.clip_sizes), len(args.score_paths))
 
 # softmax = torch.nn.Softmax()
 softmax = None
@@ -62,9 +58,10 @@ for leave_out_idx in leave_out_idxs:
         all_subjects[leave_out_idx],
     ]
 
-    dataset = GTEAGazePlusImage(seqs=seqs)
+    dataset = GTEAGazePlus(seqs=seqs)
 
     all_scores = []
+    idx_lists = []
     for folder_path in args.score_paths:
         score_path = os.path.join(folder_path, 'gtea_lo_' + str(leave_out_idx),
                                   'prediction_scores.pickle')
@@ -74,39 +71,33 @@ for leave_out_idx in leave_out_idxs:
             all_scores.append(scores)
 
     # Extract indexes for which scores have been produced
-    idx_lists = []
     for i in range(len(args.score_paths)):
-        if args.clip_sizes:
-            scored_idxs = [
-                idx
-                for idx, (action, obj, subj, rec, beg,
-                          end) in enumerate(dataset.action_clips)
-                if end - beg >= args.clip_sizes[i]
-            ]
-            idx_lists.append(scored_idxs)
-            assert len(scored_idxs) == len(all_scores[i]),\
-                'Received {} predictions for {} samples'.format(
-                    len(all_scores[i]),
-                    len(len(scored_idxs)))
-        else:
-            assert len(scored_idxs) == len(all_scores[i]),\
-                'Received {} predictions for {} samples'.format(
-                    len(all_scores[i]),
-                    len(dataset.action_clips))
+        scored_idxs = [
+            idx
+            for idx, (action, obj, subj, rec, beg,
+                      end) in enumerate(dataset.all_samples)
+        ]
+        idx_lists.append(scored_idxs)
 
+        assert len(scored_idxs) == len(all_scores[i]),\
+            'Received {} predictions for {} samples'.format(
+                len(all_scores[i]),
+                len(scored_idxs))
     mean_preds = {}
 
     # Compute scores
     conf_mat = np.zeros((dataset.class_nb, dataset.class_nb))
-    common_idxs = set(idx_lists[0]).intersection(*idx_lists)
-    for idx in range(len(dataset.action_clips)):
+    for idx in range(len(dataset.all_samples)):
         # Extract label idx
-        action, objects, subject, recipe, beg, end = dataset.action_clips[idx]
+        action, objects, subject, recipe, beg, end = dataset.all_samples[idx]
         class_idx = dataset.classes.index((action, objects))
         clip_scores = []
         for score_idx, scores in enumerate(all_scores):
             if idx in idx_lists[score_idx]:
                 clip_score = scores[idx_lists[score_idx].index(idx)]
+                # Weighted averaging
+                if len(args.weights):
+                    clip_score = clip_score * args.weights[score_idx]
                 if softmax is not None:
                     clip_score = softmax(clip_score.unsqueeze(0))
                 else:
