@@ -65,7 +65,6 @@ def run_training(opt):
         dataset = GTEAGazePlus(
             root_folder='data/GTEAGazePlusdata2',  # TODO remove
             flow_type=opt.flow_type,
-            full_res=True,
             heatmaps=opt.use_heatmaps,
             heatmap_size=scale_size,
             original_labels=True,
@@ -75,7 +74,6 @@ def run_training(opt):
         val_dataset = GTEAGazePlus(
             root_folder='data/GTEAGazePlusdata2',  # TODO remove
             flow_type=opt.flow_type,
-            full_res=True,
             heatmaps=opt.use_heatmaps,
             heatmap_size=scale_size,
             original_labels=True,

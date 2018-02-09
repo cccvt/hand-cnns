@@ -20,7 +20,6 @@ class I3DAdapt(BaseNet):
             # Make sure different nb of in_channels is requested
             old_inchannels = self.net.conv3d_1a_7x7.conv3d.in_channels
             weight_3d = self.net.conv3d_1a_7x7.conv3d.weight.data
-            bias_3d = self.net.conv3d_1a_7x7.conv3d.bias
             new_weight_3d = weight_3d.mean(1)
             new_weight_3d = new_weight_3d.unsqueeze(1).repeat(
                 1, in_channels, 1, 1, 1)
