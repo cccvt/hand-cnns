@@ -12,6 +12,14 @@ import numpy as np
 from actiondatasets.gteagazeplus import GTEAGazePlus
 
 
+def normalize_rows(mat):
+    mat = np.copy(mat)
+    for i, row in enumerate(mat):
+        norm_row = row.sum() or 1
+        mat[i] = row / norm_row
+    return mat
+
+
 def get_confmat(path):
     """Processes logs in format "(somehting),loss_1:0.1234,loss_2:0.3"
     """
@@ -20,7 +28,11 @@ def get_confmat(path):
     return conf_mat
 
 
-def plot_conf_mat(confmat, title=None, labels=None, epoch=None):
+def plot_conf_mat(confmat,
+                  title=None,
+                  labels=None,
+                  epoch=None,
+                  normalize=False):
     """
     Args:
         score_type (str): label for current curve, [valid|train|aggreg]
@@ -28,11 +40,13 @@ def plot_conf_mat(confmat, title=None, labels=None, epoch=None):
     if epoch is None:
         mat = confmat[-1]
     else:
-        mat = confmat[epoch]
-        if epoch > mat.shape[0]:
+        if epoch > confmat.shape[0]:
             raise ValueError(
-                'Epoch {} should be below'.format(epoch, mat.shape[0]))
-            # Plot confmat
+                'Epoch {} should be below {}'.format(epoch, confmat.shape[0]))
+        mat = confmat[epoch]
+        # Plot confmat
+    if normalize:
+        mat = normalize_rows(mat)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     cax = ax.imshow(mat, cmap='viridis')
@@ -69,6 +83,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--vis', action='store_true', help='Whether to plot the log curves')
     parser.add_argument(
+        '--normalize',
+        action='store_true',
+        help='Each row of the confmat sums to 1')
+    parser.add_argument(
         '--epoch', type=int, help='What itertation use to average results')
     parser.add_argument(
         '--prefixes',
@@ -88,7 +106,10 @@ if __name__ == "__main__":
             'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
         ]
         for checkpoint in opt.checkpoints:
-            dataset = GTEAGazePlus(original_labels=True, seqs=all_subjects)
+            dataset = GTEAGazePlus(
+                root_folder='data/GTEAGazePlusdata2',
+                original_labels=True,
+                seqs=all_subjects)
 
             train_conf_template = os.path.join(
                 checkpoint, 'gtea_lo_{}/train_conf_mat.pickle')
@@ -105,9 +126,11 @@ if __name__ == "__main__":
                         train_confmat,
                         title='Train conf mat',
                         epoch=opt.epoch,
-                        labels=dataset.classes)
+                        labels=dataset.classes,
+                        normalize=opt.normalize)
                     plot_conf_mat(
                         val_confmat,
                         title='Val conf mat',
                         epoch=opt.epoch,
-                        labels=dataset.classes)
+                        labels=dataset.classes,
+                        normalize=opt.normalize)
