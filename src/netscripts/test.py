@@ -26,6 +26,9 @@ def test(dataloader,
          smthg=True):
     """Performs average pooling on each action clip sample
     """
+    import pdb
+    pdb.set_trace()
+    model.net.eval()
     sample_scores = []
     if save_predictions:
         # Save final class
@@ -49,8 +52,10 @@ def test(dataloader,
             sample_scores.append(0)
         if save_predictions:
             if opt.dataset == "smthg":
-                sample_idx, _, _, _ = dataset.dataset.all_samples[idx]
-                predictions[sample_idx] = dataset.classes[best_idx[0]]
+                sample_idx, _, _, _ = dataloader.dataset.dataset.all_samples[
+                    idx]
+                predictions[sample_idx] = dataloader.dataset.dataset.classes[
+                    best_idx[0]]
                 prediction_scores[sample_idx] = mean_scores
             elif opt.dataset == "gteagazeplus":
                 prediction_scores[idx] = mean_scores
