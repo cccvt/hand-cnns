@@ -114,7 +114,7 @@ class MaxPool3dTFPadding(torch.nn.Module):
             padding_shape = get_padding_shape(kernel_size, stride)
             self.padding_shape = padding_shape
             self.pad = torch.nn.ConstantPad3d(padding_shape, 0)
-        self.pool = torch.nn.MaxPool3d(kernel_size, stride)
+        self.pool = torch.nn.MaxPool3d(kernel_size, stride, ceil_mode=True)
 
     def forward(self, inp):
         inp = self.pad(inp)
@@ -219,8 +219,6 @@ class I3D(torch.nn.Module):
         self.mixed_4e = Mixed(512, [112, 144, 288, 32, 64, 64])
         self.mixed_4f = Mixed(528, [256, 160, 320, 32, 128, 128])
 
-        # Ugly hack because I didn't use tensorflow's exact padding function
-        self.pad_5a = torch.nn.ConstantPad3d((0, 0, 0, 0, 0, 1), 0)
         self.maxPool3d_5a_2x2 = MaxPool3dTFPadding(
             kernel_size=(2, 2, 2), stride=(2, 2, 2), padding='SAME')
 
@@ -238,26 +236,33 @@ class I3D(torch.nn.Module):
             use_bias=True,
             use_bn=False)
 
-    def forward(self, inp):
+    def forward(self, inp, early_stop=None):
         # Preprocessing
         out = self.conv3d_1a_7x7(inp)
-        out = self.maxPool3d_2a_3x3(out)
+        out = self.maxPool3d_2a_3x3(out)  # 64 56x56 if input 224x224
+        if early_stop == '2a':
+            return out
         out = self.conv3d_2b_1x1(out)
         out = self.conv3d_2c_3x3(out)
-        out = self.maxPool3d_3a_3x3(out)
+        out = self.maxPool3d_3a_3x3(out)  # 256 28x28 if input 224x224
+        if early_stop == '3a':
+            return out
         out = self.mixed_3b(out)
         out = self.mixed_3c(out)
-        out = self.maxPool3d_4a_3x3(out)
+        out = self.maxPool3d_4a_3x3(out)  # 480 14x14 if inp 224x224
+        if early_stop == '4a':
+            return out
         out = self.mixed_4b(out)
         out = self.mixed_4c(out)
         out = self.mixed_4d(out)
         out = self.mixed_4e(out)
         out = self.mixed_4f(out)
-        out = self.pad_5a(out)
-        out = self.maxPool3d_5a_2x2(out)
+        out = self.maxPool3d_5a_2x2(out)  # 832 7x7
+        if early_stop == '5a':
+            return out
         out = self.mixed_5b(out)
         out = self.mixed_5c(out)
-        out = self.avg_pool(out)
+        out = self.avg_pool(out)  # 1024 1x1
         out = self.dropout(out)
         out = self.conv3d_0c_1x1(out)
         out = out.squeeze(3)
@@ -375,8 +380,8 @@ def load_conv3d(state_dict, name_pt, sess, name_tf, bias=False, bn=True):
         conv_weights, kernel_shape, in_channels, out_channels, strides, padding = conv_params
 
     conv_weights_rs = np.transpose(
-        conv_weights,
-        (4, 3, 0, 1, 2))  # to pt format (out_c, in_c, depth, height, width)
+        conv_weights, (4, 3, 0, 1,
+                       2))  # to pt format (out_c, in_c, depth, height, width)
     state_dict[name_pt + '.conv3d.weight'] = torch.from_numpy(conv_weights_rs)
     if bias:
         state_dict[name_pt + '.conv3d.bias'] = torch.from_numpy(conv_bias)

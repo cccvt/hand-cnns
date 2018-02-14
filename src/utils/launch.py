@@ -13,6 +13,12 @@ def get_smthg_test(network, modality, dataset, experience, split, epoch):
     return test_folder
 
 
+def get_smthg_viz(network, modality, dataset, experience, split, epoch):
+    viz_folder = os.path.join('viz', network, modality, dataset, experience,
+                              'epoch_{}'.format(epoch), split)
+    return viz_folder
+
+
 def get_smthg_paths(network, modality, dataset, experience, split, epoch):
     train_folder = get_smthg_train(network, modality, dataset, experience)
     test_folder = get_smthg_test(network, modality, dataset, experience, split,

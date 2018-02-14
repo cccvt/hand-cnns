@@ -63,7 +63,6 @@ def run_training(opt):
         train_seqs, valid_seqs = evaluation.leave_one_out(
             all_subjects, leave_out_idx)
         dataset = GTEAGazePlus(
-            root_folder='data/GTEAGazePlusdata2',  # TODO remove
             flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
             heatmap_size=scale_size,
@@ -72,7 +71,6 @@ def run_training(opt):
             seqs=train_seqs,
             use_flow=opt.use_flow)
         val_dataset = GTEAGazePlus(
-            root_folder='data/GTEAGazePlusdata2',  # TODO remove
             flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
             heatmap_size=scale_size,

@@ -26,8 +26,6 @@ def test(dataloader,
          smthg=True):
     """Performs average pooling on each action clip sample
     """
-    import pdb
-    pdb.set_trace()
     model.net.eval()
     sample_scores = []
     if save_predictions:
@@ -37,7 +35,6 @@ def test(dataloader,
         prediction_scores = {}
     for idx, (sample, class_idx) in enumerate(tqdm(dataloader, desc='sample')):
         class_idx = class_idx[0]
-        # imgs, class_idx = dataset.get_full_clip(idx)
         # Prepare vars
         imgs_var = model.prepare_var(sample)
         # Forward pass
