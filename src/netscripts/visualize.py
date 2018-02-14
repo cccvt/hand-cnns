@@ -14,87 +14,17 @@ from actiondatasets.utils import display as display_utils
 def visualize(dataloader, model, opt=None):
     model.net.eval()
     get_activations_by_sample(dataloader, model, opt=opt)
-    get_contributing_pixels(dataloader, model)
-    for idx, (sample, class_idx) in enumerate(tqdm(dataloader, desc='sample')):
-        class_idx = class_idx[0]
-        # Prepare vars
-        imgs_var = model.prepare_var(sample, requires_grad=True)
-        # Forward pass
-        outputs = model.net(imgs_var, early_stop='5a')
-
-        outputs_data = outputs.data
-
-        mean_scores = outputs.mean(0)
-        _, best_idx = mean_scores.max(0)
-
-
-def get_activations_by_filter(dataloader,
-                              model,
-                              level='2a',
-                              filter_chunk_size=64,
-                              opt=None):
-    model.net.eval()
-    for idx, (sample, class_idx) in enumerate(tqdm(dataloader, desc='sample')):
-        class_idx = class_idx[0]
-        # Prepare vars
-        imgs_var = model.prepare_var(sample, requires_grad=True)
-        # Forward pass
-        outputs = model.net(imgs_var, early_stop=level)
-
-        filter_nb = outputs.shape[1]
-        print('At level {} output has {} filters'.format(level, filter_nb))
-        outputs = outputs.data.cpu().numpy()
-        activations = outputs[0]
-
-        ax_nb = math.ceil(math.sqrt(filter_chunk_size))
-        fig, axes = plt.subplots(ax_nb, ax_nb)
-        time_steps = activations.shape[1]
-
-        filter_chunk_nb = filter_nb // filter_chunk_size
-        for filter_chunk in range(0, filter_chunk_nb):
-            idx_start = filter_chunk * filter_chunk_size
-            idx_end = (filter_chunk + 1) * filter_chunk_size
-            filter_activations = activations[idx_start:idx_end]
-            anim = animation.FuncAnimation(
-                fig,
-                update_activations_by_sample,
-                time_steps,
-                fargs=(axes, filter_activations, ax_nb),
-                interval=500,
-                repeat=False)
-            anim_name = os.path.join(
-                opt.checkpoint_dir, opt.exp_id,
-                'activations_sample_{}_epoch_{}_level_{}_chunk_{}.gif'.format(
-                    idx, opt.epoch, level, filter_chunk))
-            anim_path = os.path.join(anim_name)
-            anim.save(anim_path, dpi=80, writer='imagemagick')
-            print('saved filters {} to {} \
-                    to {}'.format(idx_start, idx_end, anim_path))
-
-
-def update_activations_by_filter(idx, axes, activations, ax_nb=None):
-    activations = activations[:, idx]  # Get relevant time step
-    filter_nb = activations.shape[0]
-    if ax_nb is None:
-        row_nb = int(math.ceil(math.sqrt(filter_nb)))
-    else:
-        row_nb = ax_nb
-
-    for filter_idx in range(filter_nb):
-        row = int(filter_idx / row_nb)
-        col = filter_idx - row * row_nb
-        activation = activations[filter_idx]
-        axes[row, col].imshow(activation)
-        axes[row, col].axis('off')
-    return axes
 
 
 def get_activations_by_sample(dataloader,
                               model,
-                              level='2a',
+                              level='4a',
                               filter_chunk_size=8,
                               sample_nb=8,
                               opt=None):
+    """
+    Produces gifs of activations of filters for a number of samples
+    """
     model.net.eval()
     sample_filters = []
     samples = []
@@ -109,8 +39,8 @@ def get_activations_by_sample(dataloader,
 
             # Save inputs
             activations = outputs[0]
-            output_height, output_width = activations.shape[
-                2], activations.shape[3]
+            output_time, output_height, output_width = activations.shape[
+                1], activations.shape[2], activations.shape[3]
 
             # Resize samples
             sample = sample.numpy()[0]
@@ -129,8 +59,6 @@ def get_activations_by_sample(dataloader,
             sample_filters.append(chunked_filter_activations)
         else:
             break
-
-    fig, axes = plt.subplots(sample_nb, filter_chunk_size + 1)
 
     # Compute minimal number of time steps for outputs
     time_steps = min(sample_filter[0].shape[1]
@@ -154,6 +82,13 @@ def get_activations_by_sample(dataloader,
         resized_samples.append(time_samples)
 
     for chunk_idx in range(0, filter_chunk_nb):
+        fig, axes = plt.subplots(sample_nb, filter_chunk_size + 1)
+        idx_start = chunk_idx * filter_chunk_size
+        idx_end = idx_start + filter_chunk_size
+        fig.suptitle('{} level {} - dim h: {} w :{} t: {}'.format(
+            model.name, level, output_height, output_width, output_time) +
+                     '\n filters {} to {}'.format(idx_start, idx_end))
+
         chunk_activations = [chunks[chunk_idx] for chunks in sample_filters]
         anim = animation.FuncAnimation(
             fig,
@@ -168,13 +103,10 @@ def get_activations_by_sample(dataloader,
             'activations_samples_{}_epoch_{}_level_{}_chunk_{}.gif'.format(
                 idx, opt.epoch, level, chunk_idx))
         anim_path = os.path.join(anim_name)
-        anim.save(anim_path, dpi=80, writer='imagemagick')
+        anim.save(anim_path, dpi=160, writer='imagemagick')
 
-        filter_start = chunk_idx * filter_chunk_size
-        print(
-            'saved filters {} to {} \
-                to {}'
-            .format(filter_start, filter_start + filter_chunk_size, anim_path))
+        print('saved filters {} to {} to {}'.format(idx_start, idx_end,
+                                                    anim_path))
 
 
 def update_activations_by_sample(idx,
