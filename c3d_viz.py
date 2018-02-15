@@ -15,7 +15,7 @@ from src.nets import i3d, i3d_adapt
 from src.nets import i3dense, i3dense_adapt
 from src.nets import i3res, i3res_adapt
 from src.netscripts import visualize
-from src.options import base_options, video_options, test_options
+from src.options import base_options, video_options, test_options, viz_options
 from src.utils import evaluation
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
@@ -23,7 +23,7 @@ os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 def run_visualize(opt):
     scale_size = (256, 342)
-    crop_size = (224, 224)
+    crop_size = 224
     if opt.use_heatmaps:
         channel_nb = opt.heatmap_nb
     elif opt.use_flow:
@@ -38,14 +38,13 @@ def run_visualize(opt):
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
         video_transform_list = [
-            video_transforms.Scale(scale_size),
-            video_transforms.RandomCrop(crop_size),
+            video_transforms.Scale(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
     else:
         base_transform_list = [volume_transforms.ToTensor()]
         video_transform_list = [
-            tensor_transforms.SpatialRandomCrop(crop_size),
+            tensor_transforms.Scale(crop_size),
             volume_transforms.ToTensor()
         ]
     base_transform = video_transforms.Compose(base_transform_list)
@@ -146,5 +145,6 @@ if __name__ == '__main__':
     # Add test options and parse
     test_options.add_test_options(options)
     video_options.add_video_options(options)
+    viz_options.add_viz_options(options)
     opt = options.parse()
     run_visualize(opt)
