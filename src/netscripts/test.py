@@ -1,4 +1,5 @@
 import csv
+import math
 import os
 import pickle
 
@@ -23,7 +24,8 @@ def test(dataloader,
          viz=None,
          opt=None,
          save_predictions=False,
-         smthg=True):
+         smthg=True,
+         mode='stride'):
     """Performs average pooling on each action clip sample
     """
     model.net.eval()
@@ -34,15 +36,72 @@ def test(dataloader,
         # Save predicted scores (for future averaging)
         prediction_scores = {}
     for idx, (sample, class_idx) in enumerate(tqdm(dataloader, desc='sample')):
-        class_idx = class_idx[0]
+        # Retrieve class index no mater train formatting
+        time_size = sample.shape[2]
+        assert sample.shape[
+            0] == 1, 'Batch size should be 1 in testing got {}'.format(
+                sample.shape[0])
+
+        if time_size < opt.clip_size:
+            # Loop clip
+            repetitions = math.ceil(opt.clip_size / time_size)
+            sample = torch.cat([sample] * repetitions, dim=2)
+            sample = sample[:, :, 0:opt.clip_size]
+
+        if mode == 'full':
+            sample = sample
+
+        # Extract clips with a fixed stride between them
+        elif mode == 'stride':
+            time_stride = 8
+            max_samples = 44
+            sample = sample[0]  # Remove batch dimension
+            if time_size < opt.clip_size + time_stride:
+                subsamples = [sample]
+            else:
+                subsample_idxs = list(
+                    range(0, time_size - opt.clip_size, time_stride))
+                subsamples = [
+                    sample[:, start_idx:start_idx + opt.clip_size]
+                    for start_idx in subsample_idxs
+                ]
+                subsamples = subsamples[:max_samples]
+        elif mode == 'subsample':
+            sample = sample[0]  # Remove batch dimension
+            if time_size < opt.clip_size:
+                subsamples = [sample]
+            else:
+                subsample_idxs = np.linspace(0, time_size - opt.clip_size,
+                                             opt.frame_nb)
+                subsample_idxs = [
+                    int(frame_idx) for frame_idx in subsample_idxs
+                ]
+                subsamples = [
+                    sample[:, start_idx:start_idx + opt.clip_size]
+                    for start_idx in subsample_idxs
+                ]
+
+        # Extract a fixed number of clips uniformly sampled in video
+        if mode == 'subsample' or mode == 'stride':
+            print('Got {} subsamples in mode {}'.format(len(subsamples), mode))
+            sample = torch.stack(subsamples)
+
+        print(sample.shape)
+        class_idx = dataloader.dataset.dataset.get_class_idx(idx)
         # Prepare vars
-        imgs_var = model.prepare_var(sample)
+        imgs_var = model.prepare_var(sample, volatile=True)
         # Forward pass
         outputs = model.net(imgs_var)
+        # Remove batch dimension
+        # outputs = torch.nn.functional.softmax(outputs, dim=0)
+        outputs = outputs.mean(0)
+        if outputs.dim() == 3:
+            outputs = outputs.mean(2)
+        if outputs.dim() == 2:
+            outputs = outputs.mean(1)
         outputs = outputs.data
 
-        mean_scores = outputs.mean(0)
-        _, best_idx = mean_scores.max(0)
+        _, best_idx = outputs.max(0)
         if best_idx[0] == class_idx:
             sample_scores.append(1)
         else:
@@ -53,9 +112,9 @@ def test(dataloader,
                     idx]
                 predictions[sample_idx] = dataloader.dataset.dataset.classes[
                     best_idx[0]]
-                prediction_scores[sample_idx] = mean_scores
+                prediction_scores[sample_idx] = outputs
             elif opt.dataset == "gteagazeplus":
-                prediction_scores[idx] = mean_scores
+                prediction_scores[idx] = outputs
             else:
                 raise ValueError(
                     'dataset {} not recognized'.format(opt.dataset))

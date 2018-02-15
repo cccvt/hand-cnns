@@ -124,11 +124,12 @@ class BaseNet():
                              'network groups but got {}'.format(lrs))
         return lrs[0]
 
-    def prepare_var(self, tensor, requires_grad=False):
+    def prepare_var(self, tensor, volatile=False, requires_grad=False):
         # tensor should be of type float otherwise cuda error
         if self.opt.use_gpu:
             tensor = tensor.cuda()
-        var = torch.autograd.Variable(tensor, requires_grad=requires_grad)
+        var = torch.autograd.Variable(
+            tensor, volatile=volatile, requires_grad=requires_grad)
         return var
 
     def compute_loss(self, output, target):

@@ -262,7 +262,11 @@ class I3D(torch.nn.Module):
             return out
         out = self.mixed_5b(out)
         out = self.mixed_5c(out)
+        if early_stop == '5c':
+            return out
         out = self.avg_pool(out)  # 1024 1x1
+        if early_stop == 'avg':
+            return out
         out = self.dropout(out)
         out = self.conv3d_0c_1x1(out)
         out = out.squeeze(3)

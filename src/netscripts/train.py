@@ -159,8 +159,13 @@ def data_pass(model,
     Args:
         visualize(bool): whether to display in visdom
     """
-    image = model.prepare_var(image)
-    target = model.prepare_var(target)
+    if train:
+        volatile = False
+    else:
+        volatile = True
+
+    image = model.prepare_var(image, volatile=volatile)
+    target = model.prepare_var(target, volatile=volatile)
 
     output = model.net.forward(image)
     loss = model.compute_loss(output, target)

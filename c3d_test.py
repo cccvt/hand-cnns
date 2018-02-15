@@ -22,8 +22,8 @@ os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 def run_testing(opt):
-    scale_size = (256, 342)
-    crop_size = (224, 224)
+    scale_size = 256  # int or (height, width)
+    crop_size = 224
     if opt.use_heatmaps:
         channel_nb = opt.heatmap_nb
     elif opt.use_flow:
@@ -33,22 +33,17 @@ def run_testing(opt):
 
     # Initialize transforms
     if not opt.use_heatmaps:
-        base_transform_list = [
-            video_transforms.Scale(crop_size),
-            volume_transforms.ClipToTensor(channel_nb=channel_nb)
-        ]
         video_transform_list = [
-            video_transforms.Scale(scale_size),
-            video_transforms.RandomCrop(crop_size),
+            video_transforms.Scale(crop_size),
+            # video_transforms.CenterCrop(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
     else:
-        base_transform_list = [volume_transforms.ToTensor()]
         video_transform_list = [
-            tensor_transforms.SpatialRandomCrop(crop_size),
+            tensor_transforms.Scale(crop_size),
+            # video_transforms.CenterCrop(crop_size),
             volume_transforms.ToTensor()
         ]
-    base_transform = video_transforms.Compose(base_transform_list)
     video_transform = video_transforms.Compose(video_transform_list)
 
     if opt.dataset == 'smthg':
@@ -71,11 +66,7 @@ def run_testing(opt):
             seqs=valid_seqs,
             use_flow=opt.use_flow)
     action_dataset = ActionDataset(
-        dataset,
-        base_transform=base_transform,
-        clip_size=opt.clip_size,
-        transform=video_transform,
-        test=True)
+        dataset, clip_size=opt.clip_size, transform=video_transform, test=True)
     assert opt.batch_size == 1, 'During testing batch size should be 1 bug got {}'.format(
         opt.batch_size)
     val_dataloader = torch.utils.data.DataLoader(
