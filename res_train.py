@@ -84,10 +84,7 @@ def run_training(opt):
     model = resnet_adapt.ResNetAdapt(
         opt, resnet, [dataset.class_nb, dataset.verb_nb, dataset.objects_nb])
 
-    if opt.lr != opt.new_lr:
-        model_params = model.lr_params(lr=opt.new_lr)
-    else:
-        model_params = model.net.parameters()
+    model_params = model.net.parameters()
 
     optimizer = torch.optim.SGD(model_params, lr=opt.lr, momentum=opt.momentum)
 

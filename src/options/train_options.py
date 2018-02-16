@@ -29,12 +29,6 @@ def add_train_options(options):
         default=0.001,
         help='Base learning rate for training')
     parser.add_argument(
-        '--new_lr',
-        type=float,
-        default=0.01,
-        help='Learning rate for new (not pretrained) layers\
-                             typically, lr < new_lr')
-    parser.add_argument(
         '--momentum',
         type=float,
         default=0.9,
