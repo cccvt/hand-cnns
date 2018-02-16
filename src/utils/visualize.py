@@ -112,7 +112,6 @@ class Visualize():
                     win,
                     display_idx=0,
                     k=1,
-                    unnormalize=None,
                     time_max=8,
                     time_step=1):
         """ Plots in visdom one image with predicted and ground truth labels
@@ -130,8 +129,6 @@ class Visualize():
             pred_val = pred_val.cpu()
             gts = gts.cpu()
             time_input_imgs = time_input_imgs.cpu()
-        if unnormalize is not None:
-            time_input_imgs = unnormalize(time_input_imgs)
         pred_classes = classes[int(topk_classes[0])]
         pred_string = 'predicted : ' + str(pred_classes)
 
@@ -152,6 +149,8 @@ class Visualize():
                 input_img = prepare_img(input_img)
                 stack_imgs.append(input_img)
             input_img = np.concatenate(stack_imgs, axis=2)
+        else:
+            input_img = time_input_imgs
 
         if win is None:
             win = self.vis.image(

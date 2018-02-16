@@ -125,12 +125,23 @@ class BaseNet():
         return lrs[0]
 
     def prepare_var(self, tensor, volatile=False, requires_grad=False):
+        """Converts tensors or list of tensors for network processing
+        """
         # tensor should be of type float otherwise cuda error
-        if self.opt.use_gpu:
-            tensor = tensor.cuda()
-        var = torch.autograd.Variable(
-            tensor, volatile=volatile, requires_grad=requires_grad)
-        return var
+        if isinstance(tensor, (tuple, list)):
+            variables = []
+            for tens in tensor:
+                tens = tens.cuda()
+                var = torch.autograd.Variable(
+                    tens, volatile=volatile, requires_grad=requires_grad)
+                variables.append(var)
+            return variables
+        else:
+            if self.opt.use_gpu:
+                tensor = tensor.cuda()
+            var = torch.autograd.Variable(
+                tensor, volatile=volatile, requires_grad=requires_grad)
+            return var
 
     def compute_loss(self, output, target):
         # Compute scores
@@ -138,8 +149,18 @@ class BaseNet():
             loss = self.criterion(output, target)
         elif self.opt.criterion == 'CE':
             # CE expects index of class as ground truth input
-            target_vals, target_idxs = target.max(1)
-            loss = self.criterion(output, target_idxs.view(-1))
+            if isinstance(target, (list, tuple)):
+                losses = []
+                for idx, out in enumerate(output):
+                    targ = target[idx]
+                    target_vals, target_idxs = targ.max(1)
+                    loss = self.criterion(out, target_idxs.view(-1))
+                    losses.append(loss)
+                return losses
+
+            else:
+                target_vals, target_idxs = target.max(1)
+                loss = self.criterion(output, target_idxs.view(-1))
         else:
             raise error.ArgumentError('{0} is not among known error\
                     functions'.format(self.opt.criterion))
@@ -148,6 +169,8 @@ class BaseNet():
     def step_backward(self, loss):
         # Compute gradient and do gradient step
         self.optimizer.zero_grad()
+        if isinstance(loss, (list, tuple)):
+            loss = sum(loss)
         loss.backward()
         self.optimizer.step()
 

@@ -175,9 +175,14 @@ def data_pass(model,
 
     for metric in metrics:
         if metric.compute:
+            if isinstance(output, (tuple, list)):
+                output = output[0]
+                target = target[0]
             score = metric.func(output.data, target.data)
             metric.epoch_scores.append((score.sum(), len(score)))
         if metric.name == 'loss':
+            if isinstance(loss, (tuple, list)):
+                loss = loss[0]
             metric.epoch_scores.append((loss.data[0] * len(score), len(score)))
 
     if conf_mat is not None:
@@ -189,13 +194,9 @@ def data_pass(model,
     # Display an image example in visdom
     if visualize:
         if viz is not None and i % opt.display_freq == 0:
-            sample_win = viz.plot_sample(
-                image.data,
-                target.data,
-                output.data,
-                dataloader.dataset.classes,
-                sample_win,
-                unnormalize=dataloader.dataset.untransform)
+            sample_win = viz.plot_sample(image.data, target.data, output.data,
+                                         dataloader.dataset.classes,
+                                         sample_win)
 
     return metrics, sample_win, conf_mat
 

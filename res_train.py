@@ -3,14 +3,13 @@ import torch
 from torchvision import transforms
 import torchvision.models as models
 
-from src.datasets import gun
-from src.datasets.gteagazeplusimage import GTEAGazePlusImage
-from src.datasets.smthgimage import SmthgImage
 from src.options import base_options, image_options, train_options, error
 from src.nets import resnet_adapt
 from src.netscripts import train
 from src.utils.normalize import Unnormalize
 from src.utils import evaluation
+
+from actiondatasets.gteagazeplus import GTEAGazePlus
 
 
 def run_training(opt):
@@ -19,9 +18,6 @@ def run_training(opt):
     img_stds = [0.229, 0.224, 0.225]
     normalize = transforms.Normalize(mean=img_means, std=img_stds)
 
-    # Compute reverse of normalize transfor
-    unnormalize = Unnormalize(mean=img_means, std=img_stds)
-
     # Set input tranformations
     transformations = ([
         transforms.RandomHorizontalFlip(),
@@ -29,80 +25,46 @@ def run_training(opt):
     ])
 
     final_size = 224
-    if opt.normalize:
-        transformations.append(normalize)
+    scale_size = 230
+    transformations.append(normalize)
     first_transforms = [
-        transforms.Scale(230),
+        transforms.Scale(scale_size),
         transforms.RandomCrop(final_size)
     ]
     transformations = first_transforms + transformations
 
     transform = transforms.Compose(transformations)
-    base_transform = transforms.Compose([
-        transforms.Scale(final_size),
-        transforms.ToTensor(),
-        normalize,
-    ])
 
     # Index of sequence item to leave out for validation
     leave_out_idx = opt.leave_out
 
     if opt.dataset == 'gteagazeplus':
         # Create dataset
-        valid = True
         all_subjects = [
             'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
         ]
         train_seqs, valid_seqs = evaluation.leave_one_out(
             all_subjects, leave_out_idx)
-        dataset = GTEAGazePlusImage(
-            transform=transform, untransform=unnormalize, seqs=train_seqs)
-        valid_dataset = GTEAGazePlusImage(
+        dataset = GTEAGazePlus(
             transform=transform,
-            base_transform=base_transform,
-            untransform=unnormalize,
-            seqs=valid_seqs)
-        valid = True
-
-    elif opt.dataset == 'gun':
-        test_subject_id = 2
-        # Leave one out training
-        seqs = [
-            'Subject1', 'Subject2', 'Subject3', 'Subject4', 'Subject5',
-            'Subject6', 'Subject7', 'Subject8'
-        ]
-        train_seqs, valid_seqs = evaluation.leave_one_out(
-            seqs, test_subject_id)
-
-        dataset = gun.GUN(
-            transform=transform, untransform=unnormalize, seqs=train_seqs)
-
-        valid_dataset = gun.GUN(
-            transform=transform, untransform=unnormalize, seqs=valid_seqs)
-        valid = True
-
-    elif opt.dataset == 'smthg':
-        dataset = SmthgImage(
-            split='train',
+            seqs=train_seqs,
+            flow_type=opt.flow_type,
+            heatmaps=opt.use_heatmaps,
+            heatmap_size=scale_size,
+            original_labels=True,
+            rescale_flows=opt.rescale_flows,
+            use_flow=opt.use_flow)
+        valid_dataset = GTEAGazePlus(
             transform=transform,
-            untransform=unnormalize,
-            base_transform=base_transform)
-        valid_dataset = SmthgImage(
-            split='valid',
-            transform=transform,
-            untransform=unnormalize,
-            base_transform=base_transform)
-        valid = True
+            seqs=valid_seqs,
+            flow_type=opt.flow_type,
+            heatmaps=opt.use_heatmaps,
+            heatmap_size=scale_size,
+            original_labels=True,
+            rescale_flows=opt.rescale_flows,
+            use_flow=opt.use_flow)
 
-    print('Dataset size : {0}'.format(len(dataset)))
-
-    # Initialize sampler
-    if opt.weighted_training:
-        weights = [1 / k for k in dataset.class_counts]
-        sampler = torch.utils.data.sampler.WeightedRandomSampler(
-            weights, len(dataset))
-    else:
-        sampler = torch.utils.data.sampler.RandomSampler(dataset)
+    sampler = torch.utils.data.sampler.RandomSampler(dataset)
 
     # Initialize dataloader
     dataloader = torch.utils.data.DataLoader(
@@ -111,16 +73,16 @@ def run_training(opt):
         num_workers=opt.threads,
         sampler=sampler)
 
-    if valid:
-        valid_dataloader = torch.utils.data.DataLoader(
-            valid_dataset,
-            shuffle=False,
-            batch_size=opt.batch_size,
-            num_workers=opt.threads)
+    valid_dataloader = torch.utils.data.DataLoader(
+        valid_dataset,
+        shuffle=False,
+        batch_size=opt.batch_size,
+        num_workers=opt.threads)
 
     # Load model
     resnet = models.resnet34(pretrained=opt.pretrained)
-    model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb)
+    model = resnet_adapt.ResNetAdapt(
+        opt, resnet, [dataset.class_nb, dataset.verb_nb, dataset.objects_nb])
 
     if opt.lr != opt.new_lr:
         model_params = model.lr_params(lr=opt.new_lr)
@@ -129,13 +91,7 @@ def run_training(opt):
 
     optimizer = torch.optim.SGD(model_params, lr=opt.lr, momentum=opt.momentum)
 
-    if opt.criterion == 'MSE':
-        criterion = torch.nn.MSELoss()
-    elif opt.criterion == 'CE':
-        criterion = torch.nn.CrossEntropyLoss()
-    else:
-        raise error.ArgumentError(
-            '{0} is not among known error functions'.format(opt.criterion))
+    criterion = torch.nn.CrossEntropyLoss()
 
     model.set_criterion(criterion)
     model.set_optimizer(optimizer)
@@ -148,7 +104,7 @@ def run_training(opt):
         else:
             model.load(epoch=opt.continue_epoch)
         # New learning rate for SGD TODO add momentum update
-        model.update_optimizer_lr(lr=opt.lr)
+        model.update_optimizer_lr(lr=opt.lr, momentum=opt.momentum)
 
     train.train_net(
         dataloader,
