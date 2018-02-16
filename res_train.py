@@ -96,6 +96,19 @@ def run_training(opt):
     model.set_criterion(criterion)
     model.set_optimizer(optimizer)
 
+    if opt.plateau_scheduler and opt.continue_training:
+        raise ValueError('Plateau scheduler and continue training '
+                         'are incompatible for now')
+    if opt.plateau_scheduler:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode='min',
+            factor=opt.plateau_factor,
+            patience=opt.plateau_patience,
+            threshold=opt.plateau_thresh,
+            threshold_mode='rel')
+        model.set_lr_scheduler(scheduler)
+
     # Load existing weights, opt.continue_training is epoch to load
     if opt.continue_training:
         if opt.continue_epoch == 0:
