@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from src.utils.visualize import Visualize
 from src.utils.evaluation import batch_topk_accuracy as topk
-from src.utils.evaluation import Metric
+from src.utils.evaluation import Metric, Metrics
 from src.netscripts.test import test
 
 
@@ -19,18 +19,11 @@ def train_net(dataloader,
               test_aggreg=True):
     """
     Args:
-        visualize(bool): whether to display in visdom
+    visualize(bool): whether to display in visdom
     """
-    top1 = Metric('top1', func=lambda out, pred: topk(out, pred, 1))
-    top5 = Metric('top5', func=lambda out, pred: topk(out, pred, 5))
-    loss_metric = Metric('loss', compute=False)
-    metrics = [top1, top5, loss_metric]
-    val_metrics = copy.deepcopy(metrics)
 
-    # visdom window handles
-    sample_win = None
-    if valid_dataloader is not None:
-        val_win = None
+    train_metrics = Metrics('train')
+    val_metrics = Metrics('val')
 
     viz = Visualize(opt)
     if opt.use_gpu:
@@ -43,8 +36,6 @@ def train_net(dataloader,
     # Initialize conf_mat
     classes = dataloader.dataset.classes
     class_nb = len(classes)
-    conf_win = None
-    val_conf_win = None
 
     valid_mean_scores = []
     valid_mean_win = None
@@ -60,51 +51,51 @@ def train_net(dataloader,
 
     for epoch in tqdm(range(start_epoch, last_epoch), desc='epoch'):
         # Train for one epoch
-        metrics, sample_win,\
-            conf_mat, conf_win = epoch_pass(dataloader, model, opt,
-                                            epoch, metrics, viz,
-                                            conf_mat=conf_mat,
-                                            conf_win=conf_win,
-                                            sample_win=sample_win,
-                                            train=True,
-                                            verbose=False,
-                                            visualize=visualize)
+        conf_mat = epoch_pass(
+            dataloader,
+            model,
+            opt,
+            epoch,
+            metrics=train_metrics,
+            viz=viz,
+            conf_mat=conf_mat,
+            train=True,
+            verbose=False,
+            visualize=visualize)
         if visualize:
-            conf_win = viz.plot_mat(
-                conf_mat[epoch], win=conf_win, title='train conf mat')
+            viz.plot_mat(
+                'train_confmat', conf_mat[epoch], title='train conf mat')
 
         if valid_dataloader is not None:
             # Validation for one epoch
-            val_metrics, val_win,\
-                val_conf_mat, val_conf_win = epoch_pass(valid_dataloader,
-                                                        model,
-                                                        opt, epoch,
-                                                        conf_mat=val_conf_mat,
-                                                        conf_win=val_conf_win,
-                                                        metrics=val_metrics,
-                                                        viz=viz,
-                                                        sample_win=val_win,
-                                                        train=False,
-                                                        verbose=False,
-                                                        visualize=visualize)
+            val_conf_mat = epoch_pass(
+                valid_dataloader,
+                model,
+                opt,
+                epoch,
+                conf_mat=val_conf_mat,
+                metrics=val_metrics,
+                viz=viz,
+                train=False,
+                verbose=False,
+                visualize=visualize)
 
         # Update learning rate scheduler according to loss
         if model.lr_scheduler is not None:
-            for metric in val_metrics:
-                if metric.name == 'loss':
-                    # Retrieve latest loss for lr scheduler
-                    loss = metric.evolution[-1]
-                    lr = model.scheduler_step(loss)
-                    viz.log_errors(
-                        epoch=epoch,
-                        errors={'lr': lr,
-                                'loss': loss},
-                        log_path=viz.lr_history_path)
+            # Retrieve latest loss for lr scheduler
+            loss_metric = val_metrics.metrics['loss']
+            loss = loss_metric.evolution[-1]
+            lr = model.scheduler_step(loss)
+            viz.log_errors(
+                epoch=epoch,
+                errors={'lr': lr,
+                        'loss': loss},
+                log_path=viz.lr_history_path)
 
         # Display valid conf mat
         if visualize:
-            val_conf_win = viz.plot_mat(
-                val_conf_mat[epoch], win=val_conf_win, title='val conf mat')
+            viz.plot_mat(
+                'val_confmat', val_conf_mat[epoch], title='val conf mat')
 
         # Save network weights
         if opt.save_latest:
@@ -152,12 +143,11 @@ def data_pass(model,
               metrics=None,
               viz=None,
               conf_mat=None,
-              sample_win=None,
               train=True,
               visualize=True):
     """
     Args:
-        visualize(bool): whether to display in visdom
+    visualize(bool): whether to display in visdom
     """
     if train:
         volatile = False
@@ -171,19 +161,28 @@ def data_pass(model,
     loss = model.compute_loss(output, target)
 
     if train:
-        model.step_backward(loss)
+        model.step_backward(loss, opt.multi_weights)
 
-    for metric in metrics:
-        if metric.compute:
-            if isinstance(output, (tuple, list)):
-                output = output[0]
-                target = target[0]
-            score = metric.func(output.data, target.data)
-            metric.epoch_scores.append((score.sum(), len(score)))
-        if metric.name == 'loss':
-            if isinstance(loss, (tuple, list)):
-                loss = loss[0]
-            metric.epoch_scores.append((loss.data[0] * len(score), len(score)))
+    top1_score = topk(output.data, target.data, 1)
+    top5_score = topk(output.data, target.data, 5)
+    metrics.add_metric_score('top1', (top1_score.sum(), len(top1_score)))
+    metrics.add_metric_score('top5', (top5_score.sum(), len(top1_score)))
+    metrics.add_metric_score('loss', (loss.data[0] * len(top1_score),
+                                      len(top1_score)))
+    if isinstance(target, (tuple, list)):
+        output = output[0]
+        target = target[0]
+        top1_score = topk(output.data, target.data, 1)
+        top5_score = topk(output.data, target.data, 5)
+        metrics.add_metric_score('top1', (top1_score.sum(), len(top1_score)))
+        metrics.add_metric_score('top5', (top5_score, len(top1_score)))
+        # elif isinstance(target, dict):
+        #   for idx, (target_name, target_value) in enumerate(target.items()):
+        #         score = metric.func(output[idx].data, target_value)
+        if isinstance(loss, (tuple, list)):
+            loss = loss[0]
+        metrics.add_metric_score('loss', (loss.data[0] * len(top1_score),
+                                          len(top1_score)))
 
     if conf_mat is not None:
         pred_classes = output.data.max(1)[1].cpu().numpy()
@@ -194,11 +193,12 @@ def data_pass(model,
     # Display an image example in visdom
     if visualize:
         if viz is not None and i % opt.display_freq == 0:
-            sample_win = viz.plot_sample(image.data, target.data, output.data,
-                                         dataloader.dataset.classes,
-                                         sample_win)
+            prefix = 'train_' if train else 'val_'
+            sample_name = prefix + 'sample'
+            viz.plot_sample(sample_name, image.data, target.data, output.data,
+                            dataloader.dataset.classes)
 
-    return metrics, sample_win, conf_mat
+    return conf_mat
 
 
 def epoch_pass(dataloader,
@@ -207,7 +207,6 @@ def epoch_pass(dataloader,
                epoch,
                metrics,
                viz,
-               sample_win=None,
                train=True,
                verbose=False,
                conf_mat=None,
@@ -218,39 +217,45 @@ def epoch_pass(dataloader,
     else:
         model.net.eval()
     for i, (image, target) in enumerate(tqdm(dataloader, desc='iter')):
-        metrics, sample_win,\
-            conf_mat = data_pass(model, image, target,
-                                 opt, epoch=epoch,
-                                 metrics=metrics,
-                                 dataloader=dataloader,
-                                 viz=viz,
-                                 conf_mat=conf_mat,
-                                 sample_win=sample_win,
-                                 i=i, train=train,
-                                 visualize=visualize)
+        conf_mat = data_pass(
+            model,
+            image,
+            target,
+            opt,
+            epoch=epoch,
+            metrics=metrics,
+            dataloader=dataloader,
+            viz=viz,
+            conf_mat=conf_mat,
+            i=i,
+            train=train,
+            visualize=visualize)
 
     # Display confusion matrix
     epoch_conf_mat = conf_mat[epoch]
     if visualize:
-        conf_win = viz.plot_mat(epoch_conf_mat, conf_win)
+        viz.plot_mat('train_confmat', epoch_conf_mat, title='train conf mat')
 
     # Compute epoch scores and clear current scores
-    for metric in metrics:
+    for metric in metrics.metrics.values():
         metric.update_epoch()
 
-    last_scores = {metric.name: metric.evolution[-1] for metric in metrics}
+    last_scores = {
+        metric.name: metric.evolution[-1]
+        for metric in metrics.metrics.values()
+    }
 
     # Display scores in visdom
-    for metric in metrics:
-        plt_title = 'valid ' + metric.name if train is False else metric.name
+
+    for metric_name, metric in metrics.metrics.items():
+        plt_title = '{}_{}'.format(metrics.name, metric.name)
         scores = np.array(metric.evolution)
         if visualize:
-            win = viz.plot_errors(
+            viz.plot_errors(
+                plt_title,
                 np.array(list(range(len(scores)))),
                 scores,
-                title=plt_title,
-                win=metric.win)
-            metric.win = win
+                title=plt_title)
 
     # Write scores to log file
     valid = True if train is False else False
@@ -268,4 +273,4 @@ def epoch_pass(dataloader,
 
     viz.save()
 
-    return metrics, sample_win, conf_mat, conf_win
+    return conf_mat

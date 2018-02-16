@@ -10,6 +10,11 @@ import visdom
 from actiondatasets.utils import display as displayutils
 
 
+def get_rand_win_id():
+    postfix = str(hex(int(time.time() * 10000000))[2:])
+    return 'win_{}'.format(postfix)
+
+
 class Visualize():
     def __init__(self, opt):
         self.vis = visdom.Visdom(port=opt.display_port)
@@ -57,6 +62,9 @@ class Visualize():
             print('Failed to launch visdom on port {} !!'.format(
                 opt.display_port))
             self.save()
+        self.error_windows = {}
+        self.sample_windows = {}
+        self.matrix_windows = {}
 
     def log_errors(self, epoch, errors, valid=False, log_path=None):
         """log_path overrides the destination path of the log
@@ -84,7 +92,13 @@ class Visualize():
             log_file.write(message + '\n')
         return message
 
-    def plot_errors(self, epochs, errors, title='score', win=None):
+    def plot_errors(self, window_name, epochs, errors, title='score'):
+        if window_name in self.error_windows:
+            win = self.error_windows[window_name]
+        else:
+            win = get_rand_win_id()
+            self.error_windows[window_name] = win
+
         if win is None:
             win = self.vis.line(
                 X=epochs,
@@ -105,11 +119,11 @@ class Visualize():
         return win
 
     def plot_sample(self,
+                    window_name,
                     input_imgs,
                     gts,
                     predictions,
                     classes,
-                    win,
                     display_idx=0,
                     k=1,
                     time_max=8,
@@ -122,6 +136,13 @@ class Visualize():
             time_step (int): number of time steps between two displayed frames
 
         """
+        # Retrieve window id if exists
+        if window_name in self.sample_windows:
+            win = self.sample_windows[window_name]
+        else:
+            win = get_rand_win_id()
+            self.sample_windows[window_name] = win
+
         time_input_imgs = input_imgs[display_idx]  # take first batch sample
         pred_val, topk_classes = predictions[display_idx].topk(k)
 
@@ -152,29 +173,26 @@ class Visualize():
         else:
             input_img = time_input_imgs
 
-        if win is None:
-            win = self.vis.image(
-                input_img,
-                env=self.opt.exp_id,
-                opts={'title': 'sample',
-                      'caption': caption,
-                      'win_size': 256})
-        else:
-            win = self.vis.image(
-                input_img,
-                env=self.opt.exp_id,
-                opts={'title': 'sample',
-                      'caption': caption,
-                      'win_size': 256},
-                win=win)
+        win = self.vis.image(
+            input_img,
+            env=self.opt.exp_id,
+            opts={'title': 'sample',
+                  'caption': caption,
+                  'win_size': 256},
+            win=win)
         return win
 
     def plot_mat(self,
+                 window_name,
                  mat,
-                 win=None,
                  title='',
                  normalize_row=True,
                  labels=None):
+        if window_name in self.matrix_windows:
+            win = self.matrix_windows[window_name]
+        else:
+            win = get_rand_win_id()
+            self.matrix_windows[window_name] = win
         mat = np.copy(mat)
         if normalize_row:
             for i in range(mat.shape[0]):
@@ -184,13 +202,7 @@ class Visualize():
         if labels is not None:
             opts['columnnames'] = labels
             opts['rownames'] = labels
-        if win is None:
-            win = self.vis.heatmap(
-                mat, env=self.opt.exp_id, win=win, opts=opts)
-        else:
-            win = self.vis.heatmap(
-                mat, env=self.opt.exp_id, win=win, opts=opts)
-        return win
+        win = self.vis.heatmap(mat, env=self.opt.exp_id, win=win, opts=opts)
 
     def save(self):
         self.vis.save([self.opt.exp_id])
