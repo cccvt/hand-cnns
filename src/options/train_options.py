@@ -93,3 +93,15 @@ def add_train_options(options):
         default=100,
         help='number of iters between displays of results\
                              in visdom')
+
+    # Multi training params
+    parser.add_argument(
+        '--multi_weights',
+        nargs='+',
+        type=float,
+        help='Weights for each loss term in mutlitraining')
+    parser.add_argument(
+        '--multi_prefixes',
+        nargs='+',
+        type=str,
+        help='Prefixes for each loss term in mutlitraining')

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import torch
 
@@ -136,6 +137,15 @@ class BaseNet():
                     tens, volatile=volatile, requires_grad=requires_grad)
                 variables.append(var)
             return variables
+        elif isinstance(tensor, dict):
+            variables = {}
+            for key, tens in tensor.items():
+                tens = tens.cuda()
+                var = torch.autograd.Variable(
+                    tens, volatile=volatile, requires_grad=requires_grad)
+                variables[key] = var
+            return variables
+
         else:
             if self.opt.use_gpu:
                 tensor = tensor.cuda()
@@ -157,6 +167,15 @@ class BaseNet():
                     loss = self.criterion(out, target_idxs.view(-1))
                     losses.append(loss)
                 return losses
+            elif isinstance(target, dict):
+                losses = OrderedDict()
+                for idx, (target_name,
+                          target_value) in enumerate(target.items()):
+                    out = output[idx]
+                    target_vals, target_idxs = target_value.max(1)
+                    losses[target_name] = self.criterion(
+                        out, target_idxs.view(-1))
+                return losses
 
             else:
                 target_vals, target_idxs = target.max(1)
@@ -166,11 +185,20 @@ class BaseNet():
                     functions'.format(self.opt.criterion))
         return loss
 
-    def step_backward(self, loss):
+    def step_backward(self, loss, multi_weights=None):
         # Compute gradient and do gradient step
         self.optimizer.zero_grad()
         if isinstance(loss, (list, tuple)):
-            loss = sum(loss)
+            loss = sum(
+                [weight * los for weight, los in zip(multi_weights, loss)])
+        if isinstance(loss, dict):
+            assert multi_weights is not None, (
+                'When loss is dict,'
+                'multi_weights should be defined')
+            loss = sum([
+                weight * los
+                for weight, los in zip(multi_weights, list(loss.values()))
+            ])
         loss.backward()
         self.optimizer.step()
 

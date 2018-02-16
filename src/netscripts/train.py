@@ -83,7 +83,10 @@ def train_net(dataloader,
         # Update learning rate scheduler according to loss
         if model.lr_scheduler is not None:
             # Retrieve latest loss for lr scheduler
-            loss_metric = val_metrics.metrics['loss']
+            if len(opt.multi_weights):
+                loss_metric = val_metrics.metrics['loss_action']
+            else:
+                loss_metric = val_metrics.metrics['loss']
             loss = loss_metric.evolution[-1]
             lr = model.scheduler_step(loss)
             viz.log_errors(
@@ -163,28 +166,32 @@ def data_pass(model,
     if train:
         model.step_backward(loss, opt.multi_weights)
 
-    top1_score = topk(output.data, target.data, 1)
-    top5_score = topk(output.data, target.data, 5)
-    metrics.add_metric_score('top1', (top1_score.sum(), len(top1_score)))
-    metrics.add_metric_score('top5', (top5_score.sum(), len(top1_score)))
-    metrics.add_metric_score('loss', (loss.data[0] * len(top1_score),
+    if isinstance(target, dict):
+        for idx, (out_name, targ) in enumerate(target.items()):
+            out = output[idx]
+            top1_score = topk(out.data, targ.data, 1)
+            top5_score = topk(out.data, targ.data, 5)
+            metrics.add_metric_score('top1_{}'.format(out_name),
+                                     (top1_score.sum(), len(top1_score)))
+            metrics.add_metric_score('top5_{}'.format(out_name),
+                                     (top5_score.sum(), len(top1_score)))
+        for idx, (loss_name, los) in enumerate(loss.items()):
+            metrics.add_metric_score('loss_{}'.format(loss_name),
+                                     (los.data[0] * len(top1_score),
                                       len(top1_score)))
-    if isinstance(target, (tuple, list)):
-        output = output[0]
-        target = target[0]
+    else:
         top1_score = topk(output.data, target.data, 1)
         top5_score = topk(output.data, target.data, 5)
         metrics.add_metric_score('top1', (top1_score.sum(), len(top1_score)))
-        metrics.add_metric_score('top5', (top5_score, len(top1_score)))
-        # elif isinstance(target, dict):
-        #   for idx, (target_name, target_value) in enumerate(target.items()):
-        #         score = metric.func(output[idx].data, target_value)
-        if isinstance(loss, (tuple, list)):
-            loss = loss[0]
+        metrics.add_metric_score('top5', (top5_score.sum(), len(top1_score)))
         metrics.add_metric_score('loss', (loss.data[0] * len(top1_score),
                                           len(top1_score)))
 
     if conf_mat is not None:
+        # Only register confmat for first output
+        if isinstance(target, dict):
+            output = output[0]
+            target = target['action']
         pred_classes = output.data.max(1)[1].cpu().numpy()
         target_classes = target.data.max(1)[1].cpu().numpy()
         for idx in range(len(pred_classes)):
@@ -246,16 +253,35 @@ def epoch_pass(dataloader,
     }
 
     # Display scores in visdom
-
-    for metric_name, metric in metrics.metrics.items():
-        plt_title = '{}_{}'.format(metrics.name, metric.name)
-        scores = np.array(metric.evolution)
-        if visualize:
-            viz.plot_errors(
-                plt_title,
-                np.array(list(range(len(scores)))),
-                scores,
-                title=plt_title)
+    if len(opt.multi_weights):
+        metric_groups = ['action', 'verb', 'objects']
+        for metric_name in ['top1', 'top5', 'loss']:
+            scores = [
+                metrics.metrics['{}_{}'.format(metric_name, group)].evolution
+                for group in metric_groups
+            ]
+            #  scores = np.transpose(np.array(scores), (1, 0))
+            scores = np.array(scores)
+            score_names = [
+                '{}_{}_{}'.format(metrics.name, metric_name, group)
+                for group in metric_groups
+            ]
+            epochs = np.array(list(range(scores.shape[1])))
+            scores = scores.transpose(1, 0)
+            if visualize:
+                plt_id = '{}_{}'.format(metrics.name, metric_name)
+                viz.plot_errors(
+                    plt_id, epochs, scores, title=plt_id, legend=score_names)
+    else:
+        for metric_name, metric in metrics.metrics.items():
+            plt_title = '{}_{}'.format(metrics.name, metric.name)
+            scores = np.array(metric.evolution)
+            if visualize:
+                viz.plot_errors(
+                    plt_title,
+                    np.array(list(range(len(scores)))),
+                    scores,
+                    title=plt_title)
 
     # Write scores to log file
     valid = True if train is False else False
@@ -264,7 +290,8 @@ def epoch_pass(dataloader,
     # Sanity check, top1 score should be the same as accuracy from conf_mat
     # while accounting for last batch discrepancy
 
-    if last_scores['top1'] != epoch_conf_mat.trace() / epoch_conf_mat.sum():
+    if 'top1' in last_scores and last_scores['top1'] != epoch_conf_mat.trace(
+    ) / epoch_conf_mat.sum():
         import pdb
         pdb.set_trace()
 

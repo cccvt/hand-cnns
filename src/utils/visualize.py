@@ -92,30 +92,23 @@ class Visualize():
             log_file.write(message + '\n')
         return message
 
-    def plot_errors(self, window_name, epochs, errors, title='score'):
+    def plot_errors(self,
+                    window_name,
+                    epochs,
+                    errors,
+                    title='score',
+                    legend=None):
         if window_name in self.error_windows:
             win = self.error_windows[window_name]
         else:
             win = get_rand_win_id()
             self.error_windows[window_name] = win
 
-        if win is None:
-            win = self.vis.line(
-                X=epochs,
-                Y=errors,
-                env=self.opt.exp_id,
-                opts={'title': title,
-                      'xlabel': 'epoch',
-                      'ylabel': 'score'})
-        else:
-            self.vis.line(
-                X=epochs,
-                Y=errors,
-                env=self.opt.exp_id,
-                opts={'title': title,
-                      'xlabel': 'epoch',
-                      'ylabel': 'score'},
-                win=win)
+        opts = {'title': title, 'xlabel': 'epoch', 'ylabel': 'score'}
+        if legend is not None:
+            opts['legend'] = legend
+        self.vis.line(
+            X=epochs, Y=errors, env=self.opt.exp_id, opts=opts, win=win)
         return win
 
     def plot_sample(self,
