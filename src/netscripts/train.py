@@ -83,7 +83,7 @@ def train_net(dataloader,
         # Update learning rate scheduler according to loss
         if model.lr_scheduler is not None:
             # Retrieve latest loss for lr scheduler
-            if len(opt.multi_weights):
+            if opt.multi_weights is not None and len(opt.multi_weights):
                 loss_metric = val_metrics.metrics['loss_action']
             else:
                 loss_metric = val_metrics.metrics['loss']
@@ -253,7 +253,7 @@ def epoch_pass(dataloader,
     }
 
     # Display scores in visdom
-    if len(opt.multi_weights):
+    if opt.multi_weights is not None and len(opt.multi_weights):
         metric_groups = ['action', 'verb', 'objects']
         for metric_name in ['top1', 'top5', 'loss']:
             scores = [
