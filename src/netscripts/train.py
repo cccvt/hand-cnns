@@ -62,6 +62,7 @@ def train_net(dataloader,
             train=True,
             verbose=False,
             visualize=visualize)
+
         if visualize:
             viz.plot_mat(
                 'train_confmat', conf_mat[epoch], title='train conf mat')
@@ -238,11 +239,6 @@ def epoch_pass(dataloader,
             train=train,
             visualize=visualize)
 
-    # Display confusion matrix
-    epoch_conf_mat = conf_mat[epoch]
-    if visualize:
-        viz.plot_mat('train_confmat', epoch_conf_mat, title='train conf mat')
-
     # Compute epoch scores and clear current scores
     for metric in metrics.metrics.values():
         metric.update_epoch()
@@ -289,7 +285,7 @@ def epoch_pass(dataloader,
 
     # Sanity check, top1 score should be the same as accuracy from conf_mat
     # while accounting for last batch discrepancy
-
+    epoch_conf_mat = conf_mat[epoch]
     if 'top1' in last_scores and last_scores['top1'] != epoch_conf_mat.trace(
     ) / epoch_conf_mat.sum():
         import pdb
