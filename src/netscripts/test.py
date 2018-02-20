@@ -24,8 +24,7 @@ def test(dataloader,
          viz=None,
          opt=None,
          save_predictions=False,
-         smthg=True,
-         mode='stride'):
+         smthg=True):
     """Performs average pooling on each action clip sample
     """
     model.net.eval()
@@ -48,25 +47,26 @@ def test(dataloader,
             sample = torch.cat([sample] * repetitions, dim=2)
             sample = sample[:, :, 0:opt.clip_size]
 
-        if mode == 'full':
+        if opt.mode == 'full':
             sample = sample
 
         # Extract clips with a fixed stride between them
-        elif mode == 'stride':
-            time_stride = 8
+        elif opt.mode == 'stride':
             max_samples = 44
             sample = sample[0]  # Remove batch dimension
+            time_stride = opt.mode_param
             if time_size < opt.clip_size + time_stride:
                 subsamples = [sample]
             else:
+                subsample_nb = opt.mode_param
                 subsample_idxs = list(
-                    range(0, time_size - opt.clip_size, time_stride))
+                    range(0, time_size - opt.clip_size, subsample_nb))
                 subsamples = [
                     sample[:, start_idx:start_idx + opt.clip_size]
                     for start_idx in subsample_idxs
                 ]
                 subsamples = subsamples[:max_samples]
-        elif mode == 'subsample':
+        elif opt.mode == 'subsample':
             sample = sample[0]  # Remove batch dimension
             if time_size < opt.clip_size:
                 subsamples = [sample]
@@ -82,11 +82,11 @@ def test(dataloader,
                 ]
 
         # Extract a fixed number of clips uniformly sampled in video
-        if mode == 'subsample' or mode == 'stride':
-            print('Got {} subsamples in mode {}'.format(len(subsamples), mode))
+        if opt.mode == 'subsample' or opt.mode == 'stride':
+            print('Got {} subsamples in mode {}'.format(
+                len(subsamples), opt.mode))
             sample = torch.stack(subsamples)
 
-        print(sample.shape)
         class_idx = dataloader.dataset.dataset.get_class_idx(idx)
         # Prepare vars
         imgs_var = model.prepare_var(sample, volatile=True)
@@ -94,6 +94,10 @@ def test(dataloader,
         outputs = model.net(imgs_var)
         # Remove batch dimension
         # outputs = torch.nn.functional.softmax(outputs, dim=0)
+
+        # When multiplt classifier use the first for evaluation
+        if isinstance(outputs, (tuple, list)):
+            outputs = outputs[0]
         outputs = outputs.mean(0)
         if outputs.dim() == 3:
             outputs = outputs.mean(2)
