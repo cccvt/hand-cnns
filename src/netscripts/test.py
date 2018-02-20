@@ -58,9 +58,8 @@ def test(dataloader,
             if time_size < opt.clip_size + time_stride:
                 subsamples = [sample]
             else:
-                subsample_nb = opt.mode_param
                 subsample_idxs = list(
-                    range(0, time_size - opt.clip_size, subsample_nb))
+                    range(0, time_size - opt.clip_size, time_stride))
                 subsamples = [
                     sample[:, start_idx:start_idx + opt.clip_size]
                     for start_idx in subsample_idxs
@@ -72,7 +71,7 @@ def test(dataloader,
                 subsamples = [sample]
             else:
                 subsample_idxs = np.linspace(0, time_size - opt.clip_size,
-                                             opt.frame_nb)
+                                             opt.mode_param)
                 subsample_idxs = [
                     int(frame_idx) for frame_idx in subsample_idxs
                 ]

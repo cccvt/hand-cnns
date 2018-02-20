@@ -18,7 +18,7 @@ class ResNetAdapt(BaseNet):
         if isinstance(class_nb, numbers.Number):
             self.net.fc = nn.Linear(in_features_nb, class_nb)
         else:
-            self.net.fc = MultiClassifier(in_features_nb, class_nb)
+            self.net.fc = MultiLinearClassifier(in_features_nb, class_nb)
         if in_channels is not None:
             conv1 = self.net.conv1
             self.net.conv1 = nn.Conv2d(
@@ -32,11 +32,10 @@ class ResNetAdapt(BaseNet):
         self.input_size = (224, 224)
 
 
-class MultiClassifier(nn.Module):
+class MultiLinearClassifier(nn.Module):
     def __init__(self, in_features, class_nbs):
         super().__init__()
         self.in_features = in_features
-        self.class_nbs = class_nbs
         classifier_names = []
         for classifier_idx, class_nb in enumerate(class_nbs):
             classifier = nn.Linear(in_features, class_nb)

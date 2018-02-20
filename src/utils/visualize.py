@@ -207,7 +207,7 @@ def prepare_img(input_img):
     """
     channel_size = input_img.shape[0]
     # if non canonical number of channels (not 3), extract first channel
-    if channel_size != 3 and channel_size != 2:
+    if channel_size > 3:
         input_img = input_img.sum(0)  # sum channels to one dim
 
     # If two channels treat like flow

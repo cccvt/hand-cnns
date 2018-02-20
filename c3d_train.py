@@ -29,6 +29,8 @@ def run_training(opt):
         channel_nb = opt.heatmap_nb
     elif opt.use_flow:
         channel_nb = 2
+    elif opt.use_objectness:
+        channel_nb = 1
     else:
         channel_nb = 3
 
@@ -62,14 +64,20 @@ def run_training(opt):
         ]
         train_seqs, valid_seqs = evaluation.leave_one_out(
             all_subjects, leave_out_idx)
+        if opt.multi_weights is not None and len(opt.multi_weights):
+            multi = True
+        else:
+            multi = False
         dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
+            use_objectness=opt.use_objectness,
             heatmap_size=scale_size,
             original_labels=True,
             rescale_flows=opt.rescale_flows,
             seqs=train_seqs,
-            use_flow=opt.use_flow)
+            use_flow=opt.use_flow,
+            multi=multi)
         val_dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
@@ -77,7 +85,9 @@ def run_training(opt):
             original_labels=True,
             rescale_flows=opt.rescale_flows,
             seqs=valid_seqs,
-            use_flow=opt.use_flow)
+            use_flow=opt.use_flow,
+            use_objectness=opt.use_objectness,
+            multi=multi)
     elif opt.dataset == 'smthg':
         dataset = smthg.Smthg(
             flow_type=opt.flow_type,

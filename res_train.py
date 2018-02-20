@@ -81,8 +81,7 @@ def run_training(opt):
 
     # Load model
     resnet = models.resnet34(pretrained=opt.pretrained)
-    model = resnet_adapt.ResNetAdapt(
-        opt, resnet, [dataset.class_nb, dataset.verb_nb, dataset.objects_nb])
+    model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb)
 
     model_params = model.net.parameters()
 

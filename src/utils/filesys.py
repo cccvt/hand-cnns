@@ -1,7 +1,7 @@
 import os
 
 
-def mkdir(path, safeguard=True):
+def mkdir(path, safeguard=False):
     if not os.path.exists(path):
         os.makedirs(path)
     else:

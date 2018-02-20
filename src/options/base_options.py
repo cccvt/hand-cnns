@@ -49,6 +49,10 @@ class BaseOptions():
             action='store_true',
             help='Whether to use flow or RGB')
         self.parser.add_argument(
+            '--use_objectness',
+            action='store_true',
+            help='Whether to use objectness images')
+        self.parser.add_argument(
             '--flow_type', type=str, default='tvl1', help='in [farn|tvl1]')
         self.parser.add_argument(
             '--rescale_flows',

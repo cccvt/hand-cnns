@@ -269,9 +269,18 @@ class I3D(torch.nn.Module):
             return out
         out = self.dropout(out)
         out = self.conv3d_0c_1x1(out)
-        out = out.squeeze(3)
-        out = out.squeeze(3)
-        out = out.mean(2)
+        if isinstance(out, (tuple, list)):
+            multi_out = []
+            for single_out in out:
+                single_out = single_out.squeeze(3)
+                single_out = single_out.squeeze(3)
+                single_out = single_out.mean(2)
+                multi_out.append(single_out)
+            return multi_out
+        else:
+            out = out.squeeze(3)
+            out = out.squeeze(3)
+            out = out.mean(2)
         return out
 
     def load_tf_weights(self, sess):
