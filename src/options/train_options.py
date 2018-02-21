@@ -105,3 +105,6 @@ def add_train_options(options):
         nargs='+',
         type=str,
         help='Prefixes for each loss term in mutlitraining')
+
+    parser.add_argument(
+        '--mini_factor', type=float, help='Work with small version of dataset')

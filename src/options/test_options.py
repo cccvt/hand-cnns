@@ -29,3 +29,8 @@ def add_test_options(options):
         help="Time stride when mode is stride, number of samples\
         when mode is subsample")
     parser.add_argument('--epoch', type=str, help='Index of epoch to load')
+
+    parser.add_argument(
+        '--multi',
+        action='store_true',
+        help="Indicates that several classfiers where used during training")

@@ -20,6 +20,7 @@ from src.utils import evaluation
 
 
 def run_training(opt):
+    cv2.setNumThreads(0)
     # Index of sequence item to leave out for validation
     leave_out_idx = opt.leave_out
 
@@ -77,7 +78,8 @@ def run_training(opt):
             rescale_flows=opt.rescale_flows,
             seqs=train_seqs,
             use_flow=opt.use_flow,
-            multi=multi)
+            multi=multi,
+            mini_factor=opt.mini_factor)
         val_dataset = GTEAGazePlus(
             flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
@@ -87,29 +89,34 @@ def run_training(opt):
             seqs=valid_seqs,
             use_flow=opt.use_flow,
             use_objectness=opt.use_objectness,
-            multi=multi)
+            multi=multi,
+            mini_factor=opt.mini_factor)
     elif opt.dataset == 'smthg':
         dataset = smthg.Smthg(
             flow_type=opt.flow_type,
             rescale_flows=opt.rescale_flows,
             use_flow=opt.use_flow,
-            split='train')
+            split='train',
+            mini_factor=opt.mini_factor)
 
         val_dataset = smthg.Smthg(
             flow_type=opt.flow_type,
             rescale_flows=opt.rescale_flows,
             split='valid',
-            use_flow=opt.use_flow)
+            use_flow=opt.use_flow,
+            mini_factor=opt.mini_factor)
     elif opt.dataset == 'smthgv2':
         dataset = smthgv2.SmthgV2(
             use_flow=opt.use_flow,
             split='train',
-            rescale_flows=opt.rescale_flows)
+            rescale_flows=opt.rescale_flows,
+            mini_factor=opt.mini_factor)
 
         val_dataset = smthgv2.SmthgV2(
             split='valid',
             use_flow=opt.use_flow,
-            rescale_flows=opt.rescale_flows)
+            rescale_flows=opt.rescale_flows,
+            mini_factor=opt.mini_factor)
     else:
         raise ValueError('the opt.dataset name provided {0} is not handled'
                          'by this script'.format(opt.dataset))

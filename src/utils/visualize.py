@@ -165,7 +165,6 @@ class Visualize():
             input_img = np.concatenate(stack_imgs, axis=2)
         else:
             input_img = time_input_imgs
-
         win = self.vis.image(
             input_img,
             env=self.opt.exp_id,
@@ -214,8 +213,7 @@ def prepare_img(input_img):
     elif channel_size == 2:
         angle, mag = displayutils.radial_flow(
             np.stack((input_img[0], input_img[1]), 2))
-        angle, mag = displayutils.normalize_flow(angle, mag)
-
+        angle, mag = displayutils.normalize_flow(angle, mag, clamp_mag=None)
         input_img = np.stack((angle, mag, np.ones_like(angle)), 2)
         input_img = hsv_to_rgb(input_img)  # In range [0, 1]
         input_img = input_img.transpose(2, 0, 1)

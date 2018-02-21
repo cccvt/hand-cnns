@@ -22,6 +22,7 @@ os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 def run_testing(opt):
+    cv2.setNumThreads(0)
     scale_size = 256  # int or (height, width)
     crop_size = 224
     if opt.use_heatmaps:
@@ -64,7 +65,8 @@ def run_testing(opt):
             heatmap_size=crop_size,
             rescale_flows=opt.rescale_flows,
             seqs=valid_seqs,
-            use_flow=opt.use_flow)
+            use_flow=opt.use_flow,
+            multi=opt.multi)
     action_dataset = ActionDataset(
         dataset, clip_size=opt.clip_size, transform=video_transform, test=True)
     assert opt.batch_size == 1, 'During testing batch size should be 1 bug got {}'.format(
