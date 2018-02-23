@@ -11,6 +11,7 @@ from actiondatasets.gteagazeplus import GTEAGazePlus
 
 from src.netscripts.test import save_preds
 from src.utils import options
+from src.post_utils.display import plot_confmat
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -29,6 +30,10 @@ parser.add_argument(
     default='checkpoints/test/gtea_gaze_plus',
     help='')
 parser.add_argument(
+    '--subfolder',
+    type=str,
+    help='Subfolder of gtea_lo_x containing prediction_scores.pickle')
+parser.add_argument(
     '--weights',
     type=float,
     nargs='+',
@@ -37,6 +42,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 save_folder = os.path.join(args.destination_folder)
+result_file = os.path.join(save_folder, 'result.txt')
 options.process_args(args, save_folder)
 
 # softmax = torch.nn.Softmax()
@@ -63,8 +69,12 @@ for leave_out_idx in leave_out_idxs:
     all_scores = []
     idx_lists = []
     for folder_path in args.score_paths:
-        score_path = os.path.join(folder_path, 'gtea_lo_' + str(leave_out_idx),
-                                  'prediction_scores.pickle')
+        test_folder = os.path.join(folder_path,
+                                   'gtea_lo_' + str(leave_out_idx))
+        if args.subfolder is not None:
+            test_folder = os.path.join(test_folder, args.subfolder)
+
+        score_path = os.path.join(test_folder, 'prediction_scores.pickle')
         with open(score_path, 'rb') as f:
             scores = pickle.load(f)
             print("Got {} scores from {}".format(len(scores), score_path))
@@ -79,10 +89,10 @@ for leave_out_idx in leave_out_idxs:
         ]
         idx_lists.append(scored_idxs)
 
-        assert len(scored_idxs) == len(all_scores[i]),\
-            'Received {} predictions for {} samples'.format(
-                len(all_scores[i]),
-                len(scored_idxs))
+        err_mess = ('Received {} predictions for {} samples'.format(
+            len(all_scores[i]), len(scored_idxs)))
+        assert len(scored_idxs) == len(all_scores[i]), err_mess
+
     mean_preds = {}
 
     # Compute scores
@@ -124,19 +134,31 @@ for leave_out_idx in leave_out_idxs:
     final_scores.append(acc)
     conf_mats.append(conf_mat)
 
+print('Retrieved scores {}'.format(final_scores))
+
+final_mean_score = sum(final_scores) / len(final_scores)
+print('mean : {}'.format(final_mean_score))
+
+with open(result_file, 'w') as res_f:
+    res_f.write('mean score {} folds: {}'.format(
+        len(leave_out_idxs), final_mean_score))
+
 class_accs = {}
 class_freqs = {}
 
 sum_conf_mat = conf_mats[0]
 for mat in conf_mats[1:]:
     sum_conf_mat = sum_conf_mat + mat
+
+plot_confmat(sum_conf_mat, normalize=True, labels=dataset.classes, cmap='jet')
+
 for class_idx, class_preds in enumerate(sum_conf_mat):
     class_acc = class_preds[class_idx] / np.sum(class_preds)
     class_accs[dataset.classes[class_idx]] = class_acc
     class_freqs[dataset.classes[class_idx]] = np.sum(class_preds) / np.sum(
         sum_conf_mat)
 
-class_accs = OrderedDict(sorted(class_accs.items(), key=lambda t: t[1]))
+    class_accs = OrderedDict(sorted(class_accs.items(), key=lambda t: t[1]))
 class_freqs = OrderedDict(sorted(class_freqs.items(), key=lambda t: t[1]))
 
 
@@ -173,8 +195,6 @@ labels = [dataset.get_class_str(act, obj) for act, obj in class_accs.keys()]
 ax.set_xticklabels(labels, rotation=90)
 fig.tight_layout()
 plt.show()
-print('Retrieved scores {}'.format(final_scores))
-print('mean : {}'.format(sum(final_scores) / len(final_scores)))
 
 import pdb
 pdb.set_trace()

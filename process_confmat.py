@@ -4,20 +4,11 @@ from operator import itemgetter
 import pickle
 import os
 
-import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
 import numpy as np
 
 from actiondatasets.gteagazeplus import GTEAGazePlus
-
-
-def normalize_rows(mat):
-    mat = np.copy(mat)
-    for i, row in enumerate(mat):
-        norm_row = row.sum() or 1
-        mat[i] = row / norm_row
-    return mat
+from src.post_utils.display import plot_epoch_conf_mat
 
 
 def get_confmat(path):
@@ -26,51 +17,6 @@ def get_confmat(path):
     with open(path, 'rb') as confmat_file:
         conf_mat = pickle.load(confmat_file)
     return conf_mat
-
-
-def plot_conf_mat(confmat,
-                  title=None,
-                  labels=None,
-                  epoch=None,
-                  normalize=False):
-    """
-    Args:
-        score_type (str): label for current curve, [valid|train|aggreg]
-    """
-    if epoch is None:
-        mat = confmat[-1]
-    else:
-        if epoch > confmat.shape[0]:
-            raise ValueError(
-                'Epoch {} should be below {}'.format(epoch, confmat.shape[0]))
-        mat = confmat[epoch]
-        # Plot confmat
-    if normalize:
-        mat = normalize_rows(mat)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    cax = ax.imshow(mat, cmap='viridis')
-    fig.colorbar(cax)
-    if title is not None:
-        ax.set_title(title)
-    if labels is not None:
-        str_labels = [stringify(label) for label in labels]
-        ax.set_xticklabels(str_labels, rotation=90)
-        ax.set_xticks(range(len(str_labels)))
-        ax.set_yticklabels(str_labels)
-        ax.set_yticks(range(len(str_labels)))
-    plt.tight_layout()
-    plt.show()
-
-
-def stringify(nested):
-    if isinstance(nested, str):
-        return nested
-    if (isinstance(nested, tuple)
-            or isinstance(nested, list)) and len(nested) == 1:
-        return stringify(nested[0])
-    else:
-        return stringify(nested[0]) + '_' + stringify(nested[1:])
 
 
 if __name__ == "__main__":
@@ -122,13 +68,13 @@ if __name__ == "__main__":
                 train_confmat = get_confmat(train_conf_path)
                 val_confmat = get_confmat(val_conf_path)
                 if opt.vis:
-                    plot_conf_mat(
+                    plot_epoch_conf_mat(
                         train_confmat,
                         title='Train conf mat',
                         epoch=opt.epoch,
                         labels=dataset.classes,
                         normalize=opt.normalize)
-                    plot_conf_mat(
+                    plot_epoch_conf_mat(
                         val_confmat,
                         title='Val conf mat',
                         epoch=opt.epoch,
