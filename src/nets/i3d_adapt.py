@@ -1,5 +1,8 @@
 import numbers
+from matplotlib import pyplot as plt
 
+import torch
+from torch.autograd import Variable
 from torch import nn
 from src.nets.basenet import BaseNet
 from src.nets.i3d import Unit3Dpy
@@ -35,11 +38,6 @@ class I3DAdapt(BaseNet):
         if in_channels is not None:
             # Make sure different nb of in_channels is requested
             old_inchannels = self.net.conv3d_1a_7x7.conv3d.in_channels
-            weight_3d = self.net.conv3d_1a_7x7.conv3d.weight.data
-            new_weight_3d = weight_3d.mean(1)
-            new_weight_3d = new_weight_3d.unsqueeze(1).repeat(
-                1, in_channels, 1, 1, 1)
-            new_weight_3d = new_weight_3d * old_inchannels / in_channels
             if old_inchannels != in_channels:
                 conv3d_1a_7x7 = Unit3Dpy(
                     out_channels=64,
@@ -47,7 +45,22 @@ class I3DAdapt(BaseNet):
                     kernel_size=(7, 7, 7),
                     stride=(2, 2, 2),
                     padding='SAME')
-                conv3d_1a_7x7.weight = nn.parameter.Parameter(new_weight_3d)
+
+                # Transfer conv weights
+                weight_3d = self.net.conv3d_1a_7x7.conv3d.weight.data
+                new_weight_3d = weight_3d.mean(1)
+                new_weight_3d = new_weight_3d.unsqueeze(1).repeat(
+                    1, in_channels, 1, 1, 1)
+                new_weight_3d = new_weight_3d * old_inchannels / in_channels
+                conv3d_1a_7x7.conv3d.weight = nn.parameter.Parameter(
+                    new_weight_3d)
+
+                # Transfer batch norm params
+                conv3d_1a_7x7.batch3d.running_mean = self.net.conv3d_1a_7x7.batch3d.running_mean
+                conv3d_1a_7x7.batch3d.running_var = self.net.conv3d_1a_7x7.batch3d.running_var
+                conv3d_1a_7x7.batch3d.weight = self.net.conv3d_1a_7x7.batch3d.weight
+                conv3d_1a_7x7.batch3d.bias = self.net.conv3d_1a_7x7.batch3d.bias
+
                 self.net.conv3d_1a_7x7 = conv3d_1a_7x7
 
 
