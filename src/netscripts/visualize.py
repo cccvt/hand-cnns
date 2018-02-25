@@ -10,9 +10,13 @@ from tqdm import tqdm
 
 from actiondatasets.utils import display as display_utils
 
+from src.netscripts.visualize_guided import get_guided_by_sample
+
 
 def visualize(dataloader, model, opt=None):
     model.net.eval()
+    get_guided_by_sample(
+        dataloader, model, level=opt.level, sample_nb=10, opt=opt)
     get_contributing_pixels(
         dataloader,
         model,

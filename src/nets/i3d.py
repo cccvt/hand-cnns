@@ -94,7 +94,12 @@ class Unit3Dpy(torch.nn.Module):
                 out_channels, eps=1e-3, momentum=0.001)
 
         if activation == 'relu':
-            self.activation = torch.nn.functional.relu
+            self.activation = torch.nn.ReLU()
+        elif activation is None:
+            pass
+        else:
+            raise ValueError(
+                'Activation name {} not handled'.format(activation))
 
     def forward(self, inp):
         if self.padding == 'SAME' and self.simplify_pad is False:
@@ -103,7 +108,7 @@ class Unit3Dpy(torch.nn.Module):
         if self.use_bn:
             out = self.batch3d(out)
         if self.activation is not None:
-            out = torch.nn.functional.relu(out)
+            out = self.activation(out)
         return out
 
 
