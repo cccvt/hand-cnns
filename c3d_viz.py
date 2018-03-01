@@ -5,7 +5,7 @@ import cv2
 import torch
 import torchvision
 
-from actiondatasets import smthg
+from actiondatasets import smthg, smthgv2
 from actiondatasets.gteagazeplus import GTEAGazePlus
 from actiondatasets.actiondataset import ActionDataset
 from videotransforms import video_transforms, volume_transforms, tensor_transforms
@@ -52,6 +52,12 @@ def run_visualize(opt):
 
     if opt.dataset == 'smthg':
         dataset = smthg.Smthg(
+            flow_type=opt.flow_type,
+            rescale_flows=opt.rescale_flows,
+            split=opt.split,
+            use_flow=opt.use_flow)
+    elif opt.dataset == 'smthgv2':
+        dataset = smthgv2.SmthgV2(
             flow_type=opt.flow_type,
             rescale_flows=opt.rescale_flows,
             split=opt.split,
