@@ -70,21 +70,47 @@ def run_training(opt):
         else:
             multi = False
         dataset = GTEAGazePlus(
-            flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
             use_objectness=opt.use_objectness,
             heatmap_size=scale_size,
-            original_labels=True,
+            label_type='cvpr',
             rescale_flows=opt.rescale_flows,
             seqs=train_seqs,
             use_flow=opt.use_flow,
             multi=multi,
             mini_factor=opt.mini_factor)
         val_dataset = GTEAGazePlus(
-            flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
             heatmap_size=scale_size,
-            original_labels=True,
+            label_type='cvpr',
+            rescale_flows=opt.rescale_flows,
+            seqs=valid_seqs,
+            use_flow=opt.use_flow,
+            use_objectness=opt.use_objectness,
+            multi=multi,
+            mini_factor=opt.mini_factor)
+    if opt.dataset == 'gteagazeplus_tres':
+        all_subjects = ['Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh']
+        train_seqs, valid_seqs = evaluation.leave_one_out(
+            all_subjects, leave_out_idx)
+        if opt.multi_weights is not None and len(opt.multi_weights):
+            multi = True
+        else:
+            multi = False
+        dataset = GTEAGazePlus(
+            heatmaps=opt.use_heatmaps,
+            use_objectness=opt.use_objectness,
+            heatmap_size=scale_size,
+            label_type='rubicon',
+            rescale_flows=opt.rescale_flows,
+            seqs=train_seqs,
+            use_flow=opt.use_flow,
+            multi=multi,
+            mini_factor=opt.mini_factor)
+        val_dataset = GTEAGazePlus(
+            heatmaps=opt.use_heatmaps,
+            heatmap_size=scale_size,
+            label_type='rubicon',
             rescale_flows=opt.rescale_flows,
             seqs=valid_seqs,
             use_flow=opt.use_flow,
