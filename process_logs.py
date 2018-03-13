@@ -41,7 +41,7 @@ def plot_logs(logs, score_name='top1', y_max=1, prefix=None, score_type=None):
 
     plt.plot(scores, label=label)
     plt.title(score_name)
-    if score_name == 'top1':
+    if score_name == 'top1' or score_name == 'top1_action':
         # Set maximum for y axis
         plt.minorticks_on()
         x1, x2, y1, y2 = plt.axis()

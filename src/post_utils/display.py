@@ -24,7 +24,9 @@ def plot_epoch_conf_mat(confmat,
                         title=None,
                         labels=None,
                         epoch=None,
-                        normalize=False):
+                        both_labels=False,
+                        normalize=False,
+                        display=True):
     """
     Args:
         score_type (str): label for current curve, [valid|train|aggreg]
@@ -35,8 +37,15 @@ def plot_epoch_conf_mat(confmat,
         if epoch > confmat.shape[0]:
             raise ValueError(
                 'Epoch {} should be below {}'.format(epoch, confmat.shape[0]))
-        mat = confmat[epoch]
-    plot_confmat(mat, labels=labels, title=title, normalize=normalize)
+    mat = confmat[epoch]
+    fig, ax = plot_confmat(
+        mat,
+        labels=labels,
+        title=title,
+        normalize=normalize,
+        both_labels=both_labels,
+        display=display)
+    return fig, ax
 
 
 def plot_confmat(confmat,
@@ -44,9 +53,12 @@ def plot_confmat(confmat,
                  title=None,
                  normalize=False,
                  cmap='viridis',
-                 both_labels=False):
+                 both_labels=False,
+                 display=True,
+                 annotate=False):
+    confmat = np.transpose(confmat)
     if normalize:
-        confmat = normalize_rows(confmat)
+        confmat = normalize_rows(confmat)  # Percentage of accuracy
     fig = plt.figure()
     ax = fig.add_subplot(111)
     cax = ax.imshow(confmat, cmap=cmap)
@@ -60,5 +72,17 @@ def plot_confmat(confmat,
             ax.set_xticks(range(len(str_labels)))
         ax.set_yticklabels(str_labels)
         ax.set_yticks(range(len(str_labels)))
-    plt.tight_layout()
-    plt.show()
+    if annotate:
+        for i in range(confmat.shape[0]):
+            for j in range(confmat.shape[1]):
+                val = confmat[i, j]
+                min_val = 1
+                if val > min_val:
+                    ax.annotate('{}'.format(int(val)), xy=(i - 0.3, j + 0.3))
+    try:
+        plt.tight_layout()
+    except ValueError:
+        pass
+    if display:
+        plt.show()
+    return fig, ax

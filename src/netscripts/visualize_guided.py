@@ -31,7 +31,7 @@ def get_guided_by_sample(dataloader,
                          level='4a',
                          sample_nb=2,
                          opt=None,
-                         normalize_by_frame=True):
+                         normalize_by_frame=False):
     """
     Produces gifs of guided backprop for a number of samples
     """
@@ -54,6 +54,8 @@ def get_guided_by_sample(dataloader,
             imgs_var = model.prepare_var(sample, requires_grad=True)
             # Forward pass
             outputs = model.net(imgs_var, early_stop=level)
+            import pdb
+            pdb.set_trace()
             results, = torch.autograd.grad(
                 outputs.max(), imgs_var, retain_graph=True)
             results = results.data.cpu().numpy()

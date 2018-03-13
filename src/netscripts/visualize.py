@@ -17,12 +17,6 @@ def visualize(dataloader, model, opt=None):
     model.net.eval()
     get_guided_by_sample(
         dataloader, model, level=opt.level, sample_nb=10, opt=opt)
-    get_contributing_pixels(
-        dataloader,
-        model,
-        activation_idx=opt.activation_idx,
-        opt=opt,
-        level=opt.level)
     get_activations_by_sample(dataloader, model, opt=opt, level=opt.level)
 
 
@@ -145,52 +139,3 @@ def update_activations_by_sample(idx,
             axes[sample_idx, filter_idx + 1].imshow(activation, cmap='gray')
             axes[sample_idx, filter_idx + 1].axis('off')
     return axes
-
-
-def get_contributing_pixels(dataloader,
-                            model,
-                            activation_idx=None,
-                            level='4a',
-                            opt=None):
-    model.net.eval()
-    for idx, (sample, class_idx) in enumerate(tqdm(dataloader, desc='sample')):
-        class_idx = class_idx[0]
-        # Prepare vars
-        imgs_var = model.prepare_var(sample, requires_grad=True)
-        # Forward pass
-        outputs = model.net(imgs_var, early_stop=level)
-        print('At level {} output has shape {}'.format(level, outputs.shape))
-        print(imgs_var.shape)
-        if not len(activation_idx):
-            sample_activation_idx = [dim // 2 for dim in outputs.shape]
-        else:
-            sample_activation_idx = activation_idx
-        print(sample_activation_idx)
-        sample_activation_idx[2] = 0
-        print(sample_activation_idx)
-        activation = outputs[tuple(sample_activation_idx)]
-        print(activation.data[0])
-
-        # Back propagate a nan so that all neurons in receptive field become nans
-        if activation.data[0] != 0:
-            nan_der = torch.Tensor(1)
-            nan_der[0] = np.nan
-            activation.backward(gradient=nan_der.cuda(), retain_graph=True)
-            img_grad_mask = (imgs_var.grad != imgs_var.grad).float()
-            img_grad_mask = img_grad_mask.data.cpu().numpy()
-            img_grad_mask = img_grad_mask[0]
-            channel_nb, time_nb, height_nb, width_nb = img_grad_mask.shape
-
-            fig, axes = plt.subplots(channel_nb, time_nb)
-            fig.suptitle('Receptive field for sample of len {} at level {}'.
-                         format(time_nb, level))
-            for channel in range(channel_nb):
-                for time in range(time_nb):
-                    axes[channel, time].imshow(
-                        img_grad_mask[channel, time] * 0.5,
-                        cmap='gray',
-                        vmin=0,
-                        vmax=1)
-                    axes[channel, time].axis('off')
-                    axes[channel, time].set_title('{}'.format(time))
-        plt.show()
