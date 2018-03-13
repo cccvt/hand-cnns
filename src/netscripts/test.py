@@ -116,7 +116,7 @@ def test(dataloader,
                 predictions[sample_idx] = dataloader.dataset.dataset.classes[
                     best_idx[0]]
                 prediction_scores[sample_idx] = outputs
-            elif opt.dataset == "gteagazeplus":
+            elif opt.dataset == "gteagazeplus" or opt.dataset == 'gteagazeplus_tres':
                 prediction_scores[idx] = outputs
             else:
                 raise ValueError(

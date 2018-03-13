@@ -38,11 +38,13 @@ def run_training(opt):
     # Initialize transforms
     if not opt.use_heatmaps:
         base_transform_list = [
-            video_transforms.Scale(crop_size),
+            video_transforms.Resize(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
         video_transform_list = [
-            video_transforms.Scale(scale_size),
+            video_transforms.RandomResize(),
+            video_transforms.Resize(scale_size),
+            video_transforms.RandomRotation(30),
             video_transforms.RandomCrop(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
@@ -147,15 +149,9 @@ def run_training(opt):
         raise ValueError('the opt.dataset name provided {0} is not handled'
                          'by this script'.format(opt.dataset))
     action_dataset = ActionDataset(
-        dataset,
-        base_transform=base_transform,
-        clip_size=opt.clip_size,
-        transform=video_transform)
+        dataset, clip_size=opt.clip_size, transform=video_transform)
     val_action_dataset = ActionDataset(
-        val_dataset,
-        base_transform=base_transform,
-        clip_size=opt.clip_size,
-        transform=video_transform)
+        val_dataset, clip_size=opt.clip_size, transform=base_transform)
 
     # Initialize sampler
     if opt.weighted_training:

@@ -35,13 +35,13 @@ def run_testing(opt):
     # Initialize transforms
     if not opt.use_heatmaps:
         video_transform_list = [
-            video_transforms.Scale(crop_size),
+            video_transforms.Resize(crop_size),
             # video_transforms.CenterCrop(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
     else:
         video_transform_list = [
-            tensor_transforms.Scale(crop_size),
+            tensor_transforms.Resize(crop_size),
             # video_transforms.CenterCrop(crop_size),
             volume_transforms.ToTensor()
         ]
@@ -49,7 +49,6 @@ def run_testing(opt):
 
     if opt.dataset == 'smthg':
         dataset = smthg.Smthg(
-            flow_type=opt.flow_type,
             rescale_flows=opt.rescale_flows,
             split=opt.split,
             use_flow=opt.use_flow)
@@ -60,9 +59,21 @@ def run_testing(opt):
         train_seqs, valid_seqs = evaluation.leave_one_out(
             all_subjects, opt.leave_out)
         dataset = GTEAGazePlus(
-            flow_type=opt.flow_type,
             heatmaps=opt.use_heatmaps,
             heatmap_size=crop_size,
+            label_type='cvpr',
+            rescale_flows=opt.rescale_flows,
+            seqs=valid_seqs,
+            use_flow=opt.use_flow,
+            multi=opt.multi)
+    elif opt.dataset == 'gteagazeplus_tres':
+        all_subjects = ['Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh']
+        train_seqs, valid_seqs = evaluation.leave_one_out(
+            all_subjects, opt.leave_out)
+        dataset = GTEAGazePlus(
+            heatmaps=opt.use_heatmaps,
+            heatmap_size=crop_size,
+            label_type='rubicon',
             rescale_flows=opt.rescale_flows,
             seqs=valid_seqs,
             use_flow=opt.use_flow,
