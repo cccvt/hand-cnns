@@ -53,26 +53,26 @@ class I3ResNet(torch.nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        x = self.avgpool(x)
 
         if self.conv_class:
-            x = self.avgpool(x)
 
             # If several classifiers genereate multiple outputs
-            if isinstance(self.classifier, list):
+            class_x = self.classifier(x)
+            if isinstance(class_x, list):
                 outputs = []
-                for classif in self.classifier:
-                    class_x = self.classifier(x)
-                    class_x = class_x.squeeze(3)
-                    class_x = class_x.squeeze(3)
-                    class_x = class_x.mean(2)
-                    outputs.append(class_x)
+                for out in class_x:
+                    out = out.squeeze(3)
+                    out = out.squeeze(3)
+                    out = out.mean(2)
+                    outputs.append(out)
                 return outputs
-            x = self.classifier(x)
-            x = x.squeeze(3)
-            x = x.squeeze(3)
-            x = x.mean(2)
+            else:
+                class_x = class_x.squeeze(3)
+                class_x = class_x.squeeze(3)
+                class_x = class_x.mean(2)
+                return class_x
         else:
-            x = self.avgpool(x)
             x_reshape = x.view(x.size(0), -1)
             x = self.fc(x_reshape)
         return x

@@ -7,6 +7,7 @@ import torchvision
 from actiondatasets import smthg
 from actiondatasets import smthgv2
 from actiondatasets.gteagazeplus import GTEAGazePlus
+from actiondatasets.epic import Epic
 from actiondatasets.actiondataset import ActionDataset
 from videotransforms import video_transforms, volume_transforms, tensor_transforms
 
@@ -14,6 +15,7 @@ from src.nets import c3d, c3d_adapt
 from src.nets import i3d, i3d_adapt
 from src.nets import i3dense, i3dense_adapt
 from src.nets import i3res, i3res_adapt
+from src.nets import resnext as i3next
 from src.netscripts import train
 from src.options import base_options, train_options, video_options
 from src.utils import evaluation
@@ -25,6 +27,8 @@ def run_training(opt):
     leave_out_idx = opt.leave_out
 
     scale_size = (256, 342)
+    resize_ratio = (244 / 256,
+                    1)  # ratio in (final_size e.g. 256/original_size, 1)
     crop_size = (224, 224)
     if opt.use_heatmaps:
         channel_nb = opt.heatmap_nb
@@ -42,8 +46,7 @@ def run_training(opt):
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]
         video_transform_list = [
-            video_transforms.RandomResize(),
-            video_transforms.Resize(scale_size),
+            video_transforms.RandomResize(ratio=resize_ratio),
             video_transforms.RandomRotation(30),
             video_transforms.RandomCrop(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
@@ -91,7 +94,11 @@ def run_training(opt):
             use_objectness=opt.use_objectness,
             multi=multi,
             mini_factor=opt.mini_factor)
-    if opt.dataset == 'gteagazeplus_tres':
+    elif opt.dataset == 'epic':
+        dataset = Epic('train', split_seen=False, mini_factor=opt.mini_factor)
+        val_dataset = Epic(
+            'val', split_seen=False, mini_factor=opt.mini_factor)
+    elif opt.dataset == 'gteagazeplus_tres':
         all_subjects = ['Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh']
         train_seqs, valid_seqs = evaluation.leave_one_out(
             all_subjects, leave_out_idx)
@@ -149,9 +156,15 @@ def run_training(opt):
         raise ValueError('the opt.dataset name provided {0} is not handled'
                          'by this script'.format(opt.dataset))
     action_dataset = ActionDataset(
-        dataset, clip_size=opt.clip_size, transform=video_transform)
+        dataset,
+        clip_size=opt.clip_size,
+        clip_spacing=opt.clip_spacing,
+        transform=video_transform)
     val_action_dataset = ActionDataset(
-        val_dataset, clip_size=opt.clip_size, transform=base_transform)
+        val_dataset,
+        clip_size=opt.clip_size,
+        clip_spacing=opt.clip_spacing,
+        transform=base_transform)
 
     # Initialize sampler
     if opt.weighted_training:
@@ -208,10 +221,28 @@ def run_training(opt):
             i3resnet,
             class_nb=action_dataset.class_nb,
             channel_nb=channel_nb)
+    elif opt.network == 'i3next':
+        i3resnext = i3next.resnext101(
+            sample_duration=opt.clip_size, sample_size=crop_size[0])
+        checkpoint = torch.load('data/resnext-101-kinetics.pth')
+
+        # Load state_dict after removing 'module.' prefix in keys
+        state_dict = checkpoint['state_dict']
+        state_dict = {
+            '.'.join(key.split('.')[1:]): value
+            for key, value in state_dict.items()
+        }
+        i3resnext.load_state_dict(state_dict)
+        model = i3res_adapt.I3ResAdapt(
+            opt,
+            i3resnext,
+            class_nb=action_dataset.class_nb,
+            channel_nb=channel_nb,
+            resnext=True)
     else:
-        raise ValueError(
-            'network should be in [i3res|i3dense|i3d|c3d but got {}]').format(
-                opt.network)
+        err_msg = 'network should be in [i3res|i3dense|i3d|c3d but got {}]'.format(
+            opt.network)
+        raise ValueError(err_msg)
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(

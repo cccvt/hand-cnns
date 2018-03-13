@@ -7,6 +7,7 @@ import numpy as np
 from scipy.misc import imresize
 import visdom
 
+from actiondatasets.utils import annots as annot_utils
 from actiondatasets.utils import display as displayutils
 
 
@@ -111,6 +112,21 @@ class Visualize():
             X=epochs, Y=errors, env=self.opt.exp_id, opts=opts, win=win)
         return win
 
+    def get_sample_strings(self, predictions, gts, classes, display_idx=0,
+                           k=1):
+        pred_val, topk_classes = predictions.data[display_idx].topk(k)
+
+        if self.opt.use_gpu:
+            pred_val = pred_val.cpu()
+            gts = gts.data.cpu()
+        pred_classes = classes[int(topk_classes[0])]
+        pred_string = str(pred_classes)
+
+        real_score, real_class = gts[display_idx].max(0)
+        real_string = classes[int(real_class[0])]
+
+        return real_string, pred_string
+
     def plot_sample(self,
                     window_name,
                     input_imgs,
@@ -137,21 +153,30 @@ class Visualize():
             self.sample_windows[window_name] = win
 
         time_input_imgs = input_imgs[display_idx]  # take first batch sample
-        pred_val, topk_classes = predictions[display_idx].topk(k)
-
         if self.opt.use_gpu:
-            pred_val = pred_val.cpu()
-            gts = gts.cpu()
             time_input_imgs = time_input_imgs.cpu()
-        pred_classes = classes[int(topk_classes[0])]
-        pred_string = 'predicted : ' + str(pred_classes)
-
-        real_score, real_class = gts[display_idx].max(0)
-        real_class_str = classes[int(real_class[0])]
-
-        real_string = 'true : ' + str(real_class_str)
-
-        caption = pred_string + ';\n' + real_string
+        if isinstance(gts, dict):
+            real_strings = [[] for idx in range(len(gts))]
+            predicted_strings = [[] for idx in range(len(gts))]
+            for target_idx, (label_name, gts_val) in enumerate(gts.items()):
+                predictions_val = predictions[target_idx]
+                classes_val = classes[target_idx]
+                target_real_string, target_pred_string = self.get_sample_strings(
+                    predictions_val,
+                    gts_val,
+                    classes_val,
+                    display_idx=display_idx,
+                    k=k)
+                real_strings[target_idx].append(target_real_string)
+                predicted_strings[target_idx].append(target_pred_string)
+            caption = 'true: {} \n predicted: {}'.format(
+                annot_utils.stringify(real_strings),
+                annot_utils.stringify(predicted_strings))
+        else:
+            real_string, pred_string = self.get_sample_strings(
+                predictions, gts, classes, display_idx=display_idx, k=k)
+            caption = 'true : {} \n predicted: {}'.format(
+                real_string, pred_string)
 
         # Extract one image from temporally stacked images
         if time_input_imgs.dim() == 4:

@@ -4,7 +4,7 @@ from src.nets.basenet import BaseNet
 
 
 class ResNetAdapt(BaseNet):
-    def __init__(self, opt, resnet, class_nb, in_channels=None):
+    def __init__(self, opt, resnet, class_nb, in_channels=None, resnext=False):
         """
         Args:
         class_nb: either an int in case of simple classification
@@ -12,7 +12,10 @@ class ResNetAdapt(BaseNet):
         of class_nbs for each of the predictive tasks
         """
         super().__init__(opt)
-        self.name = 'resnet_adapt'
+        if resnext:
+            self.name = 'resnext_adapt'
+        else:
+            self.name = 'resnet_adapt'
         self.net = resnet
         in_features_nb = self.net.fc.in_features
         if isinstance(class_nb, numbers.Number):

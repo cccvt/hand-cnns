@@ -34,8 +34,7 @@ def train_net(dataloader,
         last_epoch = opt.epochs
 
     # Initialize conf_mat
-    classes = dataloader.dataset.classes
-    class_nb = len(classes)
+    class_nb = dataloader.dataset.class_nb
 
     valid_mean_scores = []
     valid_mean_win = None
@@ -46,8 +45,12 @@ def train_net(dataloader,
         start_epoch = 0
 
     # Conf mat are overwritten when training is continued
-    conf_mat = np.zeros((last_epoch, class_nb, class_nb))
-    val_conf_mat = np.zeros((last_epoch, class_nb, class_nb))
+    if isinstance(class_nb, (list, tuple)):
+        conf_mat = [np.zeros((last_epoch, nb, nb)) for nb in class_nb]
+        val_conf_mat = [np.zeros((last_epoch, nb, nb)) for nb in class_nb]
+    else:
+        conf_mat = np.zeros((last_epoch, class_nb, class_nb))
+        val_conf_mat = np.zeros((last_epoch, class_nb, class_nb))
 
     for epoch in tqdm(range(start_epoch, last_epoch), desc='epoch'):
         # Train for one epoch
@@ -64,8 +67,15 @@ def train_net(dataloader,
             visualize=visualize)
 
         if visualize:
-            viz.plot_mat(
-                'train_confmat', conf_mat[epoch], title='train conf mat')
+            if isinstance(conf_mat, (list, tuple)):
+                for multi_idx, multi_conf_mat in enumerate(conf_mat):
+                    viz.plot_mat(
+                        'train_confmat_{}'.format(multi_idx),
+                        multi_conf_mat[epoch],
+                        title='train conf mat')
+            else:
+                viz.plot_mat(
+                    'train_confmat', conf_mat[epoch], title='train conf mat')
 
         if valid_dataloader is not None:
             # Validation for one epoch
@@ -98,8 +108,15 @@ def train_net(dataloader,
 
         # Display valid conf mat
         if visualize:
-            viz.plot_mat(
-                'val_confmat', val_conf_mat[epoch], title='val conf mat')
+            if isinstance(val_conf_mat, (list, tuple)):
+                for multi_idx, multi_conf_mat in enumerate(val_conf_mat):
+                    viz.plot_mat(
+                        'val_confmat_{}'.format(multi_idx),
+                        multi_conf_mat[epoch],
+                        title='train conf mat')
+            else:
+                viz.plot_mat(
+                    'val_confmat', val_conf_mat[epoch], title='val conf mat')
 
         # Save network weights
         if opt.save_latest:
@@ -191,19 +208,25 @@ def data_pass(model,
     if conf_mat is not None:
         # Only register confmat for first output
         if isinstance(target, dict):
-            output = output[0]
-            target = target['action']
-        pred_classes = output.data.max(1)[1].cpu().numpy()
-        target_classes = target.data.max(1)[1].cpu().numpy()
-        for idx in range(len(pred_classes)):
-            conf_mat[epoch, target_classes[idx], pred_classes[idx]] += 1
+            for target_idx, target_val in enumerate(target.values()):
+                output_val = output[target_idx]
+                pred_classes = output_val.data.max(1)[1].cpu().numpy()
+                target_classes = target_val.data.max(1)[1].cpu().numpy()
+                for idx in range(len(pred_classes)):
+                    conf_mat[target_idx][epoch, target_classes[idx],
+                                         pred_classes[idx]] += 1
+        else:
+            pred_classes = output.data.max(1)[1].cpu().numpy()
+            target_classes = target.data.max(1)[1].cpu().numpy()
+            for idx in range(len(pred_classes)):
+                conf_mat[epoch, target_classes[idx], pred_classes[idx]] += 1
 
     # Display an image example in visdom
     if visualize:
         if viz is not None and i % opt.display_freq == 0:
             prefix = 'train_' if train else 'val_'
             sample_name = prefix + 'sample'
-            viz.plot_sample(sample_name, image.data, target.data, output.data,
+            viz.plot_sample(sample_name, image.data, target, output,
                             dataloader.dataset.classes)
 
     return conf_mat
@@ -250,7 +273,7 @@ def epoch_pass(dataloader,
 
     # Display scores in visdom
     if opt.multi_weights is not None and len(opt.multi_weights):
-        metric_groups = ['action', 'verb', 'objects']
+        metric_groups = dataloader.dataset.class_names
         for metric_name in ['top1', 'top5', 'loss']:
             scores = [
                 metrics.metrics['{}_{}'.format(metric_name, group)].evolution
