@@ -47,7 +47,7 @@ def run_training(opt):
         ]
         video_transform_list = [
             video_transforms.RandomResize(ratio=resize_ratio),
-            video_transforms.RandomRotation(30),
+            video_transforms.RandomRotation(20),
             video_transforms.RandomCrop(crop_size),
             volume_transforms.ClipToTensor(channel_nb=channel_nb)
         ]

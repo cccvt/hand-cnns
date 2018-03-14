@@ -91,11 +91,13 @@ def train_net(dataloader,
                 verbose=False,
                 visualize=visualize)
 
-        # Update learning rate scheduler according to loss
+        # Update learning rate scheduler according to loss of first class_name
+        first_class_name = dataloader.dataset.class_names[0]
         if model.lr_scheduler is not None:
             # Retrieve latest loss for lr scheduler
             if opt.multi_weights is not None and len(opt.multi_weights):
-                loss_metric = val_metrics.metrics['loss_action']
+                loss_metric = val_metrics.metrics['loss_{}'.format(
+                    first_class_name)]
             else:
                 loss_metric = val_metrics.metrics['loss']
             loss = loss_metric.evolution[-1]
@@ -308,11 +310,12 @@ def epoch_pass(dataloader,
 
     # Sanity check, top1 score should be the same as accuracy from conf_mat
     # while accounting for last batch discrepancy
-    epoch_conf_mat = conf_mat[epoch]
-    if 'top1' in last_scores and last_scores['top1'] != epoch_conf_mat.trace(
-    ) / epoch_conf_mat.sum():
-        import pdb
-        pdb.set_trace()
+    if not isinstance(conf_mat, (list, tuple)):
+        epoch_conf_mat = conf_mat[epoch]
+        if 'top1' in last_scores and last_scores['top1'] != epoch_conf_mat.trace(
+        ) / epoch_conf_mat.sum():
+            import pdb
+            pdb.set_trace()
 
     if verbose:
         print(message)

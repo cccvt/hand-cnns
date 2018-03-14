@@ -1,13 +1,13 @@
 import os
 
 
-def get_smthg_train(network, modality, dataset, experience):
+def get_train_folder(network, modality, dataset, experience):
     train_folder = os.path.join('train', network, modality, dataset,
                                 experience)
     return train_folder
 
 
-def get_smthg_test(network, modality, dataset, experience, split, epoch):
+def get_test_folder(network, modality, dataset, experience, split, epoch):
     test_folder = os.path.join('test', network, modality, dataset, experience,
                                'epoch_{}'.format(epoch), split)
     return test_folder
