@@ -7,6 +7,7 @@ import torchvision
 from actiondatasets import smthg
 from actiondatasets import smthgv2
 from actiondatasets.gteagazeplus import GTEAGazePlus
+from actiondatasets.gulpdataset import GulpActionDataset as GulpEpicDataset
 from actiondatasets.epic import Epic
 from actiondatasets.actiondataset import ActionDataset
 from videotransforms import video_transforms, volume_transforms, tensor_transforms
@@ -26,10 +27,10 @@ def run_training(opt):
     # Index of sequence item to leave out for validation
     leave_out_idx = opt.leave_out
 
-    scale_size = (256, 342)
-    resize_ratio = (244 / 256,
+    scale_size = (71, 126)
+    crop_size = (64, 114)
+    resize_ratio = (crop_size[0] / scale_size[0],
                     1)  # ratio in (final_size e.g. 256/original_size, 1)
-    crop_size = (224, 224)
     if opt.use_heatmaps:
         channel_nb = opt.heatmap_nb
     elif opt.use_flow:
@@ -95,9 +96,16 @@ def run_training(opt):
             multi=multi,
             mini_factor=opt.mini_factor)
     elif opt.dataset == 'epic':
-        dataset = Epic('train', split_seen=False, mini_factor=opt.mini_factor)
-        val_dataset = Epic(
-            'val', split_seen=False, mini_factor=opt.mini_factor)
+        # dataset = Epic('train', split_seen=False, mini_factor=opt.mini_factor)
+        # val_dataset = Epic(
+        #     'val', split_seen=False, mini_factor=opt.mini_factor)
+        dataset = GulpEpicDataset(
+            '/local/dataset/epic-kitchen/gulpfiles/train')
+        # dataset = GulpEpicDataset('data/epic-kitchen/gulpfiles/train')
+        # validating on seen (should test on unseen)
+        val_dataset = GulpEpicDataset(
+            '/local/dataset/epic-kitchen/gulpfiles/seen')
+        # val_dataset = GulpEpicDataset('data/epic-kitchen/gulpfiles/seen')
     elif opt.dataset == 'gteagazeplus_tres':
         all_subjects = ['Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh']
         train_seqs, valid_seqs = evaluation.leave_one_out(
