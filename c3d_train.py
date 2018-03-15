@@ -12,14 +12,14 @@ from actiondatasets.epic import Epic
 from actiondatasets.actiondataset import ActionDataset
 from videotransforms import video_transforms, volume_transforms, tensor_transforms
 
-from src.nets import c3d, c3d_adapt
-from src.nets import i3d, i3d_adapt
-from src.nets import i3dense, i3dense_adapt
-from src.nets import i3res, i3res_adapt
-from src.nets import resnext as i3next
-from src.netscripts import train
-from src.options import base_options, train_options, video_options
-from src.utils import evaluation
+from netraining.nets import c3d, c3d_adapt
+from netraining.nets import i3d, i3d_adapt
+from netraining.nets import i3dense, i3dense_adapt
+from netraining.nets import i3res, i3res_adapt
+from netraining.nets import resnext as i3next
+from netraining.netscripts import train
+from netraining.options import base_options, train_options, video_options
+from netraining.utils import evaluation
 
 
 def run_training(opt):
@@ -100,11 +100,11 @@ def run_training(opt):
         # val_dataset = Epic(
         #     'val', split_seen=False, mini_factor=opt.mini_factor)
         dataset = GulpEpicDataset(
-            '/local/dataset/epic-kitchen/gulpfiles/train')
+            '/local/dataset/epic-kitchen/gulpfiles_228_fr_30/train')
         # dataset = GulpEpicDataset('data/epic-kitchen/gulpfiles/train')
         # validating on seen (should test on unseen)
         val_dataset = GulpEpicDataset(
-            '/local/dataset/epic-kitchen/gulpfiles/seen')
+            '/local/dataset/epic-kitchen/gulpfiles_228_fr_30/seen')
         # val_dataset = GulpEpicDataset('data/epic-kitchen/gulpfiles/seen')
     elif opt.dataset == 'gteagazeplus_tres':
         all_subjects = ['Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh']

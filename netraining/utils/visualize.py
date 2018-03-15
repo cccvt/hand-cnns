@@ -135,14 +135,12 @@ class Visualize():
                     classes,
                     display_idx=0,
                     k=1,
-                    time_max=8,
-                    time_step=1):
+                    max_frames=8):
         """ Plots in visdom one image with predicted and ground truth labels
         from the given batch
 
         Args:
-            time_max (int): max number of frames to display
-            time_step (int): number of time steps between two displayed frames
+            max_frames (int): max number of frames to display
 
         """
         # Retrieve window id if exists
@@ -178,12 +176,11 @@ class Visualize():
             caption = 'true : {} \n predicted: {}'.format(
                 real_string, pred_string)
 
-        # Extract one image from temporally stacked images
         if time_input_imgs.dim() == 4:
             stack_imgs = []
-            for time_idx in range(0,
-                                  min(time_max, time_input_imgs.shape[1]),
-                                  time_step):
+            input_img_nb = time_input_imgs.shape[1]
+            time_step = min(1, input_img_nb // max_frames)
+            for time_idx in range(0, input_img_nb, time_step):
                 input_img = time_input_imgs[:, time_idx, :, :]
                 input_img = prepare_img(input_img)
                 stack_imgs.append(input_img)

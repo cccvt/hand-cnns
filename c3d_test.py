@@ -10,13 +10,13 @@ from actiondatasets.gteagazeplus import GTEAGazePlus
 from actiondatasets.actiondataset import ActionDataset
 from videotransforms import video_transforms, volume_transforms, tensor_transforms
 
-from src.nets import c3d, c3d_adapt
-from src.nets import i3d, i3d_adapt
-from src.nets import i3dense, i3dense_adapt
-from src.nets import i3res, i3res_adapt
-from src.netscripts import test
-from src.options import base_options, video_options, test_options
-from src.utils import evaluation
+from netraining.nets import c3d, c3d_adapt
+from netraining.nets import i3d, i3d_adapt
+from netraining.nets import i3dense, i3dense_adapt
+from netraining.nets import i3res, i3res_adapt
+from netraining.netscripts import test
+from netraining.options import base_options, video_options, test_options
+from netraining.utils import evaluation
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 

@@ -1,7 +1,7 @@
 import copy
 
 from torch import nn
-from src.nets.basenet import BaseNet
+from netraining.nets.basenet import BaseNet
 
 
 class I3DenseAdapt(BaseNet):

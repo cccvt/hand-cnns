@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from actiondatasets.utils import display as display_utils
 
-from src.netscripts.visualize_guided import get_guided_by_sample
+from netraining.netscripts.visualize_guided import get_guided_by_sample
 
 
 def visualize(dataloader, model, opt=None):

@@ -4,8 +4,8 @@ from matplotlib import pyplot as plt
 import torch
 from torch.autograd import Variable
 from torch import nn
-from src.nets.basenet import BaseNet
-from src.nets.i3d import Unit3Dpy
+from netraining.nets.basenet import BaseNet
+from netraining.nets.i3d import Unit3Dpy
 
 
 class I3DAdapt(BaseNet):

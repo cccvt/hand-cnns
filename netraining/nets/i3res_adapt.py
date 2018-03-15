@@ -2,7 +2,7 @@ import copy
 import numbers
 
 from torch import nn
-from src.nets.basenet import BaseNet
+from netraining.nets.basenet import BaseNet
 
 
 class I3ResAdapt(BaseNet):

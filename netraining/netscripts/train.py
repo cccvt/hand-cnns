@@ -4,10 +4,10 @@ import pickle
 import os
 from tqdm import tqdm
 
-from src.utils.visualize import Visualize
-from src.utils.evaluation import batch_topk_accuracy as topk
-from src.utils.evaluation import Metric, Metrics
-from src.netscripts.test import test
+from netraining.utils.visualize import Visualize
+from netraining.utils.evaluation import batch_topk_accuracy as topk
+from netraining.utils.evaluation import Metric, Metrics
+from netraining.netscripts.test import test
 
 
 def train_net(dataloader,
