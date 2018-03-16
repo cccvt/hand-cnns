@@ -2,13 +2,20 @@ src/.cache
 
 data
 checkpoints
+checkpoints_data2
 predictions
 
 test/.cache
 test_scripts/
-train_scrips/
+train_scripts/
+viz_scripts/
+scripts/
+pyapt_scripts/
+results/
 
 __pycache__
 
 *.sw*
 *.lprof
+
+.style.yapf
