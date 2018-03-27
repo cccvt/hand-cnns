@@ -3,13 +3,14 @@ import torch
 from torchvision import transforms
 import torchvision.models as models
 
-from src.options import base_options, image_options, train_options, error
-from src.nets import resnet_adapt
-from src.netscripts import train
-from src.utils.normalize import Unnormalize
-from src.utils import evaluation
+from netraining.options import base_options, image_options, train_options, error
+from netraining.nets import resnet_adapt, miniresnet
+from netraining.netscripts import train
+from netraining.utils.normalize import Unnormalize
+from netraining.utils import evaluation
 
 from actiondatasets.gteagazeplus import GTEAGazePlus
+from actiondatasets.epicsounds import Epic as EpicSounds
 
 
 def run_training(opt):
@@ -38,6 +39,11 @@ def run_training(opt):
     # Index of sequence item to leave out for validation
     leave_out_idx = opt.leave_out
 
+    if opt.modality == 'flow':
+        use_flow = True
+    else:
+        use_flow = False
+
     if opt.dataset == 'gteagazeplus':
         # Create dataset
         all_subjects = [
@@ -53,7 +59,7 @@ def run_training(opt):
             heatmap_size=scale_size,
             original_labels=True,
             rescale_flows=opt.rescale_flows,
-            use_flow=opt.use_flow)
+            use_flow=use_flow)
         valid_dataset = GTEAGazePlus(
             transform=transform,
             seqs=valid_seqs,
@@ -62,7 +68,13 @@ def run_training(opt):
             heatmap_size=scale_size,
             original_labels=True,
             rescale_flows=opt.rescale_flows,
-            use_flow=opt.use_flow)
+            use_flow=use_flow)
+    if opt.dataset == 'epic':
+        if opt.modality == 'melspec':
+            class_nbs = (20, 50)
+            dataset = EpicSounds('train', limit_classes=class_nbs, time_size=4)
+            valid_dataset = EpicSounds(
+                'val', limit_classes=class_nbs, time_size=4)
 
     sampler = torch.utils.data.sampler.RandomSampler(dataset)
 
@@ -80,14 +92,32 @@ def run_training(opt):
         num_workers=opt.threads)
 
     # Load model
-    resnet = models.resnet34(pretrained=opt.pretrained)
-    model = resnet_adapt.ResNetAdapt(opt, resnet, dataset.class_nb)
+    if opt.modality == 'flow':
+        in_channels = 2
+    elif opt.modality == 'melspec':
+        in_channels = 1
+    else:
+        in_channels = None
+
+    resnet = miniresnet.resnet18(pretrained=opt.pretrained)
+    model = resnet_adapt.ResNetAdapt(
+        opt, resnet, dataset.class_nb, in_channels=in_channels)
 
     model_params = model.net.parameters()
 
-    optimizer = torch.optim.SGD(model_params, lr=opt.lr, momentum=opt.momentum)
+    optimizer = torch.optim.SGD(
+        model_params,
+        lr=opt.lr,
+        momentum=opt.momentum,
+        weight_decay=opt.weight_decay)
 
-    criterion = torch.nn.CrossEntropyLoss()
+    if opt.dataset == 'epic':
+        criterion = {
+            'verb': torch.nn.CrossEntropyLoss(),
+            'objects': torch.nn.BCEWithLogitsLoss()
+        }
+    else:
+        criterion = torch.nn.CrossEntropyLoss()
 
     model.set_criterion(criterion)
     model.set_optimizer(optimizer)

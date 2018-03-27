@@ -10,6 +10,8 @@ import visdom
 from actiondatasets.utils import annots as annot_utils
 from actiondatasets.utils import display as displayutils
 
+import logutils
+
 
 def get_rand_win_id():
     postfix = str(hex(int(time.time() * 10000000))[2:])
@@ -22,6 +24,8 @@ class Visualize():
 
         self.opt = opt
         self.win = None
+        checkpoint_folder = os.path.join(opt.checkpoint_dir, opt.exp_id)
+        os.makedirs(checkpoint_folder, exist_ok=True)
         self.train_log_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
                                            'train_log.txt')
         self.valid_log_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
@@ -30,23 +34,10 @@ class Visualize():
             opt.checkpoint_dir, opt.exp_id, 'valid_aggreg.txt')
         self.lr_history_path = os.path.join(opt.checkpoint_dir, opt.exp_id,
                                             'lr_history.txt')
-
-        # Initialize log files
-        with open(self.train_log_path, "a") as log_file:
-            now = time.strftime("%c")
-            log_file.write('==== Training log at {0} ====\n'.format(now))
-
-        with open(self.valid_log_path, "a") as log_file:
-            now = time.strftime("%c")
-            log_file.write('==== Valid log at {0} ====\n'.format(now))
-
-        with open(self.valid_aggreg_log_path, "a") as log_file:
-            now = time.strftime("%c")
-            log_file.write('==== Valid aggreg log at {0} ====\n'.format(now))
-
-        with open(self.lr_history_path, "a") as log_file:
-            now = time.strftime("%c")
-            log_file.write('==== LR schedule log at {0} ====\n'.format(now))
+        logutils.create_log_file(self.train_log_path, 'Train')
+        logutils.create_log_file(self.valid_log_path, 'Valid')
+        logutils.create_log_file(self.valid_aggreg_log_path, 'Valid aggreg')
+        logutils.create_log_file(self.lr_history_path, 'LR schedule')
 
         # Launch visdom server
         exp_dir = os.path.join(self.opt.checkpoint_dir, self.opt.exp_id)
@@ -78,19 +69,13 @@ class Visualize():
             raise ValueError('when log_path is specified, valid is not taken\
                     into account')
 
-        now = time.strftime("%c")
-        message = '(epoch: {epoch}, time: {t})'.format(epoch=epoch, t=now)
-        for k, v in errors.items():
-            message = message + ',{name}:{err}'.format(name=k, err=v)
-
         # Write log message to correct file
         if log_path is None:
             if valid:
                 log_path = self.valid_log_path
             else:
                 log_path = self.train_log_path
-        with open(log_path, "a") as log_file:
-            log_file.write(message + '\n')
+        message = logutils.log_errors(epoch, errors, log_path=log_path)
         return message
 
     def plot_errors(self,

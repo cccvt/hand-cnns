@@ -4,8 +4,8 @@ import os
 import subprocess
 import sys
 
-from src.utils import filesys
-from src.utils import options
+from netraining.utils import filesys
+from netraining.utils import options
 
 
 class BaseOptions():
@@ -46,13 +46,9 @@ class BaseOptions():
             help='number of threads used for data\
                                  loading')
         self.parser.add_argument(
-            '--use_flow',
-            action='store_true',
-            help='Whether to use flow or RGB')
-        self.parser.add_argument(
-            '--use_objectness',
-            action='store_true',
-            help='Whether to use objectness images')
+            '--modality',
+            default='rgb',
+            help='Can be [rgb|flow|melspec|objectness|heatmaps|..]')
         self.parser.add_argument(
             '--flow_type', type=str, default='tvl1', help='in [farn|tvl1]')
         self.parser.add_argument(
@@ -60,11 +56,6 @@ class BaseOptions():
             action='store_true',
             help='activate to scale to [min, max], otherwise to stay in [0,255]'
         )
-
-        self.parser.add_argument(
-            '--use_heatmaps',
-            action='store_true',
-            help='Whether to use heatmaps')
         self.parser.add_argument(
             '--heatmap_nb',
             type=int,

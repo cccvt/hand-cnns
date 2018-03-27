@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.nn import ReplicationPad3d
 import torchvision
 
-from src.nets.i3utils import inflate
+from netraining.nets.i3utils import inflate
 
 
 class I3DenseNet(torch.nn.Module):

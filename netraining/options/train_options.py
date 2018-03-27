@@ -34,6 +34,11 @@ def add_train_options(options):
         default=0.9,
         help='Base learning rate for training')
     parser.add_argument(
+        '--weight_decay',
+        type=float,
+        default=0,
+        help='Weight decay for training')
+    parser.add_argument(
         '--criterion',
         type=str,
         default='CE',

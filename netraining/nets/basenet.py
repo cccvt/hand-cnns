@@ -1,8 +1,10 @@
 from collections import OrderedDict
 import os
+import traceback
+
 import torch
 
-from src.options import error
+from netraining.options import error
 
 
 class BaseNet():
@@ -44,7 +46,7 @@ class BaseNet():
         if self.opt.use_gpu:
             self.net.cuda()
 
-    def load(self, epoch=0, load_path=None, latest=False):
+    def load(self, epoch=0, load_path=None, latest=False, features=False):
         """
         Utility function to load network weights
 
@@ -74,8 +76,13 @@ class BaseNet():
                     checkpoint['epoch'], epoch)
             else:
                 epoch = checkpoint['epoch']
-        self.net.load_state_dict(checkpoint['net'])
-        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        if features:
+            strict = False
+        else:
+            strict = True
+        self.net.load_state_dict(checkpoint['net'], strict=strict)
+        if not features:
+            self.optimizer.load_state_dict(checkpoint['optimizer'])
         print('loaded net from epoch {0}'.format(epoch))
         return epoch
 
@@ -173,8 +180,26 @@ class BaseNet():
                           target_value) in enumerate(target.items()):
                     out = output[idx]
                     target_vals, target_idxs = target_value.max(1)
-                    losses[target_name] = self.criterion(
-                        out, target_idxs.view(-1))
+                    if isinstance(self.criterion, dict):
+                        # If cross entropy loss, expects indexes
+                        if isinstance(self.criterion[target_name],
+                                      torch.nn.CrossEntropyLoss):
+                            losses[target_name] = self.criterion[target_name](
+                                out, target_idxs.view(-1))
+                        elif isinstance(self.criterion[target_name],
+                                        (torch.nn.MultiLabelMarginLoss,
+                                         torch.nn.MultiLabelSoftMarginLoss,
+                                         torch.nn.BCEWithLogitsLoss)):
+                            losses[target_name] = self.criterion[target_name](
+                                out, target_value.float())
+                        else:
+                            err_msg = ('{} not supported'.format(
+                                self.criterion[target_name]))
+                            raise ValueError(err_msg)
+
+                    else:
+                        losses[target_name] = self.criterion(
+                            out, target_idxs.view(-1))
                 return losses
 
             else:

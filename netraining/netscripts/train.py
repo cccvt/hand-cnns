@@ -29,7 +29,11 @@ def train_net(dataloader,
     if opt.use_gpu:
         # Transfert model to GPU
         model.net = model.net.cuda()
-        model.criterion = model.criterion.cuda()
+        if isinstance(model.criterion, dict):
+            for key, criterion in model.criterion.items():
+                model.criterion[key] = criterion.cuda()
+        else:
+            model.criterion = model.criterion.cuda()
 
         last_epoch = opt.epochs
 
@@ -115,7 +119,7 @@ def train_net(dataloader,
                     viz.plot_mat(
                         'val_confmat_{}'.format(multi_idx),
                         multi_conf_mat[epoch],
-                        title='train conf mat')
+                        title='val conf mat')
             else:
                 viz.plot_mat(
                     'val_confmat', val_conf_mat[epoch], title='val conf mat')

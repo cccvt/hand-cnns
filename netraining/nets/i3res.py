@@ -4,7 +4,7 @@ import math
 import torch
 from torch.nn import ReplicationPad3d
 
-from src.nets.i3utils import inflate
+from netraining.nets.i3utils import inflate
 
 
 class I3ResNet(torch.nn.Module):

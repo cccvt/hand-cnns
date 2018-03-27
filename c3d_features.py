@@ -15,14 +15,12 @@ from netraining.nets import c3d, c3d_adapt
 from netraining.nets import i3d, i3d_adapt
 from netraining.nets import i3dense, i3dense_adapt
 from netraining.nets import i3res, i3res_adapt
-from netraining.netscripts import test
+from netraining.netscripts import features
 from netraining.options import base_options, video_options, test_options
 from netraining.utils import evaluation
 
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
-
-def run_testing(opt):
+def get_features(opt):
     cv2.setNumThreads(0)
     if opt.dataset == 'epic':
         crop_size = (128, 228)
@@ -31,25 +29,17 @@ def run_testing(opt):
 
     # Modality params
     use_flow = False
-    if opt.modality == 'heatmaps':
-        channel_nb = opt.heatmap_nb
-    elif opt.modality == 'flow':
+    if opt.modality == 'flow':
         use_flow = True
         channel_nb = 2
     else:
         channel_nb = 3
 
     # Initialize transforms
-    if not opt.modality == 'heatmaps':
-        video_transform_list = [
-            video_transforms.Resize(crop_size),
-            volume_transforms.ClipToTensor(channel_nb=channel_nb)
-        ]
-    else:
-        video_transform_list = [
-            tensor_transforms.Resize(crop_size),
-            volume_transforms.ToTensor()
-        ]
+    video_transform_list = [
+        video_transforms.Resize(crop_size),
+        volume_transforms.ClipToTensor(channel_nb=channel_nb)
+    ]
     video_transform = video_transforms.Compose(video_transform_list)
 
     if opt.dataset == 'smthg':
@@ -57,18 +47,6 @@ def run_testing(opt):
             rescale_flows=opt.rescale_flows,
             split=opt.split,
             use_flow=use_flow)
-    elif opt.dataset == 'gteagazeplus':
-        all_subjects = [
-            'Ahmad', 'Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh'
-        ]
-        train_seqs, valid_seqs = evaluation.leave_one_out(
-            all_subjects, opt.leave_out)
-        dataset = GTEAGazePlus(
-            label_type='cvpr',
-            rescale_flows=opt.rescale_flows,
-            seqs=valid_seqs,
-            use_flow=use_flow,
-            multi=opt.multi)
     elif opt.dataset == 'gteagazeplus_tres':
         all_subjects = ['Alireza', 'Carlos', 'Rahul', 'Yin', 'Shaghayegh']
         train_seqs, valid_seqs = evaluation.leave_one_out(
@@ -82,9 +60,14 @@ def run_testing(opt):
     elif opt.dataset == 'epic':
         dataset = Epic(opt.split)
     action_dataset = ActionDataset(
-        dataset, clip_size=opt.clip_size, transform=video_transform, test=True)
-    assert opt.batch_size == 1, 'During testing batch size should be 1 bug got {}'.format(
-        opt.batch_size)
+        dataset,
+        clip_size=opt.clip_size,
+        transform=video_transform,
+        test=True,
+        max_size=opt.mode_param)
+    assert opt.batch_size == 1, (
+        'During feature extraction '
+        'batch size should be 1 bug got {}'.format(opt.batch_size))
     val_dataloader = torch.utils.data.DataLoader(
         action_dataset,
         shuffle=False,
@@ -140,10 +123,11 @@ def run_testing(opt):
     model.net.eval()
     if opt.use_gpu:
         model.net.cuda()
-    model.load(load_path=opt.checkpoint_path)  # TODO remove features=True
+    model.load(
+        load_path=opt.checkpoint_path,
+        features=True)  # TODO remove features=True
 
-    accuracy = test.test(val_dataloader, model, opt=opt, save_predictions=True)
-    print('Computed accuracy: {}'.format(accuracy))
+    features.get_features(val_dataloader, model, opt=opt)
 
 
 if __name__ == '__main__':
@@ -154,4 +138,4 @@ if __name__ == '__main__':
     test_options.add_test_options(options)
     video_options.add_video_options(options)
     opt = options.parse()
-    run_testing(opt)
+    get_features(opt)
